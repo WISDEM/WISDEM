@@ -1,9 +1,9 @@
-"""Provides the `ScourProtectionDesign` class"""
+"""Provides the `ScourProtectionDesign` class."""
 
 __author__ = ["Rob Hammond", "Jake Nunemaker"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
+__email__ = "rob.hammond@nrel.gov"
 
 from math import ceil
 
@@ -14,7 +14,8 @@ from wisdem.orbit.phases.design import DesignPhase
 
 class ScourProtectionDesign(DesignPhase):
     """
-    Calculates the necessary scour protection material for a fixed substructure.
+    Calculates the necessary scour protection material for a fixed
+    substructure.
 
     Parameters
     ----------
@@ -65,7 +66,7 @@ class ScourProtectionDesign(DesignPhase):
         "scour_protection": {
             "tonnes_per_substructure": "t",
             "cost_per_tonne": "USD/t",
-        }
+        },
     }
 
     def __init__(self, config, **kwargs):
@@ -90,7 +91,7 @@ class ScourProtectionDesign(DesignPhase):
         self.protection_depth = self._design.get("scour_protection_depth", 1)
 
     def compute_scour_protection_tonnes_to_install(self):
-        """
+        r"""
         Computes the amount of scour protection material that needs to be
         installed around a fixed substructure.
 
@@ -105,31 +106,37 @@ class ScourProtectionDesign(DesignPhase):
 
         References
         ----------
-        .. [1] Det Norske Veritas AS. (2014, May). Design of Offshore Wind Turbine
-        Structures. Retrieved from
+        .. [1] Det Norske Veritas AS. (2014, May). Design of Offshore Wind
+        Turbine Structures. Retrieved from
         https://rules.dnvgl.com/docs/pdf/DNV/codes/docs/2014-05/Os-J101.pdf
-        """
+        """  # noqa: E501
 
         self.scour_depth = self.equilibrium * self.diameter
 
         r = self.diameter / 2 + self.scour_depth / np.tan(np.radians(self.phi))
 
-        volume = np.pi * self.protection_depth * (r**2 - (self.diameter / 2) ** 2)
+        volume = (
+            np.pi * self.protection_depth * (r**2 - (self.diameter / 2) ** 2)
+        )
 
-        self.scour_protection_tonnes = ceil(self.rock_density * volume / 1000.0)
+        self.scour_protection_tonnes = ceil(
+            self.rock_density * volume / 1000.0
+        )
 
     def run(self):
-        """
-        Runs the required methods to be able to produce a `design_result`.
-        """
+        """Runs the design model."""
 
         self.compute_scour_protection_tonnes_to_install()
 
     @property
     def total_cost(self):
-        """Returns the total cost of the phase in $USD"""
+        """Returns the total cost of the phase in $USD."""
 
-        cost = self._design["cost_per_tonne"] * self.scour_protection_tonnes * self.num_turbines
+        cost = (
+            self._design["cost_per_tonne"]
+            * self.scour_protection_tonnes
+            * self.num_turbines
+        )
         return cost
 
     @property

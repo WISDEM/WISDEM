@@ -1,4 +1,4 @@
-"""Tests for common infrastructure for quayside assembly tow-out simulations"""
+"""Tests for the common infrastructure for the quayside assembly tow-out."""
 
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -10,7 +10,10 @@ import pandas as pd
 import pytest
 
 from wisdem.orbit.core import WetStorage
-from wisdem.orbit.phases.install.quayside_assembly_tow.common import TurbineAssemblyLine, SubstructureAssemblyLine
+from wisdem.orbit.phases.install.quayside_assembly_tow.common import (
+    TurbineAssemblyLine,
+    SubstructureAssemblyLine,
+)
 
 
 @pytest.mark.parametrize(
@@ -25,6 +28,7 @@ from wisdem.orbit.phases.install.quayside_assembly_tow.common import TurbineAsse
     ],
 )
 def test_SubstructureAssemblyLine(env, num, assigned, expected):
+
     _assigned = len(assigned)
     storage = WetStorage(env, capacity=float("inf"))
 
@@ -50,22 +54,30 @@ def test_SubstructureAssemblyLine(env, num, assigned, expected):
     ],
 )
 def test_TurbineAssemblyLine(env, num, assigned):
+
     _assigned = len(assigned)
     feed = WetStorage(env, capacity=float("inf"))
     target = WetStorage(env, capacity=float("inf"))
 
-    for i in assigned:
+    for _ in assigned:
         feed.put(0)
 
     for a in range(num):
-        assembly = TurbineAssemblyLine(feed, target, {"tower": {"sections": 1}}, a + 1)
+        assembly = TurbineAssemblyLine(
+            feed,
+            target,
+            {"tower": {"sections": 1}},
+            a + 1,
+        )
         env.register(assembly)
         assembly.start()
 
     env.run()
 
     df = pd.DataFrame(env.actions)
-    assert len(df.loc[df["action"] == "Mechanical Completion"]) == len(assigned)
+    assert len(df.loc[df["action"] == "Mechanical Completion"]) == len(
+        assigned
+    )
 
 
 @pytest.mark.parametrize(
@@ -83,6 +95,7 @@ def test_TurbineAssemblyLine(env, num, assigned):
     ],
 )
 def test_Sub_to_Turbine_assembly_interaction(env, sub_lines, turb_lines):
+
     num_turbines = 50
     assigned = [1] * num_turbines
 
@@ -95,7 +108,12 @@ def test_Sub_to_Turbine_assembly_interaction(env, sub_lines, turb_lines):
         assembly.start()
 
     for a in range(turb_lines):
-        assembly = TurbineAssemblyLine(feed, target, {"tower": {"sections": 1}}, a + 1)
+        assembly = TurbineAssemblyLine(
+            feed,
+            target,
+            {"tower": {"sections": 1}},
+            a + 1,
+        )
         env.register(assembly)
         assembly.start()
 

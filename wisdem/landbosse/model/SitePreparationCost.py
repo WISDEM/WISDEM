@@ -359,7 +359,9 @@ class SitePreparationCost(CostModule):
         for unit in list_units:
             unit_quantity = pd.DataFrame([[unit, material_quantity_dict[unit]]],
                                          columns=['Units', 'Quantity of material'])
-            material_needs = pd.concat((material_needs, unit_quantity))
+            material_needs = pd.concat((material_needs if not material_needs.empty else None,
+                                        unit_quantity if not unit_quantity.empty else None,
+                                        ))
 
         estimate_construction_time_output['material_needs'] = material_needs
 
@@ -375,7 +377,7 @@ class SitePreparationCost(CostModule):
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
         operation_data['time_construct_bool'] = operation_data['Number of days'] > estimate_construction_time_output['road_construction_time'] * 30.
-        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30., False: np.NAN}
+        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30., False: np.nan}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
         num_days = operation_data['Time construct days'].max()
@@ -650,7 +652,12 @@ class SitePreparationCost(CostModule):
         additional_costs = pd.DataFrame([['Other', cost_adder, 'Roads']],
                                         columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
-        road_cost = pd.concat((road_cost,material_costs,equipment_costs,labor_costs,additional_costs))
+        road_cost = pd.concat((road_cost if not road_cost.empty else None,
+                               material_costs if not material_costs.empty else None,
+                               equipment_costs if not equipment_costs.empty else None,
+                               labor_costs if not labor_costs.empty else None,
+                               additional_costs if not additional_costs.empty else None,
+                               ))
 
         # set mobilization cost equal to 5% of total road cost for utility scale model and function of
         # of turbine size for distributed wind:

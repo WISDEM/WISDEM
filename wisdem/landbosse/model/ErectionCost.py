@@ -15,7 +15,7 @@ m_per_ft = 0.3048
 
 class Point(object):
     def __init__(self, x, y):
-        if type(x) == type(pd.Series(dtype=np.float_)):
+        if type(x) == type(pd.Series(dtype=np.float64)):
             self.x = float(x.values[0])
             self.y = float(y.values[0])
         elif type(x) == type(np.array([])):
@@ -506,7 +506,7 @@ class ErectionCost(CostModule):
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
         operation_time['time_construct_bool'] = (operation_time['Operational construct days'] >
                                                  erection_construction_time * 30)
-        boolean_dictionary = {True: erection_construction_time * 30, False: np.NAN}
+        boolean_dictionary = {True: erection_construction_time * 30, False: np.nan}
         operation_time['time_construct_bool'] = operation_time['time_construct_bool'].map(boolean_dictionary)
         operation_time['Time construct days'] = operation_time[
             ['time_construct_bool', 'Operational construct days']].min(axis=1)
@@ -622,7 +622,7 @@ class ErectionCost(CostModule):
             # that timeframe for weather delays; if not, use the number of days calculated
             operation_time['time_construct_bool'] = (turbine_num / operation_time['Operational construct days'] * 6
                                                      > float(rate_of_deliveries))
-            boolean_dictionary = {True: (float(turbine_num) / (float(rate_of_deliveries) / 6)), False: np.NAN}
+            boolean_dictionary = {True: (float(turbine_num) / (float(rate_of_deliveries) / 6)), False: np.nan}
             operation_time['time_construct_bool'] = operation_time['time_construct_bool'].map(boolean_dictionary)
             operation_time['Time construct days'] = operation_time[
                 ['time_construct_bool', 'Operational construct days']].max(
@@ -692,7 +692,9 @@ class ErectionCost(CostModule):
                                        'Max wind speed m per s', 'Setup time hr', 'Breakdown time hr',
                                        'Hoist speed m per min', 'Speed of travel km per hr',
                                        'Crew type ID', 'Crane poly'])
-            crane_poly = pd.concat((crane_poly, df), sort=True)
+            crane_poly = pd.concat((crane_poly if not crane_poly.empty else None,
+                                    df if not df.empty else None,
+                                    ), sort=True)
         return crane_poly
 
     def calculate_component_lift_max_wind_speed(self, *, component_group, crane_poly, component_max_speed, operation):

@@ -206,6 +206,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+            ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
+            ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
@@ -228,6 +230,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
             self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
+            self.connect("configuration.n_blades", "blade.high_level_blade_props.n_blades")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
@@ -315,6 +318,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     units="kg",
                     desc="Override regular regression-based calculation of transformer mass with this value",
                 )
+                nacelle_ivc.add_output(
+                    "mb1_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of first main bearing mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "mb2_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of second main bearing mass with this value",
+                )
                 nacelle_ivc.add_discrete_output(
                     "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
                 )
@@ -332,6 +347,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 nacelle_ivc.add_discrete_output(
                     "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
+                nacelle_ivc.add_output(
+                    "bedplate_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override bottom-up calculation of bedplate mass with this value",
                 )
 
                 if modeling_options["WISDEM"]["DriveSE"]["direct"]:
@@ -393,6 +414,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             # Generator inputs
             generator_ivc = om.IndepVarComp()
+            generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
             if modeling_options["flags"]["generator"]:
                 generator_ivc.add_output("B_r", val=1.2, units="T")
                 generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
@@ -481,7 +503,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 # If using simple (regression) generator scaling, this is an optional input to override default values
                 n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
                 generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
-                generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
             self.add_subsystem("generator", generator_ivc)
@@ -519,6 +540,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "outfitting_factor",
                 val=0.0,
                 desc="Multiplier that accounts for secondary structure mass inside of tower",
+            )
+            ivc.add_output(
+                "tower_mass_user",
+                val=0.0,
+                units="kg",
+                desc="Override bottom-up calculation of total tower mass with this value",
             )
             ivc.add_discrete_output(
                 "layer_name", val=[], desc="1D array of the names of the layers modeled in the tower structure."
@@ -575,8 +602,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
             bos_ivc.add_output("plant_turbine_spacing", 7, desc="Distance between turbines in rotor diameters")
             bos_ivc.add_output("plant_row_spacing", 7, desc="Distance between turbine rows in rotor diameters")
-            bos_ivc.add_output("commissioning_pct", 0.01)
-            bos_ivc.add_output("decommissioning_pct", 0.15)
+            bos_ivc.add_output("commissioning_cost_kW", 44.0, units="USD/kW")
+            bos_ivc.add_output("decommissioning_cost_kW", 58.0, units="USD/kW")
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
             if modeling_options["flags"]["offshore"]:
@@ -584,11 +611,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
                 bos_ivc.add_output("site_auction_price", 100e6, units="USD")
-                bos_ivc.add_output("site_assessment_plan_cost", 1e6, units="USD")
-                bos_ivc.add_output("site_assessment_cost", 25e6, units="USD")
-                bos_ivc.add_output("construction_operations_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("site_assessment_cost", 50e6, units="USD")
                 bos_ivc.add_output("boem_review_cost", 0.0, units="USD")
-                bos_ivc.add_output("design_install_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("installation_plan_cost", 2.5e5, units="USD")
+                bos_ivc.add_output("construction_plan_cost", 1e6, units="USD")
+                bos_ivc.add_output("construction_insurance", 44.0, units="USD/kW")
+                bos_ivc.add_output("construction_financing", 183.0, units="USD/kW")
+                bos_ivc.add_output("contingency", 316.0, units="USD/kW")
             else:
                 bos_ivc.add_output("interconnect_voltage", 130.0, units="kV")
 
@@ -756,6 +785,7 @@ class Blade(om.Group):
         if vawt_flag:
             self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
@@ -1173,6 +1203,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
             outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
+
         ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
@@ -1292,7 +1325,6 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
         outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
         
-            
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -2188,6 +2220,9 @@ class Hub(om.Group):
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
+            ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
+            ivc.add_output("spinner_mass_user", val=0.0, units="kg")
+            ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2313,6 +2348,7 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("monopile_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total monopile mass with this value")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -2379,6 +2415,7 @@ class Jacket(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("jacket_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total jacket mass with this value")
 
 
 class Floating(om.Group):
@@ -2482,6 +2519,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+            ivc.add_output("member_mass_user", 0.0, units="kg", desc="Override bottom-up calculation of total member mass with this value")
 
             # Use the memidx to query the correct member_shape
             self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][memidx]))
@@ -3242,6 +3280,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         rotor_radius_vawt_opt = self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]
         if rotor_radius_vawt_opt:
@@ -3294,8 +3336,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.",
         )
+        self.add_output("blade_solidity", val=0.0, desc="Blade solidity")
+        self.add_output("rotor_solidity", val=0.0, desc="Rotor solidity")
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs,  discrete_outputs):
         outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
         outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
         # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
@@ -3329,6 +3373,8 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
+        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_radius"]**2.)
+        outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):

@@ -505,7 +505,7 @@ class FoundationCost(CostModule):
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that timeframe for weather delays; if not, use the number of days calculated
         operation_data['time_construct_bool'] = operation_data['Number of days'] > foundation_construction_time * 30
-        boolean_dictionary = {True: foundation_construction_time * 30, False: np.NAN}
+        boolean_dictionary = {True: foundation_construction_time * 30, False: np.nan}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
         num_days = operation_data['Time construct days'].max()
@@ -665,7 +665,11 @@ class FoundationCost(CostModule):
                                       columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
         # Append all cost items to foundation_cost
-        foundation_cost = pd.concat( (foundation_cost,equipment_costs,labor_costs,material_costs) )
+        foundation_cost = pd.concat( (foundation_cost if not foundation_cost.empty else None,
+                                      equipment_costs if not equipment_costs.empty else None,
+                                      labor_costs if not labor_costs.empty else None,
+                                      material_costs if not material_costs.empty else None,
+                                      ) )
 
         # Calculate mobilization cost as percentage of total foundation cost and add to foundation_cost
         # Assumed 5% of total foundation cost and add to foundation_cost for utility scale plant

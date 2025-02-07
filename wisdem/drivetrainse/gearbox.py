@@ -144,138 +144,147 @@ class Gearbox(om.ExplicitComponent):
             outputs["gearbox_mass"] = outputs["D_gearbox"] = outputs["L_gearbox"] = np.zeros(1)
             outputs["gearbox_I"] = np.zeros(3)
             return
-        elif inputs["gearbox_mass_user"] == 0.0:
-            if self.options["use_gb_torque_density"]:
-                m_gearbox = inputs["rated_torque"] / inputs["gearbox_torque_density"]
-                outputs["carrier_mass"] = 0.0
-            else:
-                # Unpack inputs
-                config = discrete_inputs["gear_configuration"]
-                # shaft_factor = discrete_inputs['shaft_factor']
-                n_planets = np.maximum(1.0, np.array(discrete_inputs["planet_numbers"]))
-                gear_ratio = inputs["gear_ratio"]
-                torque = inputs["rated_torque"]
-                rating = inputs["machine_rating"]
 
-                # Known configuration checks
-                if not config.lower() in ["eep", "eep_2", "eep_3", "epp"]:
-                    raise ValueError("Invalid value for gearbox_configuration.  Must be one of: eep, eep_2, eep_3, epp")
-                n_stage = 3
+        # Unpack inputs
+        config = discrete_inputs["gear_configuration"]
+        # shaft_factor = discrete_inputs['shaft_factor']
+        n_planets = np.maximum(1.0, np.array(discrete_inputs["planet_numbers"]))
+        gear_ratio = float(inputs["gear_ratio"][0])
+        torque = float(inputs["rated_torque"][0])
+        rating = float(inputs["machine_rating"][0])
+        n_stage = 3
+        
+        # Other gearbox elements that are just estimates: shrink disc and carrier
+        m_shrink_disc = rating / 3.0
+        m_carrier = 8e3
+        outputs["carrier_mass"] = m_shrink_disc + m_carrier
+        
+        # calculate mass properties
+        D_rotor = float(inputs["rotor_diameter"][0])
+        
+        R_gearbox = float(inputs["gearbox_radius_user"][0])
+        if R_gearbox == 0.0:
+            R_gearbox = 0.006 * D_rotor # assumed to be 0.6% of wind turbine rotor diameter, regression from Jan 30th, 2024
+                
+        L_gearbox = float(inputs["gearbox_length_user"][0])
+        if L_gearbox == 0.0:
+            L_gearbox = 0.015 * D_rotor # assumed to be 1.5% of wind turbine rotor diameter, regression from Jan 30th, 2024
 
-                # Optimize stage ratios
-
-                # Use double sided constraints to hack inequality constraints as COBYLA seems to work better than SLSQP here
-                def constr1(x, ratio):
-                    return np.prod(x) - ratio
-
-                def constr2(x, ratio):
-                    return ratio - np.prod(x)
-
-                x0 = gear_ratio ** (1.0 / n_stage) * np.ones(n_stage)
-                bounds = [[2.01, 20.0], [2.01, 20.0], [2.01, 20.0]]
-                const = [{}, {}]
-                const[0]["type"] = "ineq"
-                const[0]["fun"] = constr1
-                const[0]["args"] = [gear_ratio]
-                const[1]["type"] = "ineq"
-                const[1]["fun"] = constr2
-                const[1]["args"] = [gear_ratio]
-                method = "cobyla"
-                tol = 1e-3
-
-                if config.lower() == "eep":
-                    bounds[2][0] = 1.0
-                    result = minimize(
-                        lambda x: volumeEEP(x, n_planets, torque),
-                        x0,
-                        method=method,  # bounds=bounds,
-                        tol=tol,
-                        constraints=const,
-                        options={"maxiter": 100, "disp": False},
-                    )
-                    ratio_stage = result.x
-
-                elif config == "eep_3":
-                    # fixes last stage ratio at 3
-                    const[0]["args"] = const[1]["args"] = [gear_ratio / 3.0]
-                    bounds[2][0] = 1.0
-                    result = minimize(
-                        lambda x: volumeEEP(np.r_[x, 3.0], n_planets, torque),
-                        x0[:2],
-                        method=method,  # bounds=bounds,
-                        tol=tol,
-                        constraints=const,
-                        options={"maxiter": 100, "disp": False},
-                    )
-                    ratio_stage = np.r_[result.x, 3.0]
-
-                elif config == "eep_2":
-                    # fixes final stage ratio at 2
-                    const[0]["args"] = const[1]["args"] = [gear_ratio / 2.0]
-                    bounds[2][0] = 1.0
-                    result = minimize(
-                        lambda x: volumeEEP(np.r_[x, 2.0], n_planets, torque),
-                        x0[:2],
-                        method=method,  # bounds=bounds,
-                        tol=tol,
-                        constraints=const,
-                        options={"maxiter": 100, "disp": False},
-                    )
-                    ratio_stage = np.r_[result.x, 2.0]
-
-                elif config == "epp":
-                    bounds[1][0] = 1.0
-                    bounds[2][0] = 1.0
-                    result = minimize(
-                        lambda x: volumeEPP(x, n_planets, torque),
-                        x0,
-                        method=method,  # bounds=bounds,
-                        tol=tol,
-                        constraints=const,
-                        options={"maxiter": 100, "disp": False},
-                    )
-                    ratio_stage = result.x
-
-                # Get final volume
-                if config.lower().find("eep") >= 0:
-                    vol = volumeEEP(ratio_stage, n_planets, torque)
-                else:
-                    vol = volumeEPP(ratio_stage, n_planets, torque)
-                outputs["stage_ratios"] = ratio_stage
-
-                # Cumulative Kfactor scaling based on values reported in Nejad's paper even though that was probably done with the buggy version of DriveSE
-                K = np.mean([48.82 / 15216.504, 53.69 / 17401.453])
-
-                # Shaft length factor
-                Kshaft = 1.0  # if shaft_factor == 'normal' else 1.25
-
-                # All factors into the mass
-                m_gearbox = K * Kshaft * vol.sum()
-
-                # Other gearbox elements that are just estimates: shrink disc and carrier
-                m_shrink_disc = rating / 3.0
-                m_carrier = 8e3
-                m_gearbox += m_shrink_disc + m_carrier
-                outputs["carrier_mass"] = m_shrink_disc + m_carrier
-
-            # calculate mass properties
-            D_rotor = float(inputs["rotor_diameter"][0])
-            L_gearbox = 0.015 * D_rotor # assumed to be 1.5% of wind turbine rotor diameter, regression from Jan 30th, 2024 
-            R_gearbox = 0.006 * D_rotor # assumed to be 0.6% of wind turbine rotor diameter, regression from Jan 30th, 2024 
-        else:
-            m_gearbox = float(inputs["gearbox_mass_user"][0])
-            R_gearbox = float(inputs["gearbox_radius_user"][0])
-            L_gearbox = float(inputs["gearbox_length_user"][0])
-            outputs["carrier_mass"] = 0.
-
-
+        # Moment of inertia (without mass yet)
         I = np.zeros(3)
         I[0] = 0.5 * R_gearbox**2
         I[1:] = (1.0 / 12.0) * (3 * R_gearbox**2 + L_gearbox**2)
 
-        # Store outputs
-        outputs["gearbox_mass"] = m_gearbox
-        outputs["gearbox_I"] = I * m_gearbox
+        # Store some outputs
         outputs["D_gearbox"] = 2 * R_gearbox
         outputs["L_gearbox"] = L_gearbox
         outputs["carrier_I"] = outputs["carrier_mass"] * I[0] * np.array([1.0, 0.5, 0.5])  # Solid disk
+
+        # Now determine gearbox mass
+        m_gearbox = float(inputs["gearbox_mass_user"][0])
+        
+        if m_gearbox == 0.0 and self.options["use_gb_torque_density"]:
+            # NOTE THIS IS DEFAULT BECAUSE WE TRUST IT MORE AND IT IS MUCH QUICKER
+            m_gearbox = torque / float(inputs["gearbox_torque_density"][0])
+
+        if m_gearbox == 0.0:
+
+            # Known configuration checks
+            if config.lower() not in ["eep", "eep_2", "eep_3", "epp"]:
+                raise ValueError("Invalid value for gearbox_configuration.  Must be one of: eep, eep_2, eep_3, epp")
+
+            # Optimize stage ratios
+            # Use double sided constraints to hack inequality constraints as COBYLA seems to work better than SLSQP here
+            def constr1(x, ratio):
+                return np.prod(x) - ratio
+
+            def constr2(x, ratio):
+                return ratio - np.prod(x)
+
+            x0 = gear_ratio ** (1.0 / n_stage) * np.ones(n_stage)
+            bounds = [[2.01, 20.0], [2.01, 20.0], [2.01, 20.0]]
+            const = [{}, {}]
+            const[0]["type"] = "ineq"
+            const[0]["fun"] = constr1
+            const[0]["args"] = [gear_ratio]
+            const[1]["type"] = "ineq"
+            const[1]["fun"] = constr2
+            const[1]["args"] = [gear_ratio]
+            method = "cobyla"
+            tol = 1e-3
+
+            if config.lower() == "eep":
+                bounds[2][0] = 1.0
+                result = minimize(
+                    lambda x: volumeEEP(x, n_planets, torque),
+                    x0,
+                    method=method,  # bounds=bounds,
+                    tol=tol,
+                    constraints=const,
+                    options={"maxiter": 100, "disp": False},
+                )
+                ratio_stage = result.x
+
+            elif config == "eep_3":
+                # fixes last stage ratio at 3
+                const[0]["args"] = const[1]["args"] = [gear_ratio / 3.0]
+                bounds[2][0] = 1.0
+                result = minimize(
+                    lambda x: volumeEEP(np.r_[x, 3.0], n_planets, torque),
+                    x0[:2],
+                    method=method,  # bounds=bounds,
+                    tol=tol,
+                    constraints=const,
+                    options={"maxiter": 100, "disp": False},
+                )
+                ratio_stage = np.r_[result.x, 3.0]
+
+            elif config == "eep_2":
+                # fixes final stage ratio at 2
+                const[0]["args"] = const[1]["args"] = [gear_ratio / 2.0]
+                bounds[2][0] = 1.0
+                result = minimize(
+                    lambda x: volumeEEP(np.r_[x, 2.0], n_planets, torque),
+                    x0[:2],
+                    method=method,  # bounds=bounds,
+                    tol=tol,
+                    constraints=const,
+                    options={"maxiter": 100, "disp": False},
+                )
+                ratio_stage = np.r_[result.x, 2.0]
+
+            elif config == "epp":
+                bounds[1][0] = 1.0
+                bounds[2][0] = 1.0
+                result = minimize(
+                    lambda x: volumeEPP(x, n_planets, torque),
+                    x0,
+                    method=method,  # bounds=bounds,
+                    tol=tol,
+                    constraints=const,
+                    options={"maxiter": 100, "disp": False},
+                )
+                ratio_stage = result.x
+
+            # Get final volume
+            if config.lower().find("eep") >= 0:
+                vol = volumeEEP(ratio_stage, n_planets, torque)
+            else:
+                vol = volumeEPP(ratio_stage, n_planets, torque)
+            outputs["stage_ratios"] = ratio_stage
+
+            # Cumulative Kfactor scaling based on values reported in Nejad's paper even though that was probably done with the buggy version of DriveSE
+            K = np.mean([48.82 / 15216.504, 53.69 / 17401.453])
+
+            # Shaft length factor
+            Kshaft = 1.0  # if shaft_factor == 'normal' else 1.25
+
+            # All factors into the mass
+            m_gearbox = K * Kshaft * vol.sum()
+
+            # Other gearbox elements that are just estimates: shrink disc and carrier
+            m_gearbox += m_shrink_disc + m_carrier
+
+        # Store outputs
+        outputs["gearbox_mass"] = m_gearbox
+        outputs["gearbox_I"] = I * m_gearbox

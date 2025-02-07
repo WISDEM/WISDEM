@@ -159,7 +159,7 @@ class PowerWind(WindBase):
     def compute(self, inputs, outputs):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])
@@ -167,7 +167,7 @@ class PowerWind(WindBase):
         # velocity
         idx = z > z0
         outputs["U"] = np.zeros(self.options["nPoints"])
-        outputs["U"][idx] = inputs["Uref"] * ((z[idx] - z0) / (zref - z0)) ** inputs["shearExp"]
+        outputs["U"][idx] = inputs["Uref"][0] * ((z[idx] - z0) / (zref - z0)) ** inputs["shearExp"][0]
 
         # # add small cubic spline to allow continuity in gradient
         # k = 0.01  # fraction of profile with cubic spline
@@ -185,23 +185,23 @@ class PowerWind(WindBase):
     def compute_partials(self, inputs, J):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
-        zref = inputs["zref"]
-        z0 = inputs["z0"]
-        shearExp = inputs["shearExp"]
+        zref = inputs["zref"][0]
+        z0 = inputs["z0"][0]
+        shearExp = inputs["shearExp"][0]
         idx = z > z0
         npts = self.options["nPoints"]
 
         U = np.zeros(npts)
-        U[idx] = inputs["Uref"] * ((z[idx] - z0) / (zref - z0)) ** inputs["shearExp"]
+        U[idx] = inputs["Uref"][0] * ((z[idx] - z0) / (zref - z0)) ** inputs["shearExp"][0]
 
         # gradients
         dU_dUref = np.zeros(npts)
         dU_dz = np.zeros(npts)
         dU_dzref = np.zeros(npts)
 
-        dU_dUref[idx] = U[idx] / inputs["Uref"]
+        dU_dUref[idx] = U[idx] / inputs["Uref"][0]
         dU_dz[idx] = U[idx] * shearExp / (z[idx] - z0)
         dU_dzref[idx] = -U[idx] * shearExp / (zref - z0)
 
@@ -262,7 +262,7 @@ class LogWind(WindBase):
     def compute(self, inputs, outputs):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])
@@ -271,12 +271,12 @@ class LogWind(WindBase):
         # find velocity
         idx = np.where(z - z0 > z_roughness)[0]
         outputs["U"] = np.zeros_like(z)
-        outputs["U"][idx] = inputs["Uref"] * np.log((z[idx] - z0) / z_roughness) / np.log((zref - z0) / z_roughness)
+        outputs["U"][idx] = inputs["Uref"][0] * np.log((z[idx] - z0) / z_roughness) / np.log((zref - z0) / z_roughness)
 
     def compute_partials(self, inputs, J):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])
@@ -359,19 +359,19 @@ class LinearWaves(WaveBase):
         super(LinearWaves, self).compute(inputs, outputs)
 
         # water depth
-        z_floor = inputs["z_floor"]
+        z_floor = inputs["z_floor"][0]
         if z_floor > 0.0:
             z_floor *= -1.0
-        d = inputs["z_surface"] - z_floor
+        d = inputs["z_surface"][0] - z_floor
         # Use zero entries if there is no depth and no water
         if d == 0.0:
             return
 
         # design wave height
-        h = inputs["Hsig_wave"]
+        h = inputs["Hsig_wave"][0]
 
         # circular frequency
-        omega = 2.0 * np.pi / inputs["Tsig_wave"]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"][0]
 
         # compute wave number from dispersion relationship
         k = brentq(lambda k: omega**2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega**2 / gravity, disp=False)
@@ -379,29 +379,29 @@ class LinearWaves(WaveBase):
         outputs["phase_speed"] = omega / k
 
         # zero at surface
-        z_rel = inputs["z"] - inputs["z_surface"]
+        z_rel = inputs["z"] - inputs["z_surface"][0]
 
         # Amplitude
         a = 0.5 * h
 
         # maximum velocity
-        outputs["U"] = a * omega * np.cosh(k * (z_rel + d)) / np.sinh(k * d) + inputs["Uc"]
+        outputs["U"] = a * omega * np.cosh(k * (z_rel + d)) / np.sinh(k * d) + inputs["Uc"][0]
         outputs["W"] = -a * omega * np.sinh(k * (z_rel + d)) / np.sinh(k * d)
         outputs["V"] = np.sqrt(outputs["U"] ** 2.0 + outputs["W"] ** 2.0)
         # outputs['U0'] = a*omega*np.cosh(k*(0. + d))/np.sinh(k*d) + inputs['Uc']
 
         # acceleration
-        outputs["A"] = (outputs["U"] - inputs["Uc"]) * omega
+        outputs["A"] = (outputs["U"] - inputs["Uc"][0]) * omega
         # outputs['A0'] = (outputs['U0'] - inputs['Uc']) * omega
 
         # Pressure oscillation is just sum of static and dynamic contributions
         # Hydrostatic is simple rho * g * z
         # Dynamic is from standard solution to Airy (Potential Flow) Wave theory
         # Full pressure would also include standard dynamic head (0.5*rho*V^2)
-        outputs["p"] = inputs["rho_water"] * gravity * (a * np.cosh(k * (z_rel + d)) / np.cosh(k * d) - z_rel)
+        outputs["p"] = inputs["rho_water"][0] * gravity * (a * np.cosh(k * (z_rel + d)) / np.cosh(k * d) - z_rel)
 
         # check heights
-        idx = np.logical_or(inputs["z"] < z_floor, inputs["z"] > inputs["z_surface"])
+        idx = np.logical_or(inputs["z"] < z_floor, inputs["z"] > inputs["z_surface"][0])
         outputs["U"][idx] = 0.0
         outputs["W"][idx] = 0.0
         outputs["V"][idx] = 0.0
@@ -413,15 +413,15 @@ class LinearWaves(WaveBase):
         self.compute(inputs, outputs)
 
         # rename
-        z_floor = inputs["z_floor"]
+        z_floor = inputs["z_floor"][0]
         if z_floor > 0.0:
             z_floor *= -1.0
         z = inputs["z"]
-        d = inputs["z_surface"] - z_floor
-        h = inputs["Hsig_wave"]
-        omega = 2.0 * np.pi / inputs["Tsig_wave"]
+        d = inputs["z_surface"][0] - z_floor
+        h = inputs["Hsig_wave"][0]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"][0]
         k = self.k
-        z_rel = z - inputs["z_surface"]
+        z_rel = z - inputs["z_surface"][0]
 
         # Amplitude
         a = 0.5 * h
@@ -434,9 +434,9 @@ class LinearWaves(WaveBase):
         dV_dUc = 0.5 / outputs["V"] * (2 * outputs["U"] * dU_dUc)
         dA_dz = omega * dU_dz
         dA_dUc = 0.0  # omega*dU_dUc
-        dp_dz = inputs["rho_water"] * gravity * (a * np.sinh(k * (z_rel + d)) * k / np.cosh(k * d) - 1.0)
+        dp_dz = inputs["rho_water"][0] * gravity * (a * np.sinh(k * (z_rel + d)) * k / np.cosh(k * d) - 1.0)
 
-        idx = np.logical_or(z < z_floor, z > inputs["z_surface"])
+        idx = np.logical_or(z < z_floor, z > inputs["z_surface"][0])
         dU_dz[idx] = 0.0
         dW_dz[idx] = 0.0
         dV_dz[idx] = 0.0
@@ -536,10 +536,10 @@ class TowerSoil(om.ExplicitComponent):
         outputs["k"][:, ind] = inputs["k_usr"][np.newaxis, ind]
 
     def compute_partials(self, inputs, J):
-        G = inputs["G"]
-        nu = inputs["nu"]
-        h = np.linspace(inputs["depth"], 0.0, self.options["npts"])
-        r0 = 0.5 * inputs["d0"]
+        G = inputs["G"][0]
+        nu = inputs["nu"][0]
+        h = np.linspace(inputs["depth"][0], 0.0, self.options["npts"])
+        r0 = 0.5 * inputs["d0"][0]
 
         # vertical
         eta = 1.0 + 0.6 * (1.0 - nu) * h / r0

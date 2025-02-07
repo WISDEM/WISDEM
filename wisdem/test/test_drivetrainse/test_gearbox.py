@@ -50,7 +50,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -70,7 +70,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -90,7 +90,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -110,7 +110,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -130,7 +130,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -149,7 +149,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
@@ -170,7 +170,7 @@ class TestGearbox(unittest.TestCase):
         )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"][0]
+            self.outputs["gearbox_mass"]
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )

@@ -68,7 +68,7 @@ class Tube(CrossSectionBase):
     """The Tube Class contains functions to calculate properties of tubular circular cross-sections
     for structural analyses."""
 
-    def __init__(self, D, t, L=np.NaN, Kbuck=1.0):
+    def __init__(self, D, t, L=np.nan, Kbuck=1.0):
         self.D = D
         self.R = 0.5 * D
         self.t = t

@@ -513,6 +513,24 @@ properties:
                     spinner_material:
                         type: string
                         description: Material of the spinner
+                    hub_shell_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    spinner_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    pitch_system_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of pitch system mass with this value
+                        minimum: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -772,6 +790,12 @@ properties:
                                 minimum: 0.
                                 maximum: 1.
                                 default: 0.05
+                            bedplate_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular calculation of bedplate mass with this value
+                                minimum: 0.0
                             brake_mass_user:
                                 type: number
                                 default: 0.0
@@ -810,6 +834,18 @@ properties:
                                 description: Type of bearing for second main bearing
                                 default: SRB
                                 enum: [CARB, CRB, SRB, TRB]
+                            mb1_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of first main bearing mass with this value
+                                minimum: 0.0
+                            mb2_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of second main bearing mass with this value
+                                minimum: 0.0
                             uptower:
                                 type: boolean
                                 description: If power electronics are located uptower (True) or at tower base (False)
@@ -1249,7 +1285,8 @@ properties:
                     - outer_shape_bem
                     - internal_structure_2d_fem
                 optional:
-                    - tower_height
+                    - tower_mass_user
+                    - elastic_properties_mb
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1289,6 +1326,12 @@ properties:
                                 $ref: "#/definitions/beam/cp_lambda_beam"
                             six_x_six:
                                 $ref: "#/definitions/beam/six_x_six"
+                    tower_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total tower mass with this value
+                        minimum: 0.0
                     internal_structure_2d_fem:
                         type: object
                         required:
@@ -1347,6 +1390,7 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - monopile_mass_user
                 properties:
                     transition_piece_mass: &m_tp
                         type: number
@@ -1366,6 +1410,12 @@ properties:
                         unit: kg
                         minimum: 0.0
                         default: 0.0
+                    monopile_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total monopile mass with this value
+                        minimum: 0.0
                     outer_shape:
                         type: object
                         required:
@@ -1465,10 +1515,17 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - jacket_mass_user
                 properties:
                     transition_piece_mass: *m_tp
                     transition_piece_cost: *c_tp
                     gravity_foundation_mass: *g_fm
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
                     material:
                         type: string
                         description: Material of jacket members
@@ -1594,6 +1651,7 @@ properties:
                                 - Cp
                                 - Cd
                                 - Cdy
+                                - member_mass_user
                             properties:
                                 name:
                                     description: Name of the member
@@ -1602,6 +1660,12 @@ properties:
                                     type: string
                                     description: Name of joint/node connection
                                 joint2: *jointid
+                                member_mass_user:
+                                    type: number
+                                    default: 0.0
+                                    units: kg
+                                    description: Override bottom-up calculation of total member mass with this value
+                                    minimum: 0.0
                                 outer_shape:
                                     type: object
                                     required:
@@ -2827,6 +2891,14 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
+                    ps_percent:
+                        type: number
+                        default: 1.
+                        description: Scalar applied to the max thrust within RotorSE for peak thrust shaving
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
             torque:
                 type: object
                 required:
@@ -2990,20 +3062,6 @@ properties:
                 minimum: 1
                 maximum: 100
                 default: 7
-            commissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to commissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.01
-            decommissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to decommissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.15
             distance_to_substation:
                 type: number
                 description: Distance from centroid of plant to substation in km
@@ -3039,6 +3097,41 @@ properties:
                 minimum: 0
                 maximum: 1000
                 default: 130
+            contingency:
+                type: number
+                description: Additional contingency cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 316.0
+            construction_insurance:
+                type: number
+                description: Additional insurance cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            construction_financing:
+                type: number
+                description: Additional financing cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 183.0
+            commissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to commission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            decommissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to decommission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 58.0
             port_cost_per_month:
                 type: number
                 description: Monthly port rental fees
@@ -3052,28 +3145,14 @@ properties:
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            site_assessment_plan_cost:
-                type: number
-                description: Cost to do engineering plan for site assessment
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 100e6
             site_assessment_cost:
                 type: number
-                description: Cost to execute site assessment
+                description: Cost to do engineering site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            construction_operations_plan_cost:
-                type: number
-                description: Cost to do construction planning
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 50e6
             boem_review_cost:
                 type: number
                 description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
@@ -3081,13 +3160,20 @@ properties:
                 minimum: 0
                 maximum: 1.e+9
                 default: 0.0
-            design_install_plan_cost:
+            construction_plan_cost:
+                type: number
+                description: Cost to do construction planning
+                unit: USD
+                minimum: 0
+                maximum: 1.e+9
+                default: 1e6
+            installation_plan_cost:
                 type: number
                 description: Cost to do installation planning
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
+                default: 2.5e5
     costs:
         type: object
         properties:

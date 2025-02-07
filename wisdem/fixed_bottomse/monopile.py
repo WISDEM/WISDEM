@@ -787,6 +787,7 @@ class MonopileSEProp(om.Group):
             ("outer_diameter_in", "monopile_outer_diameter_in"),
             ("outer_diameter", "monopile_outer_diameter"),
             ("wall_thickness", "monopile_wall_thickness"),
+            ("shell_mass_user", "monopile_mass_user"),
         ]
         if n_height > 2:
             promlist += ["thickness_slope"]

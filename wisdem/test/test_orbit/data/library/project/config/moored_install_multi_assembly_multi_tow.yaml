@@ -1,0 +1,21 @@
+plant:
+  num_turbines: 50
+port:
+  assembly_storage: 1
+  sub_assembly_lines: 3
+  sub_storage: 1
+  turbine_assembly_cranes: 1
+site:
+  depth: 500
+  distance: 50
+substructure:
+  takt_time: 168
+  towing_speed: 6
+  unit_cost: 12e6
+ahts_vessel: test_ahts_vessel
+towing_vessel: test_towing_vessel
+towing_vessel_groups:
+  num_groups: 1
+  ahts_vessels: 1
+  towing_vessels: 1
+turbine: 12MW_generic

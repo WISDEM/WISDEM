@@ -1,0 +1,24 @@
+# Generic modeling options file to run standard WISDEM case
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS # Name in the yaml of the spar cap laminate on the suction side
+        te_ps: TE_reinforcement_PS # Name in the yaml of the spar cap laminate on the suction side
+    DriveSE:
+        flag: True
+    TowerSE:             # Options of TowerSE module
+        flag: True
+    FloatingSE:
+        flag: True
+        symmetric_moorings: True
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+    BOS:
+        flag: True

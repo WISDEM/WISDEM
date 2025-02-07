@@ -2365,7 +2365,9 @@ class virtual_factory(object):
         # Building space per operation
         delta = 2.0  # [m] Distance between blades
         self.floor_space = np.zeros(len(operation))  # [m2]
-        self.floor_space[0] = 3.0 * blade_specs["blade_length"][0]  # [m2] Material cutting
+        self.floor_space[0] = 3.0 * blade_specs["blade_length"]  # [m2] Material cutting
+        if isinstance(blade_specs["root_preform_length"], type(np.array([]))):
+            blade_specs["root_preform_length"] = blade_specs["root_preform_length"][0]
         self.floor_space[1] = (
             self.parallel_proc[1] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"])
         )  # [m2] Infusion root preform lp
@@ -2380,78 +2382,78 @@ class virtual_factory(object):
             )  # [m2] Infusion webs
         self.floor_space[3 + self.n_webs] = (
             self.parallel_proc[3 + self.n_webs]
-            * (delta + blade_specs["length_sc_lp"][0])
+            * (delta + blade_specs["length_sc_lp"])
             * (delta + blade_specs["width_sc_start_lp"])
         )  # [m2] Infusion spar caps
         self.floor_space[4 + self.n_webs] = (
             self.parallel_proc[4 + self.n_webs]
-            * (delta + blade_specs["length_sc_hp"][0])
+            * (delta + blade_specs["length_sc_hp"])
             * (delta + blade_specs["width_sc_start_hp"])
         )  # [m2] Infusion spar caps
         self.floor_space[5 + self.n_webs] = (
             self.parallel_proc[5 + self.n_webs]
             * (blade_specs["max_chord"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Infusion skin shell lp
         self.floor_space[6 + self.n_webs] = (
             self.parallel_proc[6 + self.n_webs]
             * (blade_specs["max_chord"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Infusion skin shell hp
         self.floor_space[9 + self.n_webs] = (
             self.parallel_proc[9 + self.n_webs]
             * (blade_specs["max_chord"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Trim
         self.floor_space[10 + self.n_webs] = (
             self.parallel_proc[10 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Overlay
         self.floor_space[11 + self.n_webs] = (
             self.parallel_proc[11 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Post cure
         self.floor_space[12 + self.n_webs] = (
             self.parallel_proc[12 + self.n_webs]
             * (blade_specs["max_chord"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Root cut and drill
         self.floor_space[13 + self.n_webs] = (
             self.parallel_proc[13 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Root hardware install
         self.floor_space[14 + self.n_webs] = (
             self.parallel_proc[14 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Surface preparation
         self.floor_space[15 + self.n_webs] = (
             self.parallel_proc[15 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Paint
         self.floor_space[16 + self.n_webs] = (
             self.parallel_proc[16 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Surface inspection and finish
         self.floor_space[17 + self.n_webs] = (
             self.parallel_proc[17 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Weight and balance
         self.floor_space[18 + self.n_webs] = (
             self.parallel_proc[18 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Inspection
         self.floor_space[19 + self.n_webs] = (
             self.parallel_proc[19 + self.n_webs]
             * (blade_specs["root_D"] + delta)
-            * (blade_specs["blade_length"][0] + delta)
+            * (blade_specs["blade_length"] + delta)
         )  # [m2] Shipping preparation
 
         # Average power consumption during each operation
@@ -2518,16 +2520,16 @@ class virtual_factory(object):
                 price_mold_sqm * self.parallel_proc[4 + self.n_webs] * blade_specs["area_sc_hp"]
             )  # [$] Mold of the high pressure spar cap, cost assumed equal to 10800 $ per meter square of surface
         self.tooling_investment[5 + self.n_webs] = (
-            price_mold_sqm * self.parallel_proc[5 + self.n_webs] * blade_specs["area_lpskin_w_flanges"][0]
+            price_mold_sqm * self.parallel_proc[5 + self.n_webs] * blade_specs["area_lpskin_w_flanges"]
         )  # [$] Mold of the low pressure skin shell, assumed equal to 9400 $ per meter square of surface
         self.tooling_investment[6 + self.n_webs] = (
-            price_mold_sqm * self.parallel_proc[6 + self.n_webs] * blade_specs["area_hpskin_w_flanges"][0]
+            price_mold_sqm * self.parallel_proc[6 + self.n_webs] * blade_specs["area_hpskin_w_flanges"]
         )  # [$] Mold of the low pressure skin shell, assumed equal to 9400 $ per meter square of surface
 
         # Equipment investment per station per operation
         self.equipm_investment = np.zeros(len(operation))  # [$]
         self.equipm_investment[0] = (
-            5000.0 * self.parallel_proc[0] * blade_specs["blade_length"][0]
+            5000.0 * self.parallel_proc[0] * blade_specs["blade_length"]
         )  # [$] Equipment for material cutting is assumed at 5000 $ per meter of blade length
         self.equipm_investment[1] = (
             15000.0 * self.parallel_proc[1] * blade_specs["root_D"]
@@ -2541,14 +2543,14 @@ class virtual_factory(object):
             )  # [$] Equipment for webs infusion is assumed at 1700 $ per meter of web length
         if not blade_specs["pultruded_spar_caps"]:
             self.equipm_investment[3 + self.n_webs] = (
-                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"][0]
+                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
             self.equipm_investment[4 + self.n_webs] = (
-                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"][0]
+                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
         else:
             cutting_chamfering_unit = 2.0e5  # Assume one pultrusion cutting and chamfering unit costs $200k
-            max_sc_length = np.max([blade_specs["length_sc_lp"][0], blade_specs["length_sc_hp"][0]])
+            max_sc_length = np.max([blade_specs["length_sc_lp"], blade_specs["length_sc_hp"]])
             stacking_table = 100.0 * max_sc_length  # Assume a table to stack the SC planks will cost $100 per meter
             fixture_unit = 200.0 * max_sc_length  # Assume a SC fixture will cost $200 per meter
             self.equipm_investment[3 + self.n_webs] = (
@@ -2558,22 +2560,22 @@ class virtual_factory(object):
                 self.parallel_proc[4 + self.n_webs] * cutting_chamfering_unit + stacking_table + fixture_unit
             )
         self.equipm_investment[5 + self.n_webs] = (
-            1600.0 * self.parallel_proc[5 + self.n_webs] * blade_specs["skin_perimeter_wo_root"][0]
+            1600.0 * self.parallel_proc[5 + self.n_webs] * blade_specs["skin_perimeter_wo_root"]
         )  # [$] Equipment for skins infusion is assumed at 1600 $ per meter of skin perimeter
         self.equipm_investment[6 + self.n_webs] = (
-            1600.0 * self.parallel_proc[6 + self.n_webs] * blade_specs["skin_perimeter_wo_root"][0]
+            1600.0 * self.parallel_proc[6 + self.n_webs] * blade_specs["skin_perimeter_wo_root"]
         )  # [$] Equipment for skins infusion is assumed at 1600 $ per meter of skin perimeter
         self.equipm_investment[7 + self.n_webs] = (
             6600.0 * self.parallel_proc[7 + self.n_webs] * sum(blade_specs["length_webs"])
         )  # [$] Equipment for assembly is assumed equal to 6600 $ per meter of total webs length
         self.equipm_investment[9 + self.n_webs] = (
-            25000.0 * self.parallel_proc[9 + self.n_webs] * blade_specs["blade_length"][0]
+            25000.0 * self.parallel_proc[9 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for trim booth is assumed at 25000 $ per meter of blade length
         self.equipm_investment[10 + self.n_webs] = (
-            250.0 * self.parallel_proc[10 + self.n_webs] * blade_specs["blade_length"][0]
+            250.0 * self.parallel_proc[10 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for overlay is assumed at 250 $ per meter of blade length
         self.equipm_investment[11 + self.n_webs] = (
-            28500.0 * self.parallel_proc[11 + self.n_webs] * blade_specs["blade_length"][0]
+            28500.0 * self.parallel_proc[11 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for post-cure is assumed at 28500 $ per meter of blade length
         self.equipm_investment[12 + self.n_webs] = (
             390000.0 * self.parallel_proc[12 + self.n_webs] * blade_specs["root_D"]
@@ -2587,16 +2589,16 @@ class virtual_factory(object):
             * (blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"])
         )  # [$] Equipment for surface preparation is assumed at 160 $ per meter square of blade outer surface
         self.equipm_investment[15 + self.n_webs] = (
-            57000.0 * self.parallel_proc[15 + self.n_webs] * blade_specs["blade_length"][0]
+            57000.0 * self.parallel_proc[15 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for paint booth is assumed at 57000 $ per meter of blade length
         self.equipm_investment[16 + self.n_webs] = (
-            800.0 * self.parallel_proc[16 + self.n_webs] * blade_specs["blade_length"][0]
+            800.0 * self.parallel_proc[16 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for surface inspection and finish is assumed at 800 $ per meter of blade length
         self.equipm_investment[17 + self.n_webs] = (
             200000.0 * self.parallel_proc[17 + self.n_webs]
         )  # [$] Weight and Balance, assumed constant
         self.equipm_investment[18 + self.n_webs] = (
-            400.0 * self.parallel_proc[18 + self.n_webs] * blade_specs["blade_length"][0]
+            400.0 * self.parallel_proc[18 + self.n_webs] * blade_specs["blade_length"]
         )  # [$] Equipment for final inspection is assumed at 400 $ per meter of blade length
         self.equipm_investment[19 + self.n_webs] = (
             8000.0 * self.parallel_proc[19 + self.n_webs] * blade_specs["root_D"]
@@ -3321,9 +3323,8 @@ class BladeCost(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Inputs
         s = inputs["s"]
-        blade_length = inputs["blade_length"]
         chord = inputs["chord"]
-        blade_length = inputs["blade_length"]
+        blade_length = inputs["blade_length"][0]
         s = inputs["s"]
         layer_start_nd = inputs["layer_start_nd"]
         layer_end_nd = inputs["layer_end_nd"]
@@ -3342,7 +3343,7 @@ class BladeCost(om.ExplicitComponent):
         fwf = inputs["fwf"]
         fvf = inputs["fvf"]
         unit_cost = inputs["unit_cost"]
-        flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
+        flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"][0]
         flange_thick = inputs["flange_thick"][0]
         flange_width = inputs["flange_width"][0]
         t_bolt_spacing = inputs["t_bolt_spacing"][0]
@@ -3350,7 +3351,7 @@ class BladeCost(om.ExplicitComponent):
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
         if self.root:
-            root_preform_length = inputs["root_preform_length"]
+            root_preform_length = inputs["root_preform_length"][0]
         else:
             root_preform_length = 0.0
 
@@ -3432,6 +3433,19 @@ class BladeCost(om.ExplicitComponent):
         mass_shell_ss = 0.0
         mass_shell_ps = 0.0
         tol_LE = 1.0e-5
+        pultruded_spar_caps = False
+        area_sc_ss = 0.
+        volume2lay_sc_ss = 0.
+        fabric2lay_sc_ss = 0.
+        mass_sc_ss = 0.
+        max_n_plies_sc_ss = 0.
+        area_sc_ps = 0.
+        volume2lay_sc_ps = 0.
+        fabric2lay_sc_ps = 0.
+        mass_sc_ps = 0.
+        max_n_plies_sc_ps = 0.
+
+
         for i_lay in range(self.n_layers):
             if np.max(layer_thickness[i_lay, :]) > 0.0:
                 imin, imax = np.nonzero(layer_thickness[i_lay, :])[0][[0, -1]]

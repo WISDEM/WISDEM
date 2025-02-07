@@ -1,0 +1,10 @@
+ac_resistance: 0           # ohm/km
+capacitance: 227000        # nF/km
+conductor_size: 2500       # mm^2
+cost_per_km: 1420000       # $
+current_capacity: 1905     # A
+inductance: 0.149          # mH/km
+linear_density: 74         # t/km
+rated_voltage: 525         # kV
+cable_type: HVDC-bipole    # HVDC vs HVAC
+name: HVDC_2500mm_525kV

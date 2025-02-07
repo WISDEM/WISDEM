@@ -5,17 +5,17 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
-import os
+from pathlib import Path
 
 import yaml
 
 from wisdem.orbit.core.library import loader
 
-DIR = os.path.split(__file__)[0]
+DIR = Path(__file__).parent
 
-with open(os.path.join(DIR, "process_times.yaml"), "r") as f:
+with (DIR / "process_times.yaml").open() as f:
     process_times = yaml.load(f, Loader=loader)
 
 
-with open(os.path.join(DIR, "common_costs.yaml"), "r") as f:
+with (DIR / "common_costs.yaml").open() as f:
     common_costs = yaml.load(f, Loader=loader)

@@ -87,15 +87,18 @@ prob["rotor_diameter"] = 126.0
 prob["D_top"] = 3.87
 prob["minimum_rpm"] = 6.9
 prob["rated_rpm"] = 12.1
+prob["rated_torque"] = 4308926.79641971
 
 # Loading from rotor
-prob["F_hub"] = np.array([1125044.07614847, -7098.0872533, -7022.79756034]).reshape((3, 1))
-prob["M_hub"] = np.array([10515165.10636333, 945938.60268626, 1042828.16100417]).reshape((3, 1))
+prob["F_aero_hub"] = np.array([1125044.07614847, -7098.0872533, -7022.79756034]).reshape((3, 1))
+prob["M_aero_hub"] = np.array([10515165.10636333, 945938.60268626, 1042828.16100417]).reshape((3, 1))
 # ---
 
 # Blade properties and hub design options
+prob["blades_cm"] = 0.99847077
 prob["blade_mass"] = 16403.0
 prob["blades_mass"] = 3 * prob["blade_mass"]
+prob["blades_I"] = np.r_[36494351.0, 17549243.0, 14423664.0, np.zeros(3)]
 prob["pitch_system.BRFM"] = 14239550.0
 prob["pitch_system_scaling_factor"] = 0.54
 prob["blade_root_diameter"] = 3.542
@@ -110,7 +113,6 @@ prob["clearance_hub_spinner"] = 1.0
 prob["spin_hole_incr"] = 1.2
 prob["spinner_gust_ws"] = 70.0
 prob["hub_diameter"] = 3.0
-prob["blades_I"] = np.r_[36494351.0, 17549243.0, 14423664.0, np.zeros(3)]
 # ---
 
 # Drivetrain configuration and sizing inputs

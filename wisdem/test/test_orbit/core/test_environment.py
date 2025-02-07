@@ -92,7 +92,7 @@ def test_interp():
 
     assert "windspeed_20m" not in env.state.dtype.names
     constraints = {"waveheight": le(2), "windspeed_20m": le(10)}
-    valid = env._find_valid_constraints(**constraints)
+    _ = env._find_valid_constraints(**constraints)
     assert "windspeed_20m" in env.state.dtype.names
     assert (env.state["windspeed_10m"] < env.state["windspeed_20m"]).all()
     assert (env.state["windspeed_20m"] < env.state["windspeed_100m"]).all()
@@ -103,7 +103,7 @@ def test_extrap():
 
     assert "windspeed_120m" not in env.state.dtype.names
     constraints = {"waveheight": le(2), "windspeed_120m": le(10)}
-    valid = env._find_valid_constraints(**constraints)
+    _ = env._find_valid_constraints(**constraints)
     assert "windspeed_120m" in env.state.dtype.names
     assert (env.state["windspeed_120m"] > env.state["windspeed_100m"]).all()
 
@@ -111,6 +111,6 @@ def test_extrap():
 
     assert "windspeed_120m" not in env2.state.dtype.names
     constraints = {"waveheight": le(2), "windspeed_120m": le(10)}
-    valid = env2._find_valid_constraints(**constraints)
+    _ = env2._find_valid_constraints(**constraints)
     assert (env.state["windspeed_100m"] == env2.state["windspeed_100m"]).all()
     assert (env.state["windspeed_120m"] < env2.state["windspeed_120m"]).all()

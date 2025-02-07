@@ -53,54 +53,53 @@ Where the contents of ``nrel5mw_driver.py`` are,
 Screen Output
 *************
 
-Successfully running WISDEM should show the following screen output for the NREL 5-MW reference wind turbine:
+Successfully running WISDEM should show the following screen output for the NREL 5-MW reference wind turbine (note that exact number values will vary based on WISDEM version and computer):
 
 .. code:: console
 
-    ==
-    wt
-    ==
-    NL: NLBGS Converged in 2 iterations
+    =========
+    wt.wt_rna
+    =========
+    NL: NLBGS 1 ; 4.0637118e+11 1
+    NL: NLBGS 2 ; 5128312.48 1.26197741e-05
+    NL: NLBGS 3 ; 0 0
+    NL: NLBGS Converged
     ########################################
     Objectives
-    Turbine AEP: 24.0796812417 GWh
-    Blade Mass:  16403.6823269407 kg
-    LCOE:        49.4740771484 USD/MWh
-    Tip Defl.:   4.1950872846 m
+    Turbine AEP: 23.9127972556 GWh
+    Blade Mass:  16419.8666989212 kg
+    LCOE:        51.6906874361 USD/MWh
+    Tip Defl.:   4.7295143980 m
     ########################################
+    Completed in, 21.37621808052063 seconds
+    blade mass: [16419.86669892]
+    blade moments of inertia: [35590815.60501075 17795407.80250537 17795407.80250537 0. 0. 0.]
+    BRFM: [-16256766.58646931]
+    hub forces: [1171726.2468185     9709.60828863    9930.09366145]
+    hub moments: [11075137.65779509  1317752.66701219  1200194.31654923]
 
 And this output for the IEA Wind 15-MW reference wind turbine:
 
 .. code:: console
 
-    ==
-    wt
-    ==
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.
-    |
-    |  ==========
-    |  wt.drivese
-    |  ==========
-    |  NL: NLBGS Converged in 2 iterations
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.
-    WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.
-    |
-    |  ==========
-    |  wt.drivese
-    |  ==========
-    |  NL: NLBGS Converged in 2 iterations
-    NL: NLBGSSolver 'NL: NLBGS' on system 'wt' failed to converge in 2 iterations.
+    =========
+    wt.wt_rna
+    =========
+    NL: NLBGS 1 ; 4.89089054e+11 1
+    NL: NLBGS 2 ; 13008245.1 2.65968846e-05
+    NL: NLBGS 3 ; 301966.026 6.17404998e-07
+    NL: NLBGS 4 ; 7593.53109 1.5525866e-08
+    NL: NLBGS 5 ; 190.680588 3.89868853e-10
+    NL: NLBGS Converged
     ORBIT library intialized at '/Users/gbarter/devel/WISDEM/wisdem/library'
     ########################################
     Objectives
-    Turbine AEP: 78.0794202708 GWh
-    Blade Mass:  73310.0985877902 kg
-    LCOE:        71.9371232305 USD/MWh
-    Tip Defl.:   22.7001875342 m
+    Turbine AEP: 77.9037579237 GWh
+    Blade Mass:  68206.4068005262 kg
+    LCOE:        85.9788523601 USD/MWh
+    Tip Defl.:   25.8318262264 m
     ########################################
+    Completed in, 28.88100290298462 seconds
 
 Some helpful summary information is printed to the screen.  More detailed output can be found in the ``outputs`` directory.  This creates output files that can be read-in by Matlab, Numpy, Python pickle-package, and Excel.  These files have the complete list of all WISDEM variables (with extended naming based on their OpenMDAO Group hierarchy) and the associated values.  An output yaml-file is also written, in case any input values were altered in the course of the analysis.
 

@@ -1,3 +1,5 @@
+"""Provides the ParametricManager class for a parameter sweeps."""
+
 __author__ = ["Jake Nunemaker"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
@@ -10,11 +12,9 @@ from copy import deepcopy
 from random import sample
 from itertools import product
 
-import yaml
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from yaml import Loader
 from benedict import benedict
 
 from wisdem.orbit import ProjectManager
@@ -31,7 +31,7 @@ class ParametricManager:
         weather=None,
         module=None,
         product=False,
-        keep_inputs=[],
+        keep_inputs=None,
     ):
         """
         Creates an instance of `ParametricRun`.
@@ -57,11 +57,12 @@ class ParametricManager:
         self.results = None
         self.module = module
         self.product = product
-        self.keep = keep_inputs
+        self.keep = keep_inputs if keep_inputs is not None else []
 
     def run(self, **kwargs):
         """Run the configured parametric runs and save any requested results to
-        `self.results`."""
+        `self.results`.
+        """
 
         outputs = []
         for run in self.run_list:
@@ -123,6 +124,7 @@ class ParametricManager:
 
     @property
     def num_runs(self):
+        """Calculates the number of runs completed."""
         return len(self.run_list)
 
     @staticmethod
@@ -143,13 +145,14 @@ class ParametricManager:
             try:
                 res = f(obj)
 
-            except TypeError:
+            except TypeError as exc:
                 raise TypeError(
-                    f"Result function '{f}' not structured properly. " f"Correct format: 'lambda project: project.{f}'"
-                )
+                    f"Result function '{f}' not structured properly. "
+                    f"Correct format: 'lambda project: project.{f}'"
+                ) from exc
 
             except AttributeError:
-                res = np.NaN
+                res = np.nan
 
             results[k] = res
 
@@ -186,7 +189,7 @@ class ParametricManager:
         return pd.DataFrame(outputs)
 
     def create_model(self, x, y):
-        """"""
+        """Creates a ``LinearModel`` for the inputs and results."""
 
         if self.results is None:
             print("`ParametricManager hasn't been ran yet.")
@@ -195,12 +198,16 @@ class ParametricManager:
 
     @classmethod
     def from_config(cls, data):
-        """"""
+        """
+        Creates a ``ParametricManager`` isntance from a configuration
+        dictionary, ``data``.
+        """
 
         outputs = data.pop("outputs", {})
 
         funcs = {}
         for k, v in outputs.items():
+
             split = v.split("[")
             attr = split[0]
 
@@ -296,6 +303,7 @@ class LinearModel:
 
         out = ""
         for i, (k, v) in enumerate(params.items()):
+
             if i == 0:
                 pre = ""
 
@@ -347,7 +355,7 @@ class LinearModel:
         pd.Series
         """
 
-        inputs = dict(zip(self.X.T.index, self.X.T.values))
+        inputs = dict(zip(self.X.T.index, self.X.T.to_numpy()))
         predicted = self.predict(inputs)
 
         return (self.Y - predicted) / self.Y
