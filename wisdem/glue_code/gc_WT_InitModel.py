@@ -24,7 +24,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
         environment = wt_init["environment"]
-        blade_flag = modeling_options["flags"]["blade"]
+        blade_flag = modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"])
         wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
         environment = {}

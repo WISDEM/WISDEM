@@ -709,11 +709,18 @@ class Blade(om.Group):
             opt_var.add_output(
                 "s_opt_radius", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"])
             )
-            opt_var.add_output(
-                "rotor_radius_vawt",
-                units="m",
-                val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"]),
-            )
+            if opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["constant"]:
+                opt_var.add_output(
+                    "rotor_radius_vawt",
+                    units="m",
+                    val=1.0,
+                )
+            else:
+                opt_var.add_output(
+                    "rotor_radius_vawt",
+                    units="m",
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"]),
+                )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -746,7 +753,8 @@ class Blade(om.Group):
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options, opt_options=opt_options))
         self.connect("opt_var.s_opt_radius", "high_level_blade_props.s_opt_radius")
         self.connect("outer_shape_bem.s", "high_level_blade_props.s")
-        self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
+        if vawt_flag:
+            self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
         # TODO : Compute Reynolds here
@@ -3235,12 +3243,22 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
 
-        self.add_input(
-            "rotor_radius_vawt",
-            val=np.zeros(n_opt_radius),
-            units="m",
-            desc="1D array of the radius distribution being optimized at the n_opt locations"
-        )
+        rotor_radius_vawt_opt = self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]
+        if rotor_radius_vawt_opt:
+            if rotor_radius_vawt_opt["constant"]:
+                self.add_input(
+                    "rotor_radius_vawt",
+                    val=1.0,
+                    units="m",
+                    desc="Constant radius distribution being optimized at the n_opt locations"
+                )
+            else:
+                self.add_input(
+                    "rotor_radius_vawt",
+                    val=np.ones(n_opt_radius),
+                    units="m",
+                    desc="1D array of the radius distribution being optimized at the n_opt locations"
+                )
 
         self.add_output(
             "rotor_diameter",
@@ -3293,12 +3311,16 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
 
-        if np.any(inputs["rotor_radius_vawt"]>0):
+        if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"] and np.any(inputs["rotor_radius_vawt"]>0):
             # update the reference axis location
             spline = PchipInterpolator
-            x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt"])
-            outputs["blade_ref_axis"][:, 0] = x_spline(inputs["s"])
-            outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
+            if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["constant"]:
+                outputs["blade_ref_axis"][:, 0] = inputs["rotor_radius_vawt"]
+                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
+            else:
+                x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt"])
+                outputs["blade_ref_axis"][:, 0] = x_spline(inputs["s"])
+                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
 
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]
