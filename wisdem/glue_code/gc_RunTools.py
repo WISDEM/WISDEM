@@ -77,8 +77,7 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
 class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen
     def initialize(self):
-        self.options.declare("modeling_options")
-        self.options.declare("opt_options")
+        self.options.declare("verbosity", default=False)
 
     def setup(self):
         self.add_input("aep", val=0.0, units="GW * h")
@@ -95,13 +94,14 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input("tip_deflection", val=0.0, units="m")
 
     def compute(self, inputs, outputs):
-        print("########################################")
-        print("Objectives")
-        print("Turbine AEP: {:8.10f} GWh".format(inputs["aep"][0]))
-        print("Blade Mass:  {:8.10f} kg".format(inputs["blade_mass"][0]))
-        print("LCOE:        {:8.10f} USD/MWh".format(inputs["lcoe"][0]))
-        print("Tip Defl.:   {:8.10f} m".format(inputs["tip_deflection"][0]))
-        print("########################################")
+        if self.options["verbosity"] == True: 
+            print("########################################")
+            print("Objectives")
+            print("Turbine AEP: {:8.10f} GWh".format(inputs["aep"][0]))
+            print("Blade Mass:  {:8.10f} kg".format(inputs["blade_mass"][0]))
+            print("LCOE:        {:8.10f} USD/MWh".format(inputs["lcoe"][0]))
+            print("Tip Defl.:   {:8.10f} m".format(inputs["tip_deflection"][0]))
+            print("########################################")
 
 
 class PlotRecorder(om.Group):

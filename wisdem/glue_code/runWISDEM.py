@@ -83,6 +83,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         wt_opt = myopt.set_constraints(wt_opt)
         wt_opt = myopt.set_recorders(wt_opt)
 
+    if modeling_options["General"]["verbosity"] == False:
+        wt_opt.set_solver_print(level=-1)
+
     # Setup openmdao problem
     wt_opt.setup()
 
