@@ -739,13 +739,13 @@ class WindTurbineOntologyPython(object):
                             break
                     if not foundit:
                         blade_opt_options["n_opt_struct"][i] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
                         spars_tereinf[0] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
                         spars_tereinf[1] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"].lower():
                         spars_tereinf[2] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"].lower():
                         spars_tereinf[3] = i
             else:
                 blade_opt_options["structure"] = []
