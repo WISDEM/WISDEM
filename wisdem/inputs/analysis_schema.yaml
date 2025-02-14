@@ -1505,7 +1505,34 @@ properties:
                     roll_period: *period
                     pitch_period: *period
                     yaw_period: *period
-                    
+            owens:
+                type: object
+                default: {}
+                properties:
+                    fatigue: 
+                        type: object
+                        default: {}
+                        description: Aggregated fatigue of blade and tower
+                        properties:
+                            flag: *flag
+                            upper_bound:
+                                type: number
+                                default: 1
+                    power: 
+                        type: object
+                        default: {}
+                        description: Positive power constraint
+                        properties:
+                            flag: *flag
+                    SF:
+                        type: object
+                        default: {}
+                        description: Aggregated minimun safety factor of blade and tower
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 1
             user:
                 type: array
                 description: User-defined constraints based on full variable name.  Must enter a lower_bound and/or an upper bound for each constraint

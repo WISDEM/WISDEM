@@ -55,6 +55,10 @@ class WindTurbineOntologyPython(object):
 
         # VAWT flag
         self.modeling_options["flags"]["vawt"] = (self.wt_init["assembly"]["turbine_type"] == "vertical")
+        try:
+            self.modeling_options["flags"]["marine_hydro"] = self.wt_init["assembly"]["marine_hydro"] # TODO YL: this will need to be removed when merging MHK 
+        except:
+            print("No MHK defined")
 
         # Put in some logic about what needs to be in there
         flags = self.modeling_options["flags"]
