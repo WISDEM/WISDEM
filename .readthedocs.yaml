@@ -19,15 +19,17 @@ build:
     pre_install:
       - conda install -y cmake compilers sphinx sphinxcontrib-bibtex
       - conda install sphinx_rtd_theme>=1.3
+      - pip install json-schema-for-humans 
     pre_build:
       - pwd
-      - wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq && chmod +x yq
-      - ./yq -p yaml -o json wisdem/inputs/analysis_schema.yaml >| docs/schema/analysis_schema.json
-      - ./yq -p yaml -o json wisdem/inputs/modeling_schema.yaml >| docs/schema/modeling_schema.json
-      - sed -i -s '0,/properties/s//definitions/' docs/schema/modeling_schema.json
-      - sed -i -s '0,/properties/s//definitions/' docs/schema/analysis_schema.json
-      #- sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' docs/schema/modeling_schema.json
-      #- sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' docs/schema/analysis_schema.json
+      - generate-schema-doc --no-copy-css --no-copy-js wisdem/inputs/modeling_schema.yaml docs/_static/modeling_doc.html
+      - generate-schema-doc --no-copy-css --no-copy-js wisdem/inputs/analysis_schema.yaml docs/_static/analysis_doc.html
+      - generate-schema-doc --no-copy-css --no-copy-js wisdem/inputs/geometry_schema.yaml docs/_static/geometry_doc.html
+      #- wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq && chmod +x yq
+      #- ./yq -p yaml -o json wisdem/inputs/analysis_schema.yaml >| docs/schema/analysis_schema.json
+      #- ./yq -p yaml -o json wisdem/inputs/modeling_schema.yaml >| docs/schema/modeling_schema.json
+      #- sed -i -s '0,/properties/s//definitions/' docs/schema/modeling_schema.json
+      #- sed -i -s '0,/properties/s//definitions/' docs/schema/analysis_schema.json
 
 
 # Shouldn't need conda for building the docs, but it is an option
