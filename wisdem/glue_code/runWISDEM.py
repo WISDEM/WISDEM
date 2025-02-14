@@ -156,7 +156,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     fileIO.save_data(froot_out, wt_opt)
 
     t1 = time.time()
-    print("Completed in,", t1-t0, "seconds")
+    if modeling_options["General"]["verbosity"]:
+        print("WISDEM run completed in,", t1-t0, "seconds")
 
     return wt_opt, modeling_options, opt_options
 
