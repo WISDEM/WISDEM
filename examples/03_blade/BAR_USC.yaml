@@ -892,9 +892,9 @@ materials:
    -  {name: steel, description: Steel of the tower and monopile ASTM A572 Grade 50, source: "'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'", orth: 0, rho: 7800, alpha: 0.0, E: 200000000000.0, nu: 0.3, G: 79300000000.0, GIc: 0, GIIc: 0, alp0: 0, Xt: 450000000.0, Xc: 450000000.0, S: 0, Xy: 345000000.0, m: 3, A: 3.5534648443719767e10, unit_cost: 0.7}
    -  {name: joint_insert, description: Stainless steel 440a tempered @315C, orth: 0.0, rho: 7800.0, alpha: 0.0, E: 210e9, nu: 0.283, G: 83.9e9, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 1790e6, Xc: 1790e6, S: 0.0, Xy: 1650e6, unit_cost: 2}
 control:
-    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0, minOmega: 0.0, maxOmega: 0.9927432785343746}
-    pitch: {PC_zeta: 1.1, PC_omega: 0.2, ps_percent: 0.8, max_pitch: 1.57, max_pitch_rate: 0.03488888888888889, min_pitch: 0.0}
-    torque: {control_type: tsr_tracking, tsr: 10.5, VS_zeta: 0.5, VS_omega: 0.1, max_torque_rate: 4500000.0, VS_minspd: 0.0, VS_maxspd: 2.0}
+    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 75.0, rated_power: 5000000.0}
+    pitch: {PC_zeta: 1.1, PC_omega: 0.2, ps_percent: 0.8, max_pitch: 1.57, max_pitch_rate: 0.03488888888888889, min_pitch: 0.05}
+    torque: {control_type: tsr_tracking, tsr: 10.5, VS_zeta: 0.5, VS_omega: 0.1, max_torque_rate: 4500000.0, VS_minspd: 0.6, VS_maxspd: 0.8}
     setpoint_smooth: {ss_vsgain: 1, ss_pcgain: 0.001}
     shutdown: {limit_type: gen_speed, limit_value: 2.0}
 environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, weib_shape_parameter: 2.0, air_speed_sound: 340.0, shear_exp: 0.2, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, gravity: 9.80665, air_pressure: 103500.0, air_vapor_pressure: 1700.0, water_depth: 0.0, V_mean: 0.0}

@@ -390,7 +390,8 @@ class ComputePowerCurve(ExplicitComponent):
         T = np.zeros(Uhub.shape)
         Q = np.zeros(Uhub.shape)
         M = np.zeros(Uhub.shape)
-        pitch = np.zeros(Uhub.shape) + inputs["control_pitch"][0]
+        min_pitch = inputs["control_pitch"][0]
+        pitch = np.zeros(Uhub.shape) + min_pitch
 
         # Unpack variables
         P_rated = float(inputs["rated_power"][0])
@@ -487,7 +488,7 @@ class ComputePowerCurve(ExplicitComponent):
                 x0 = [0.0, U_rated]
                 imin = max(i - 3, 0)
                 imax = min(i + 2, len(Uhub) - 1)
-                bnds = [[0.0, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
+                bnds = [[min_pitch, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
@@ -500,10 +501,10 @@ class ComputePowerCurve(ExplicitComponent):
                     pitch_rated = params_rated.x[0]
                 else:
                     U_rated = U_rated  # Use guessed value earlier
-                    pitch_rated = 0.0
+                    pitch_rated = min_pitch
             else:
                 # Just search over speed
-                pitch_rated = 0.0
+                pitch_rated = min_pitch
                 try:
                     U_rated = brentq(
                         lambda x: const_Urated([0.0, x]),
@@ -560,7 +561,7 @@ class ComputePowerCurve(ExplicitComponent):
 
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
-                bnds = [[0.0, 15.0], [Uhub[i - 2] + TOL, Uhub[-1] - TOL]]
+                bnds = [[min_pitch, 15.0], [Uhub[i - 2] + TOL, Uhub[-1] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated_Tpeak
@@ -573,7 +574,7 @@ class ComputePowerCurve(ExplicitComponent):
                     pitch_rated = params_rated.x[0]
                 else:
                     U_rated = U_rated  # Use guessed value earlier
-                    pitch_rated = 0.0
+                    pitch_rated = min_pitch
 
                 Omega_tsr_rated = U_rated * tsr / R_tip
                 Omega_rated = np.minimum(Omega_tsr_rated, Omega_max)
@@ -667,7 +668,7 @@ class ComputePowerCurve(ExplicitComponent):
 
             # Find pitch value that gives highest power rating
             pitch0 = pitch[i] if i == 0 else pitch[i - 1]
-            bnds = [pitch0 - 10.0, pitch0 + 10.0]
+            bnds = [max([min_pitch, pitch0 - 10.0]), max([min_pitch, pitch0 + 10.0])]
             # For a successfull minimization, find the initial power value to nondimensionalize power and bring the figure of merit close to 1
             myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
             # For better conditioning near cut-in, use rated values
