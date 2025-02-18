@@ -728,7 +728,7 @@ class WindTurbineOntologyPython(object):
             blade_opt_options["n_opt_struct"] = np.ones(n_layers, dtype=int)
             if "structure" in blade_opt_options:
                 n_layers_opt = len(blade_opt_options["structure"])
-                blade_opt_options["layer_index_opt"] = np.ones(n_layers_opt, dtype=int)
+                blade_opt_options["layer_index_opt"] = -np.ones(n_layers_opt, dtype=int)
                 for i in range(n_layers):
                     foundit = False
                     for j in range(n_layers_opt):
@@ -739,14 +739,23 @@ class WindTurbineOntologyPython(object):
                             break
                     if not foundit:
                         blade_opt_options["n_opt_struct"][i] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
                         spars_tereinf[0] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
                         spars_tereinf[1] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"].lower():
                         spars_tereinf[2] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"].lower():
                         spars_tereinf[3] = i
+
+                index_not_found = np.where(blade_opt_options["layer_index_opt"] == -1)[0]
+                if len(index_not_found)>0:
+                    raise Exception(
+                        "WISDEM is set to optimize the thickness of blade composite layer {}, but this layer "
+                        "is not found in the input geometry yaml".format(
+                            blade_opt_options["structure"][index_not_found[0]]["layer_name"]
+                        )
+                    )
             else:
                 blade_opt_options["structure"] = []
                 blade_opt_options["n_opt_struct"] *= self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -1011,9 +1020,8 @@ class WindTurbineOntologyPython(object):
             # TODO assign joint mass to wt_init from rs.bjs
             # Elastic properties of the blade
             if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = float(
-                    wt_opt["rotorse.rs.bjs.joint_mass"]
-                )
+                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = wt_opt[
+                    "rotorse.rs.bjs.joint_mass"][0]
 
             self.wt_init["components"]["blade"]["elastic_properties_mb"] = {}
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"] = {}

@@ -943,7 +943,7 @@ class WindPark(om.Group):
         if modeling_options["flags"]["blade"]:
             self.add_subsystem("financese", PlantFinance(verbosity=modeling_options["General"]["verbosity"]))
             self.add_subsystem(
-                "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
+                "outputs_2_screen", Outputs_2_Screen(verbosity=modeling_options["General"]["verbosity"])
             )
 
         # BOS inputs

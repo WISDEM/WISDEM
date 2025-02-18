@@ -692,7 +692,9 @@ class ErectionCost(CostModule):
                                        'Max wind speed m per s', 'Setup time hr', 'Breakdown time hr',
                                        'Hoist speed m per min', 'Speed of travel km per hr',
                                        'Crew type ID', 'Crane poly'])
-            crane_poly = pd.concat((crane_poly, df), sort=True)
+            crane_poly = pd.concat((crane_poly if not crane_poly.empty else None,
+                                    df if not df.empty else None,
+                                    ), sort=True)
         return crane_poly
 
     def calculate_component_lift_max_wind_speed(self, *, component_group, crane_poly, component_max_speed, operation):

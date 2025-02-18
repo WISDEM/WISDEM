@@ -1144,8 +1144,8 @@ class BladeJointSizing(ExplicitComponent):
         self.nd_span = rotorse_options["nd_span"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        # self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        # self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         self.layer_name = rotorse_options["layer_name"]
         self.layer_mat = rotorse_options["layer_mat"]
 

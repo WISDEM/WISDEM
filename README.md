@@ -61,7 +61,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        conda install -y petsc4py mpi4py                 # (Mac / Linux only)
+        conda install -y petsc4py=3.22.2 mpi4py                 # (Mac / Linux only)
         conda install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
         conda install -y m2w64-toolchain libpython       # (Windows only)
         pip install --no-deps -e . -v

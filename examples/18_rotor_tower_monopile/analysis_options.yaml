@@ -21,13 +21,13 @@ design_variables:
                 index_start: 1         # Lock the first DV at blade root
                 index_end: 5           # The last DV at blade tip is locked
         structure:
-            - layer_name: Spar_cap_ss
+            - layer_name: Spar_Cap_SS
               n_opt: 6
               max_decrease: 0.8
               max_increase: 2.0
               index_start: 1
               index_end: 5
-            - layer_name: Spar_cap_ps
+            - layer_name: Spar_Cap_PS
               n_opt: 6
               max_decrease: 0.8
               max_increase: 2.0

@@ -94,15 +94,13 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         chord_opt = spline(inputs["s"], outputs["chord_param"])
         max_chord = self.opt_options["constraints"]["blade"]["chord"]["max"]
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
-        # Define constraint to enforce monothonically decreasing blade chord
-        outputs["slope_chord_constr"] = np.diff(inputs["chord_opt"])
-        # Pick the points before max chord or before 40% span and deactivate the constraint
+        # Define constraint to enforce monothonically increasing and then decreasing blade chord
+        # Constraint is satisfied when below 0
         id_max_chord = np.argmax(inputs["chord_opt"])
-        if inputs["s_opt_chord"][id_max_chord] > 0.4:
-            id_start_constraint = id_max_chord
-        else:
-            id_start_constraint = np.argmin(abs(inputs["s_opt_chord"]-0.4))
-        outputs["slope_chord_constr"][:id_start_constraint] = -1 
+        slope_chord_constr = np.diff(inputs["chord_opt"])
+        # Up to max chord, chord must be increasing (positive diff), after max chord, decreasing (negative diff)
+        slope_chord_constr[:id_max_chord] *= -1 
+        outputs["slope_chord_constr"] = slope_chord_constr
 
 
 class ParametrizeBladeStruct(om.ExplicitComponent):
