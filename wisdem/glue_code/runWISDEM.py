@@ -156,7 +156,11 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     fileIO.save_data(froot_out, wt_opt)
 
     t1 = time.time()
-    if modeling_options["General"]["verbosity"]:
+    if MPI:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
+    if rank == 0:
         print("WISDEM run completed in,", t1-t0, "seconds")
 
     return wt_opt, modeling_options, opt_options
