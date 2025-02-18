@@ -1011,9 +1011,8 @@ class WindTurbineOntologyPython(object):
             # TODO assign joint mass to wt_init from rs.bjs
             # Elastic properties of the blade
             if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = float(
-                    wt_opt["rotorse.rs.bjs.joint_mass"]
-                )
+                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = wt_opt[
+                    "rotorse.rs.bjs.joint_mass"][0]
 
             self.wt_init["components"]["blade"]["elastic_properties_mb"] = {}
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"] = {}
