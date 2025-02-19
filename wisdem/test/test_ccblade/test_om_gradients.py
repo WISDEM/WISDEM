@@ -5,33 +5,12 @@ import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
 
-from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeTwist, CCBladeEvaluate, CCBladeGeometry
+from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeTwist, CCBladeEvaluate
 
 np.random.seed(314)
 
 
 class Test(unittest.TestCase):
-    def test_ccblade_geometry(self):
-        n_span = 10
-
-        prob = om.Problem(reports=False)
-
-        comp = CCBladeGeometry(n_span=n_span)
-        prob.model.add_subsystem("comp", comp, promotes=["*"])
-
-        prob.setup(force_alloc_complex=True)
-
-        prob.set_val("Rtip", 80.0, units="m")
-        prob.set_val("precurve_in", np.random.rand(n_span), units="m")
-        prob.set_val("presweep_in", np.random.rand(n_span), units="m")
-        prob.set_val("precone", 2.2, units="deg")
-
-        prob.run_model()
-
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
-
-        assert_check_partials(check)
-
     def test_ccblade_loads(self):
         prob = om.Problem(reports=False)
 
