@@ -583,8 +583,8 @@ components:
             - name: main_column
               joint1: main_keel
               joint2: main_freeboard
-              Ca: [1.0, 1.0]
-              Cd: [0.8, 0.8]
+              Ca: 1.0 # These coefficients can be defined as one constant scalar (here) or an array that defines different sections along the member (see column 1 below)
+              Cd: 0.8
               outer_shape:
                 shape: circular
                 outer_diameter:
