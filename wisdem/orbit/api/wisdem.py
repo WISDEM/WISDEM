@@ -767,7 +767,7 @@ class OrbitWisdem(om.ExplicitComponent):
         project = ProjectManager(config)
         project.run()
 
-        capacity_kW = 1e3 * float(inputs["turbine_rating"][0]) * int(discrete_inputs["number_of_turbines"]),
+        capacity_kW = 1e3 * inputs["turbine_rating"] * discrete_inputs["number_of_turbines"]
         outputs["bos_capex"] = project.bos_capex
         outputs["soft_capex"] = project.soft_capex
         outputs["project_capex"] = project.project_capex
