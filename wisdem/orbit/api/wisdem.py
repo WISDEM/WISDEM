@@ -767,6 +767,8 @@ class OrbitWisdem(om.ExplicitComponent):
         project = ProjectManager(config)
         project.run()
 
+        # The ORBIT version of total_capex includes turbine capex, so we do our own sum of
+        # the parts here that wisdem doesn't account for
         capacity_kW = 1e3 * inputs["turbine_rating"] * discrete_inputs["number_of_turbines"]
         outputs["bos_capex"] = project.bos_capex
         outputs["soft_capex"] = project.soft_capex
