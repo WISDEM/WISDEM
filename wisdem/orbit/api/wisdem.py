@@ -458,19 +458,33 @@ class OrbitWisdem(om.ExplicitComponent):
             "bos_capex",
             0.0,
             units="USD",
-            desc="Total BOS CAPEX not including commissioning or decommissioning.",  # noqa: E501
+            desc="Sum of system and installation capex",
+        )
+        self.add_output(
+            "soft_capex",
+            0.0,
+            units="USD",
+            desc="Project costs associated with commissioning, decommissioning and financing",
+        )
+        self.add_output(
+            "project_capex",
+            0.0,
+            units="USD",
+            desc="costs associated with the lease area, "+
+            "the development of the construction operations plan,"+
+            "and any environmental review and other upfront project costs."
         )
         self.add_output(
             "total_capex",
             0.0,
             units="USD",
-            desc="Total BOS CAPEX including commissioning and decommissioning.",  # noqa: E501
+            desc="Total capex of bos + soft + project",
         )
         self.add_output(
             "total_capex_kW",
             0.0,
             units="USD/kW",
-            desc="Total BOS CAPEX including commissioning and decommissioning.",  # noqa: E501
+            desc="Total capex of bos + soft + project per rated project capacity in kW",
         )
         self.add_output(
             "installation_time",
@@ -753,8 +767,11 @@ class OrbitWisdem(om.ExplicitComponent):
         project = ProjectManager(config)
         project.run()
 
+        capacity_kW = 1e3 * float(inputs["turbine_rating"][0]) * int(discrete_inputs["number_of_turbines"]),
         outputs["bos_capex"] = project.bos_capex
-        outputs["total_capex"] = project.total_capex
-        outputs["total_capex_kW"] = project.total_capex_per_kw
+        outputs["soft_capex"] = project.soft_capex
+        outputs["project_capex"] = project.project_capex
+        outputs["total_capex"] = project.bos_capex + project.soft_capex + project.project_capex
+        outputs["total_capex_kW"] = outputs["total_capex"] / capacity_kW
         outputs["installation_time"] = project.installation_time
         outputs["installation_capex"] = project.installation_capex
