@@ -481,7 +481,7 @@ class CCBlade(object):
         Rhub : float (m)
             location of hub
         Rtip : float (m)
-            location of tip
+            distance between rotor center and blade tip along z axis of blade root c.s.
         B : int, optional
             number of blades
         rho : float, optional (kg/m^3)
@@ -1183,7 +1183,7 @@ class CCBlade(object):
         CMy = My / (q * A * R)
         CMz = Mz / (q * A * R)
         CMb = Mb / (q * A * R)
-        The rotor radius R, may not actually be Rtip if precone and precurve are both nonzero
+        The rotor radius R, may not actually be Rtip if precone is nonzero
         ``R = Rtip*cos(precone)``
         """
 

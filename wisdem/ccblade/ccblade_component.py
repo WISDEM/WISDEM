@@ -37,7 +37,7 @@ class CCBladeLoads(ExplicitComponent):
     Rhub : float
         Hub radius.
     Rtip : float
-        Tip radius.
+        Distance between rotor center and blade tip along z axis of blade root c.s.
     hub_height : float
         Hub height.
     precone : float
@@ -362,7 +362,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
         self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
-        self.add_input("Rtip", val=0.0, units="m", desc="tip radius")
+        self.add_input("Rtip", val=0.0, units="m", desc="Distance between rotor center and blade tip along z axis of blade root c.s.")
         self.add_input(
             "rthick", val=np.zeros(n_span), desc="1D array of the relative thicknesses of the blade defined along span."
         )
@@ -503,7 +503,7 @@ class CCBladeTwist(ExplicitComponent):
             discrete_inputs["usecd"],
         )
 
-        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / inputs["Rtip"][0] * 30.0 / np.pi
+        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (inputs["Rtip"][0] * np.cos(inputs["precone"][0])) * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:

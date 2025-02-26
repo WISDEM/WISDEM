@@ -126,7 +126,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
-            self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -767,7 +767,7 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
-            self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "tcons.Rtip")
             self.connect("blade.high_level_blade_props.blade_ref_axis", "tcons.ref_axis_blade")
             self.connect("hub.cone", "tcons.precone")
             self.connect("nacelle.uptilt", "tcons.tilt")

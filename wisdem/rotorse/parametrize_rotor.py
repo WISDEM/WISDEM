@@ -165,8 +165,8 @@ class ComputeReynolds(om.ExplicitComponent):
         self.add_input("r_blade", val=np.zeros(n_span), units="m",
             desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
         )
-        self.add_input("rotor_radius", val=0.0, units="m",
-            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+        self.add_input("rotor_diameter", val=0.0, units="m",
+            desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
         self.add_input("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
@@ -178,7 +178,7 @@ class ComputeReynolds(om.ExplicitComponent):
         # Note that we used to use ccblade outputs of local wind speed at the rated condition
         # This is more accurate, of course, but creates an implicit feedback loop in the code
         # This way gets an order-of-magnitude estimate for Reynolds number, which is really all that is needed
-        max_local_TS = inputs["max_TS"] / inputs["rotor_radius"] * inputs["r_blade"]
+        max_local_TS = inputs["max_TS"][0] / (inputs["rotor_diameter"][0] / 2.) * inputs["r_blade"][0]
         if np.all(max_local_TS == 0.0):
             max_local_TS = inputs["maxOmega"] * inputs["r_blade"]
 
