@@ -1899,11 +1899,17 @@ properties:
                                                 description: Non-dimensional value along member axis
                                 Ca: &ca
                                     description: User-defined added mass coefficient if axi-symmetric or user-defined added mass coefficient in x-direction
-                                    type: array
-                                    default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
-                                    items:
-                                        type: number
-                                        minimum: -1.0
+                                    oneOf:
+                                        - type: number
+                                          default: -1.0
+                                          minimum: 0
+                                        - type: array
+                                          default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
+                                          items:
+                                            type: number
+                                            minimum: -1.0
+                                    default: [-1.0]
+
                                 Cay:
                                     <<: *ca
                                     description: User-defined added mass coefficient in y-direction
@@ -1912,12 +1918,8 @@ properties:
                                     type: number
                                     default: 0.0
                                 Cd: &cd
+                                    <<: *ca
                                     description: User-defined drag coefficient if axi-symmetric or user-defined drag coefficient in x-direction
-                                    type: array
-                                    default: [-1.0]
-                                    items:
-                                        type: number
-                                        minimum: -1.0
                                 Cdy:
                                     <<: *cd
                                     description: User-defined drag coefficient in y-direction
