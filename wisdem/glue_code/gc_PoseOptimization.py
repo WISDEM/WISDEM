@@ -1327,11 +1327,16 @@ class PoseOptimization(object):
                 idx_k = user_constr[k]["indices"]
             else:
                 idx_k = None
+            
+            if "ref" in user_constr[k]:
+                ref_k = user_constr[k]["ref"]
+            else:
+                ref_k = None
 
             if lower_k is None and upper_k is None:
                 raise Exception(f"Must include a lower_bound and/or an upper bound for {var_k}")
 
-            wt_opt.model.add_constraint(var_k, lower=lower_k, upper=upper_k, indices=idx_k)
+            wt_opt.model.add_constraint(var_k, lower=lower_k, upper=upper_k, indices=idx_k, ref=ref_k)
 
         return wt_opt
 

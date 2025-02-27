@@ -395,16 +395,18 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Unpack variables
         P_rated = float(inputs["rated_power"][0])
-        R_tip = float(inputs["Rtip"][0])
+        # Rtip is passed without cone to CCBlade, which multiplies it by the cos(cone) internally, 
+        # but it is also multiplied by cos(cone) to be used correctly in this script
+        Rtip_cone = float(inputs["Rtip"][0]) * np.cos(np.deg2rad(float(inputs["precone"][0])))
         tsr = float(inputs["tsr_operational"][0])
         driveType = discrete_inputs["drivetrainType"]
 
         ## POWERCURVE PRELIMS ##
         # Set rotor speed based on TSR
-        Omega_tsr = Uhub * tsr / R_tip
+        Omega_tsr = Uhub * tsr / Rtip_cone
 
         # Determine maximum rotor speed (rad/s)- either by TS or by control input
-        Omega_max = min([float(inputs["control_maxTS"][0]) / R_tip,
+        Omega_max = min([float(inputs["control_maxTS"][0]) / Rtip_cone,
                          float(inputs["omega_max"][0]) * np.pi / 30.0])
 
         # Apply maximum and minimum rotor speed limits
@@ -473,7 +475,7 @@ class ComputePowerCurve(ExplicitComponent):
             def const_Urated(x):
                 pitch_i = x[0]
                 Uhub_i = x[1]
-                Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
+                Omega_i = min([Uhub_i * tsr / Rtip_cone, Omega_max])
                 Omega_i_rpm = Omega_i * 30.0 / np.pi
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                 P_aero_i = float(myout["P"][0])
@@ -523,7 +525,7 @@ class ComputePowerCurve(ExplicitComponent):
                         options={"disp": False, "xatol": TOL, "maxiter": 40},
                     )["x"]
 
-            Omega_tsr_rated = U_rated * tsr / R_tip
+            Omega_tsr_rated = U_rated * tsr / Rtip_cone
             Omega_rated = np.minimum(Omega_tsr_rated, Omega_max)
             Omega_rpm_rated = Omega_rated * 30.0 / np.pi
             myout, _ = self.ccblade.evaluate([U_rated], [Omega_rpm_rated], [pitch_rated], coefficients=True)
@@ -548,7 +550,7 @@ class ComputePowerCurve(ExplicitComponent):
                 def const_Urated_Tpeak(x):
                     pitch_i = x[0]
                     Uhub_i = x[1]
-                    Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
+                    Omega_i = min([Uhub_i * tsr / Rtip_cone, Omega_max])
                     Omega_i_rpm = Omega_i * 30.0 / np.pi
                     myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                     P_aero_i = float(myout["P"][0])
@@ -576,7 +578,7 @@ class ComputePowerCurve(ExplicitComponent):
                     U_rated = U_rated  # Use guessed value earlier
                     pitch_rated = min_pitch
 
-                Omega_tsr_rated = U_rated * tsr / R_tip
+                Omega_tsr_rated = U_rated * tsr / Rtip_cone
                 Omega_rated = np.minimum(Omega_tsr_rated, Omega_max)
                 Omega_rpm_rated = Omega_rated * 30.0 / np.pi
                 myout, _ = self.ccblade.evaluate([U_rated], [Omega_rpm_rated], [pitch_rated], coefficients=True)
@@ -787,8 +789,8 @@ class ComputePowerCurve(ExplicitComponent):
                 Q[i_3:] = P[i_3:] / Omega[i_3:]
                 M[i_3:] = 0
                 pitch[i_3:] = 0
-                Cp[i_3:] = P[i_3:] / (0.5 * inputs["rho"][0]* np.pi * R_tip**2 * Uhub[i_3:] ** 3)
-                Cp_aero[i_3:] = P_aero[i_3:] / (0.5 * inputs["rho"][0] * np.pi * R_tip**2 * Uhub[i_3:] ** 3)
+                Cp[i_3:] = P[i_3:] / (0.5 * inputs["rho"][0]* np.pi * Rtip_cone**2 * Uhub[i_3:] ** 3)
+                Cp_aero[i_3:] = P_aero[i_3:] / (0.5 * inputs["rho"][0] * np.pi * Rtip_cone**2 * Uhub[i_3:] ** 3)
                 Ct_aero[i_3:] = 0
                 Cq_aero[i_3:] = 0
                 Cm_aero[i_3:] = 0
@@ -820,7 +822,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs["rated_efficiency"] = eff_rated
 
         self.ccblade.induction_inflow = True
-        tsr_vec = Omega_rpm / 30.0 * np.pi * R_tip / Uhub
+        tsr_vec = Omega_rpm / 30.0 * np.pi * Rtip_cone / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs["tsr_operational"][0]))
         ax_induct_rotor = np.zeros_like(Uhub)
         for i in range(len(Uhub)):

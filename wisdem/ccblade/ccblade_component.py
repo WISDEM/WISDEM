@@ -8,83 +8,6 @@ from wisdem.commonse.csystem import DirectionVector
 cosd = lambda x: np.cos(np.deg2rad(x))
 sind = lambda x: np.sin(np.deg2rad(x))
 
-
-class CCBladeGeometry(ExplicitComponent):
-    """
-    Compute some geometric properties of the turbine based on the tip radius,
-    precurve, presweep, and precone.
-
-    Parameters
-    ----------
-    Rtip : float
-        Rotor tip radius.
-    precurve_in : numpy array[n_span]
-        Prebend distribution along the span.
-    presweep_in : numpy array[n_span]
-        Presweep distribution along the span.
-    precone : float
-        Precone angle.
-
-    Returns
-    -------
-    R : float
-        Rotor radius.
-    diameter : float
-        Rotor diameter.
-    precurveTip : float
-        Precurve value at the rotor tip.
-    presweepTip : float
-        Presweep value at the rotor tip.
-    """
-
-    def initialize(self):
-        self.options.declare("n_span")
-
-    def setup(self):
-        n_span = self.options["n_span"]
-
-        self.add_input("Rtip", val=0.0, units="m")
-        self.add_input("precurve_in", val=np.zeros(n_span), units="m")
-        self.add_input("presweep_in", val=np.zeros(n_span), units="m")
-        self.add_input("precone", val=0.0, units="deg")
-
-        self.add_output("R", val=0.0, units="m")
-        self.add_output("diameter", val=0.0, units="m")
-        self.add_output("precurveTip", val=0.0, units="m")
-        self.add_output("presweepTip", val=0.0, units="m")
-
-        self.declare_partials("R", ["Rtip", "precone"])
-        self.declare_partials("diameter", ["Rtip", "precone"])
-
-        self.declare_partials(["R", "diameter"], "precurve_in", rows=[0], cols=[n_span - 1])
-
-        self.declare_partials("precurveTip", "precurve_in", val=1.0, rows=[0], cols=[n_span - 1])
-        self.declare_partials("presweepTip", "presweep_in", val=1.0, rows=[0], cols=[n_span - 1])
-
-    def compute(self, inputs, outputs):
-        Rtip = inputs["Rtip"][0]
-        precone = inputs["precone"][0]
-
-        outputs["precurveTip"] = inputs["precurve_in"][-1]
-        outputs["presweepTip"] = inputs["presweep_in"][-1]
-
-        outputs["R"] = Rtip * cosd(precone) + outputs["precurveTip"] * sind(precone)
-        outputs["diameter"] = outputs["R"] * 2
-
-    def compute_partials(self, inputs, J):
-        Rtip = inputs["Rtip"][0]
-        precone = inputs["precone"][0]
-        precurveTip = inputs["precurve_in"][-1]
-
-        J["R", "precurve_in"] = sind(precone)
-        J["R", "Rtip"] = cosd(precone)
-        J["R", "precone"] = (-Rtip * sind(precone) + precurveTip * cosd(precone)) * np.pi / 180.0
-
-        J["diameter", "precurve_in"] = 2.0 * J["R", "precurve_in"]
-        J["diameter", "Rtip"] = 2.0 * J["R", "Rtip"]
-        J["diameter", "precone"] = 2.0 * J["R", "precone"]
-
-
 class CCBladeLoads(ExplicitComponent):
     """
     Compute the aerodynamic forces along the blade span given a rotor speed,
@@ -114,7 +37,7 @@ class CCBladeLoads(ExplicitComponent):
     Rhub : float
         Hub radius.
     Rtip : float
-        Tip radius.
+        Distance between rotor center and blade tip along z axis of blade root c.s.
     hub_height : float
         Hub height.
     precone : float
@@ -439,7 +362,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
         self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
-        self.add_input("Rtip", val=0.0, units="m", desc="tip radius")
+        self.add_input("Rtip", val=0.0, units="m", desc="Distance between rotor center and blade tip along z axis of blade root c.s.")
         self.add_input(
             "rthick", val=np.zeros(n_span), desc="1D array of the relative thicknesses of the blade defined along span."
         )
@@ -580,7 +503,8 @@ class CCBladeTwist(ExplicitComponent):
             discrete_inputs["usecd"],
         )
 
-        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / inputs["r"][-1] * 30.0 / np.pi
+        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (
+            inputs["Rtip"][0] * np.cos(np.deg2rad(inputs["precone"][0]))) * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:

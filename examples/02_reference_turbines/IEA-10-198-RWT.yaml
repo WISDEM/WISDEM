@@ -1,5 +1,5 @@
 name: IEA-10.0-198-RWT
-assembly: {turbine_class: I, turbulence_class: A, drivetrain: direct_drive, rotor_orientation: Upwind, number_of_blades: 3, hub_height: 119.0, rated_power: 10000000.0, rotor_diameter: 199.38249593364753}
+assembly: {turbine_class: I, turbulence_class: A, drivetrain: direct_drive, rotor_orientation: Upwind, number_of_blades: 3, hub_height: 119.0, rated_power: 10000000.0, rotor_diameter: 197.82692681}
 components:
     blade:
         outer_shape_bem:
