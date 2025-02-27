@@ -6,7 +6,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 150.
-    rotor_diameter: 241.94
+    rotor_diameter: 241.35064632
     rated_power: 15.e+6
     lifetime: 25.0
 components:
