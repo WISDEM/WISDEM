@@ -397,7 +397,7 @@ class ComputePowerCurve(ExplicitComponent):
         P_rated = float(inputs["rated_power"][0])
         # Rtip is passed without cone to CCBlade, which multiplies it by the cos(cone) internally, 
         # but it is also multiplied by cos(cone) to be used correctly in this script
-        Rtip_cone = float(inputs["Rtip"][0]) * np.cos(float(inputs["precone"][0]))
+        Rtip_cone = float(inputs["Rtip"][0]) * np.cos(np.deg2rad(float(inputs["precone"][0])))
         tsr = float(inputs["tsr_operational"][0])
         driveType = discrete_inputs["drivetrainType"]
 

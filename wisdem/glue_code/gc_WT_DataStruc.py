@@ -3397,10 +3397,10 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
         )
         self.add_input(
-            "rotor_z",
+            "rotor_diameter",
             val=0.0,
             units="m",
-            desc="Distance between rotor center and blade tip along z axis.",
+            desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input(
             "r_thick",

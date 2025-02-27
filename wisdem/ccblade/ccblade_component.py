@@ -503,7 +503,8 @@ class CCBladeTwist(ExplicitComponent):
             discrete_inputs["usecd"],
         )
 
-        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (inputs["Rtip"][0] * np.cos(inputs["precone"][0])) * 30.0 / np.pi
+        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (
+            inputs["Rtip"][0] * np.cos(np.deg2rad(inputs["precone"][0]))) * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
