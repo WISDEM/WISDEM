@@ -1009,6 +1009,7 @@ class WindPark(om.Group):
                 # Inputs into LandBOSSE
                 self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
                 self.connect("costs.turbine_number", "landbosse.num_turbines")
+                self.connect("tcc.turbine_cost_kW", "landbosse.turbine_capex_kW")
                 self.connect("configuration.rated_power", "landbosse.turbine_rating_MW")
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
                 self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")
