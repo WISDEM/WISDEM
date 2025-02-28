@@ -42,6 +42,7 @@ class LandBOSSE(om.Group):
         self.set_input_defaults("nacelle_mass", 50e3, units="kg")
         self.set_input_defaults("tower_mass", 240e3, units="kg")
         self.set_input_defaults("turbine_rating_MW", 1500.0, units="kW")
+        self.set_input_defaults("turbine_capex_kW", 0.0, units="USD/kW")
 
         self.add_subsystem("landbosse", LandBOSSE_API(), promotes=["*"])
 
@@ -101,6 +102,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input("hub_height_meters", val=80, units="m", desc="Hub height m")
         self.add_input("rotor_diameter_m", val=77, units="m", desc="Rotor diameter m")
         self.add_input("wind_shear_exponent", val=0.2, desc="Wind shear exponent")
+        self.add_input("turbine_capex_kW", val=0.0, units="USD/kW", desc="Turbine capital cost")
         self.add_input("turbine_rating_MW", val=1.5, units="MW", desc="Turbine rating MW")
         self.add_input("fuel_cost_usd_per_gal", val=1.5, desc="Fuel cost USD/gal")
 
@@ -448,6 +450,9 @@ class LandBOSSE_API(om.ExplicitComponent):
             discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"][0]
         )
 
+        # Turbine Capex
+        incomplete_input_dict["turbine_capex"] = float(inputs["turbine_capex_kW"][0])
+        
         # Needed to avoid distributed wind keys
         incomplete_input_dict["road_distributed_wind"] = False
 
@@ -584,6 +589,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         installation_per_kW = 0.0
 
         for row in costs_by_module_type_operation:
+            if row["Module"] in ["TurbineCost"]:
+                continue
             bos_per_kw += row["Cost / kW"]
             bos_per_project += row["Cost / project"]
             if row["Module"] in ["ErectionCost", "FoundationCost"]:
