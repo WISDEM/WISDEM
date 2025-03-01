@@ -101,6 +101,11 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         # Up to max chord, chord must be increasing (positive diff), after max chord, decreasing (negative diff)
         slope_chord_constr[:id_max_chord] *= -1 
         outputs["slope_chord_constr"] = slope_chord_constr
+        # Similarly, define constraint to enforce monothonically decreasing and then increasing blade twist
+        id_min_twist = np.argmin(inputs["twist_opt"])
+        slope_twist_constr = np.diff(inputs["twist_opt"])
+        slope_twist_constr[id_min_twist:] *= -1 
+        outputs["slope_twist_constr"] = slope_twist_constr
 
 
 class ParametrizeBladeStruct(om.ExplicitComponent):

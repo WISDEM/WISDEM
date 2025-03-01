@@ -998,7 +998,13 @@ properties:
                                 unit: meter
                     chord_slope:
                         type: object
-                        description: Constraint to enforce monothonically decreasing chord after max chord
+                        description: Constraint to enforce monothonically increasing chord to max chord, and then decreasing afterwards
+                        default: {}
+                        properties:
+                            flag: *flag
+                    twist_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing twist to min twist, and then increasing afterwards
                         default: {}
                         properties:
                             flag: *flag
