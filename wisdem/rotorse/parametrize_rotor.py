@@ -82,7 +82,12 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         self.add_output(
             "slope_chord_constr",
             val=np.zeros(n_opt_chord-1),
-            desc="1D array of the difference between one chord point and the other. If larger than 0, chord is growing along span. It can be used as constraint to achieve monotically decreasing chord",
+            desc="1D array of the difference between one chord point and the other. It can be used as constraint to achieve monotically increasing and then decreasing chord",
+        )
+        self.add_output(
+            "slope_twist_constr",
+            val=np.zeros(n_opt_twist-1),
+            desc="1D array of the difference between one twist point and the other. It can be used as constraint to achieve monotically decreasing and then increasing chord",
         )
 
     def compute(self, inputs, outputs):
