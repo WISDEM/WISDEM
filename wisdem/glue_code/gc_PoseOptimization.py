@@ -161,16 +161,21 @@ class PoseOptimization(object):
                     wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(opt_options["tol"])
                     if "time_limit" in opt_options:
                         wt_opt.driver.opt_settings["Time limit"] = int(opt_options["time_limit"])
-                    wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
-                    wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
-                    if "hist_file_name" in opt_options:
-                        wt_opt.driver.hist_file = opt_options["hist_file_name"]
+                    if "major_step_limit" in opt_options:
+                        wt_opt.driver.opt_settings["Major step limit"] = float(opt_options["major_step_limit"])
+                    if "function_precision" in opt_options:
+                        wt_opt.driver.opt_settings["Function precision"] = float(opt_options["function_precision"])
                     if "verify_level" in opt_options:
                         wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
                     else:
                         wt_opt.driver.opt_settings["Verify level"] = -1
+                        
+                # below are pyoptsparse options
+                wt_opt.driver.options["output_dir"] = folder_output # Directory location of pyopt_sparse output files.Default is {prob_name}_out/reports. OpenMDAO overwrties SNOPT output file locations.
+                if "hist_file_name" in opt_options:
+                    wt_opt.driver.options["hist_file"] = os.path.join(folder_output, opt_options["hist_file_name"]) # File location for saving pyopt_sparse optimization history. Default is None for no output.
                 if "hotstart_file" in opt_options:
-                    wt_opt.driver.hotstart_file = opt_options["hotstart_file"]
+                    wt_opt.driver.options["hotstart_file"] = opt_options["hotstart_file"] # File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
 
             elif opt_options["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
