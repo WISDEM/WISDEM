@@ -1605,7 +1605,7 @@ properties:
                         type: integer
                         description: Max change during a line search in SNOPT
                         default: 2.0
-                        minimum: 0s
+                        minimum: 0
                     function_precision:
                         type: number
                         description: A measure of the relative accuracy with which the nonlinear functions can be computed for SNOPT. Usually set based on how many significant digits the function is known to be accurately computed to.
