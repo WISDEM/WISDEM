@@ -155,22 +155,27 @@ class RunPreComp(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_output(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIxx", val=np.zeros(n_span), units="N*m", desc="Coupled axial-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIyy", val=np.zeros(n_span), units="N*m", desc="Coupled axial-flap stiffness with respect to the XE-YE frame")
+        self.add_output("EIxx_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled lag-torsion stiffness with respect to the XE-YE frame")
+        self.add_output("EIyy_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-torsion stiffness with respect to the XE-YE frame ")
+        self.add_output("EA_GJ", val=np.zeros(n_span), units="N*m", desc="Coupled axial-torsion stiffness")
         self.add_output(
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsion stiffness",
         )
-        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
+        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="Section mass per unit length")
         self.add_output("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
         self.add_output(
             "Tw_iner",
@@ -762,6 +767,11 @@ class RunPreComp(ExplicitComponent):
             GJ,
             EA,
             EIxy,
+            EA_EIxx,
+            EA_EIyy,
+            EIxx_GJ,
+            EIyy_GJ,
+            EA_GJ,
             x_ec,
             y_ec,
             rhoA,
@@ -819,6 +829,11 @@ class RunPreComp(ExplicitComponent):
         outputs["GJ"] = GJ
         outputs["EA"] = EA
         outputs["EIxy"] = EIxy
+        outputs["EA_EIxx"] = EA_EIxx
+        outputs["EA_EIyy"] = EA_EIyy
+        outputs["EIxx_GJ"] = EIxx_GJ
+        outputs["EIyy_GJ"] = EIyy_GJ
+        outputs["EA_GJ"] = EA_GJ
         outputs["x_ec"] = x_ec
         outputs["y_ec"] = y_ec
         outputs["rhoA"] = rhoA_joint
@@ -887,6 +902,11 @@ class RotorElasticity(Group):
             "EIyy",
             "EIxy",
             "GJ",
+            "EA_EIxx"
+            "EA_EIyy"
+            "EIxx_GJ"
+            "EIyy_GJ"
+            "EA_GJ"        
             "rhoA",
             "rhoJ",
             "x_sc",

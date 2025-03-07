@@ -113,6 +113,11 @@ class PreComp:
         beam_EIyy = np.zeros(nsec)
         beam_EIxy = np.zeros(nsec)
         beam_GJ = np.zeros(nsec)
+        beam_EA_EIxx = np.zeros(nsec)
+        beam_EA_EIyy = np.zeros(nsec)
+        beam_EIxx_GJ = np.zeros(nsec)
+        beam_EIyy_GJ = np.zeros(nsec)
+        beam_EA_GJ = np.zeros(nsec)
         beam_rhoA = np.zeros(nsec)
         beam_A = np.zeros(nsec)
         beam_rhoJ = np.zeros(nsec)
@@ -252,23 +257,28 @@ class PreComp:
                 mat_idxW,
             )
             
-            beam_EIxx[i] = eilbar  # EIedge
-            beam_EIyy[i] = eifbar  # EIflat
-            beam_GJ[i] = gjbar
-            beam_EA[i] = eabar
-            beam_EIxy[i] = eiflbar
-            beam_x_sc[i] = z_sc
-            beam_y_sc[i] = y_sc
-            beam_x_tc[i] = ztc_ref
-            beam_y_tc[i] = ytc_ref
-            beam_rhoA[i] = mass
-            beam_A[i] = area
-            beam_Tw_iner[i] = tw_iner
-            beam_x_cg[i] = zcm_ref
-            beam_y_cg[i] = ycm_ref
+            beam_EIxx[i] = eilbar  # EI_lag, Section lag (edgewise) bending stiffness about the XE axis (Nm2)
+            beam_EIyy[i] = eifbar  # EI_flap, Section flap bending stiffness about the YE axis (Nm2)
+            beam_GJ[i] = gjbar #  Section torsion stiffness (Nm2)
+            beam_EA[i] = eabar # Section axial stiffness (N)
+            beam_EIxy[i] = eiflbar # Coupled flap-lag stiffness with respect to the XE-YE frame (Nm2)
+            beam_EA_EIxx[i] = slbar # Coupled axial-lag stiffness with respect to the XE-YE frame (Nm.)
+            beam_EA_EIyy[i] = sfbar # Coupled axial-flap stiffness with respect to the XE-YE frame (Nm)
+            beam_EIxx_GJ[i] = sltbar # Coupled lag-torsion stiffness with respect to the XE-YE frame (Nm2)
+            beam_EIyy_GJ[i] = sftbar # Coupled flap-torsion stiffness with respect to the XE-YE frame (Nm2)
+            beam_EA_GJ[i] = satbar # Coupled axial-torsion stiffness (Nm)
+            beam_x_sc[i] = z_sc # X-coordinate of the shear-center offset with respect to the ref axes (m)
+            beam_y_sc[i] = y_sc # Chordwise offset of the section shear-center with respect to the reference frame, XR-YR (m)
+            beam_x_tc[i] = ztc_ref # X-coordinate of the tension-center offset with respect to the XR-YR axes (m)
+            beam_y_tc[i] = ytc_ref # Chordwise offset of the section tension-center with respect to the XR-YR axes (m)
+            beam_rhoA[i] = mass # Section mass per unit length (kg/m)
+            beam_A[i] = area # Cross-Sectional area (m)
+            beam_flap_iner[i] = iflap_eta # Section flap inertia about the YG axis per unit length (kg-m)
+            beam_edge_iner[i] = ilag_zeta # Section lag inertia about the XG axis per unit length (kg-m)
+            beam_Tw_iner[i] = tw_iner # Orientation of the section principal inertia axes with respect the blade reference plane, theta (deg)
+            beam_x_cg[i] = zcm_ref # X-coordinate of the center-of-mass offset with respect to the XR-YR axes (m)
+            beam_y_cg[i] = ycm_ref # Chordwise offset of the section center of mass with respect to the XR-YR axes (m)
 
-            beam_flap_iner[i] = iflap_eta
-            beam_edge_iner[i] = ilag_zeta
 
         beam_rhoJ = beam_flap_iner + beam_edge_iner  # perpendicular axis theorem
         beam_x_ec = beam_x_tc - beam_x_sc
@@ -283,6 +293,11 @@ class PreComp:
             beam_GJ,
             beam_EA,
             beam_EIxy,
+            beam_EA_EIxx,
+            beam_EA_EIyy,
+            beam_EIxx_GJ,
+            beam_EIyy_GJ,
+            beam_EA_GJ,
             beam_x_ec,
             beam_y_ec,
             beam_rhoA,
