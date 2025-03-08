@@ -281,8 +281,6 @@ class PreComp:
 
 
         beam_rhoJ = beam_flap_iner + beam_edge_iner  # perpendicular axis theorem
-        beam_x_ec = beam_x_tc - beam_x_sc
-        beam_y_ec = beam_y_tc - beam_y_sc
 
         self.x_ec_nose = beam_y_tc + self.leLoc * self.chord
         self.y_ec_nose = beam_x_tc  # switch b.c of coordinate system used
@@ -298,8 +296,6 @@ class PreComp:
             beam_EIxx_GJ,
             beam_EIyy_GJ,
             beam_EA_GJ,
-            beam_x_ec,
-            beam_y_ec,
             beam_rhoA,
             beam_A,
             beam_rhoJ,

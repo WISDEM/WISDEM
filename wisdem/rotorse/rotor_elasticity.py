@@ -184,18 +184,6 @@ class RunPreComp(ExplicitComponent):
             desc="Orientation of the section principal inertia axes with respect the blade reference plane",
         )
         self.add_output(
-            "x_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)",
-        )
-        self.add_output(
-            "y_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="y-distance to elastic center from point about which above structural properties are computed",
-        )
-        self.add_output(
             "x_tc",
             val=np.zeros(n_span),
             units="m",
@@ -772,8 +760,6 @@ class RunPreComp(ExplicitComponent):
             EIxx_GJ,
             EIyy_GJ,
             EA_GJ,
-            x_ec,
-            y_ec,
             rhoA,
             _,
             rhoJ,
@@ -834,8 +820,6 @@ class RunPreComp(ExplicitComponent):
         outputs["EIxx_GJ"] = EIxx_GJ
         outputs["EIyy_GJ"] = EIyy_GJ
         outputs["EA_GJ"] = EA_GJ
-        outputs["x_ec"] = x_ec
-        outputs["y_ec"] = y_ec
         outputs["rhoA"] = rhoA_joint
         outputs["A"] = area
         outputs["rhoJ"] = rhoJ
@@ -901,12 +885,7 @@ class RotorElasticity(Group):
             "EIxx",
             "EIyy",
             "EIxy",
-            "GJ",
-            "EA_EIxx"
-            "EA_EIyy"
-            "EIxx_GJ"
-            "EIyy_GJ"
-            "EA_GJ"        
+            "GJ",       
             "rhoA",
             "rhoJ",
             "x_sc",
@@ -923,8 +902,6 @@ class RotorElasticity(Group):
                 "Tw_iner",
                 "precurve",
                 "presweep",
-                "x_ec",
-                "y_ec",
                 "x_tc",
                 "y_tc",
                 "x_cg",
