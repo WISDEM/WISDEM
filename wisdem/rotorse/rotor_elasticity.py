@@ -6,7 +6,6 @@ from scipy.interpolate import PchipInterpolator
 
 from wisdem.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
-from wisdem.rotorse.rail_transport import RailTransport
 import logging
 logger = logging.getLogger("wisdem/weis")
 
@@ -925,9 +924,3 @@ class RotorElasticity(Group):
                 "I_all_blades",
             ],
         )
-        # Check rail transportabiliy
-        if (
-            modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-            or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-        ):
-            self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)

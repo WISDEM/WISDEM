@@ -210,15 +210,15 @@ class RunFrame3DD(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_input(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-axis of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
         self.add_input(
             "GJ",
             val=np.zeros(n_span),
