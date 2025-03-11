@@ -172,7 +172,7 @@ class RunPreComp(ExplicitComponent):
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="Section torsion stiffness",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
         self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="Section mass per unit length")
         self.add_output("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")

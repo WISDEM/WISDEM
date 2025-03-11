@@ -223,7 +223,7 @@ class RunFrame3DD(ExplicitComponent):
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
         self.add_input("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
         self.add_input("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")

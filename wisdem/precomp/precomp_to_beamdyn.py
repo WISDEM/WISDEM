@@ -71,7 +71,9 @@ def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ,
     A_est_xx = EA / E_est_xx
     A_est_yy = EA / E_est_yy
     
-    # Stiffness matrix built at the elastic center by PreComp
+    # Stiffness matrix built at the elastic center by PreComp. 
+    # Note that shear terms A_est_xx and A_est_yy are flipped 
+    # as they match better with the real values from ANBA
     K_sc = np.array([
         [G_est*A_est_yy  , 0.          , 0.      , 0.      , 0.      , 0.     ],
         [0.           , G_est*A_est_xx , 0.      , 0.      , 0.      , 0.     ],
