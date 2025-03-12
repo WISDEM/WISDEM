@@ -81,6 +81,14 @@ You are now ready to run WISDEM!  In the GUI, click on `Run WISDEM/WEIS` underne
 
 Depending on whether you are running a design optimization or not, WISDEM may take a while to run.  The GUI will become active again once the run is complete.  Output files can be found in the `Working directory`.
 
+Plotting Outputs in the GUI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+WISDEM outputs results in a variety of formats including `xlsx`, `csv`, python pickle (`pkl`), Numpy archives (`npz`), and Matlab archives (`mat`).  The next section details working with those files directly.  The GUI also provides for simple output plotting.  Select the `pkl` or `csv` or `xlsx` file from the selection dialog and the GUI will populate the available variables for plotting.  Select the x-axis variable first and then the GUI will reduce the y-axis options to those variables of the same length.  For now, only one line can be displayed at a time for quick interrogation. 
+
+.. figure:: /images/yaml/wisdem_gui_step_05.png
+
+
 Working with Outputs Manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
