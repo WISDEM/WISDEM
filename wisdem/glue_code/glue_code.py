@@ -126,7 +126,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
-            self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -189,12 +189,6 @@ class WT_RNTA(om.Group):
             self.connect("materials.nu", "rotorse.re.precomp.nu")
             self.connect("materials.rho", "rotorse.re.precomp.rho")
 
-            # Conncetions to rail transport module
-            if (
-                modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-                or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-            ):
-                self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
             # Connections from blade struct parametrization to rotor load anlysis
             spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
             self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
@@ -767,7 +761,7 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
-            self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "tcons.Rtip")
             self.connect("blade.high_level_blade_props.blade_ref_axis", "tcons.ref_axis_blade")
             self.connect("hub.cone", "tcons.precone")
             self.connect("nacelle.uptilt", "tcons.tilt")
@@ -1009,6 +1003,7 @@ class WindPark(om.Group):
                 # Inputs into LandBOSSE
                 self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
                 self.connect("costs.turbine_number", "landbosse.num_turbines")
+                self.connect("tcc.turbine_cost_kW", "landbosse.turbine_capex_kW")
                 self.connect("configuration.rated_power", "landbosse.turbine_rating_MW")
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
                 self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")

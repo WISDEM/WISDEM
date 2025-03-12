@@ -87,6 +87,7 @@ class OpenMDAODataframeCache:
         for sheet_name in xlsx.sheet_names:
             sheets_dict[sheet_name].dropna(inplace=True, how='all')
         cls._cache[xlsx_basename] = sheets_dict
+        xlsx.close()
         return cls.copy_dataframes(sheets_dict)
 
     @classmethod

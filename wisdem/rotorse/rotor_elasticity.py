@@ -6,7 +6,6 @@ from scipy.interpolate import PchipInterpolator
 
 from wisdem.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
-from wisdem.rotorse.rail_transport import RailTransport
 import logging
 logger = logging.getLogger("wisdem/weis")
 
@@ -155,40 +154,33 @@ class RunPreComp(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_output(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIxx", val=np.zeros(n_span), units="N*m", desc="Coupled axial-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIyy", val=np.zeros(n_span), units="N*m", desc="Coupled axial-flap stiffness with respect to the XE-YE frame")
+        self.add_output("EIxx_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled lag-torsion stiffness with respect to the XE-YE frame")
+        self.add_output("EIyy_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-torsion stiffness with respect to the XE-YE frame ")
+        self.add_output("EA_GJ", val=np.zeros(n_span), units="N*m", desc="Coupled axial-torsion stiffness")
         self.add_output(
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
-        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
+        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="Section mass per unit length")
         self.add_output("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
         self.add_output(
             "Tw_iner",
             val=np.zeros(n_span),
             units="deg",
             desc="Orientation of the section principal inertia axes with respect the blade reference plane",
-        )
-        self.add_output(
-            "x_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)",
-        )
-        self.add_output(
-            "y_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="y-distance to elastic center from point about which above structural properties are computed",
         )
         self.add_output(
             "x_tc",
@@ -762,8 +754,11 @@ class RunPreComp(ExplicitComponent):
             GJ,
             EA,
             EIxy,
-            x_ec,
-            y_ec,
+            EA_EIxx,
+            EA_EIyy,
+            EIxx_GJ,
+            EIyy_GJ,
+            EA_GJ,
             rhoA,
             _,
             rhoJ,
@@ -819,8 +814,11 @@ class RunPreComp(ExplicitComponent):
         outputs["GJ"] = GJ
         outputs["EA"] = EA
         outputs["EIxy"] = EIxy
-        outputs["x_ec"] = x_ec
-        outputs["y_ec"] = y_ec
+        outputs["EA_EIxx"] = EA_EIxx
+        outputs["EA_EIyy"] = EA_EIyy
+        outputs["EIxx_GJ"] = EIxx_GJ
+        outputs["EIyy_GJ"] = EIyy_GJ
+        outputs["EA_GJ"] = EA_GJ
         outputs["rhoA"] = rhoA_joint
         outputs["A"] = area
         outputs["rhoJ"] = rhoJ
@@ -886,7 +884,7 @@ class RotorElasticity(Group):
             "EIxx",
             "EIyy",
             "EIxy",
-            "GJ",
+            "GJ",       
             "rhoA",
             "rhoJ",
             "x_sc",
@@ -903,8 +901,6 @@ class RotorElasticity(Group):
                 "Tw_iner",
                 "precurve",
                 "presweep",
-                "x_ec",
-                "y_ec",
                 "x_tc",
                 "y_tc",
                 "x_cg",
@@ -928,9 +924,3 @@ class RotorElasticity(Group):
                 "I_all_blades",
             ],
         )
-        # Check rail transportabiliy
-        if (
-            modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-            or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-        ):
-            self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)

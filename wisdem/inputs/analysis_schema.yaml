@@ -998,7 +998,13 @@ properties:
                                 unit: meter
                     chord_slope:
                         type: object
-                        description: Constraint to enforce monothonically decreasing chord after max chord
+                        description: Constraint to enforce monothonically increasing chord to max chord, and then decreasing afterwards
+                        default: {}
+                        properties:
+                            flag: *flag
+                    twist_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing twist to min twist, and then increasing afterwards
                         default: {}
                         properties:
                             flag: *flag
@@ -1595,12 +1601,30 @@ properties:
                         description: Max seconds of major iteration runtime for SNOPT
                         default: 0
                         minimum: 0
+                    major_step_limit:
+                        type: integer
+                        description: Max change during a line search in SNOPT
+                        default: 2.0
+                        minimum: 0
+                    function_precision:
+                        type: number
+                        description: A measure of the relative accuracy with which the nonlinear functions can be computed for SNOPT. Usually set based on how many significant digits the function is known to be accurately computed to.
+                        default: 3.7e-11
+                        minimum: 0
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
                         default: 100000
                         minimum: 0
                         maximum: 100000000
+                    hist_file:
+                        type: string
+                        description: File name (saved to the output folder) for saving pyopt_sparse optimization history. Default is None for no output.
+                        default: 'None'
+                    hotstart_file:
+                        type: string
+                        description: File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
+                        default: 'None'
                     solver:
                         type: string
                         description: Optimization driver.
