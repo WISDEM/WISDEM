@@ -576,7 +576,7 @@ class GUI_Master(object):
         self._set_file_field(None, {"file_path_name": temp_anal}, "analysis_field")
 
         # OUTPUT WINDOW
-        with dpg.window(width=1000, height=800, on_close=self._on_demo_close, pos=(750, 0), label='Output'):
+        with dpg.window(width=900, height=800, on_close=self._on_demo_close, pos=(750, 0), label='Output'):
             
             with dpg.menu_bar():
                 with dpg.menu(label="Load"):
@@ -607,7 +607,7 @@ class GUI_Master(object):
 def run():
     if GUI_AVAIL:
         dpg.create_context()
-        dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=1750, height=800)
+        dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=1650, height=800)
 
         mygui = GUI_Master()
         mygui.show_gui()
