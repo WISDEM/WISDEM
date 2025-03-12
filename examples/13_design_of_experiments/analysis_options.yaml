@@ -65,93 +65,18 @@ design_variables:
       lower_bound: 4.e-3
       upper_bound: 2.e-1
 
-merit_figure: 'blade_tip_deflection'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
-
-constraints:
-  blade:
-    strains_spar_cap_ss:
-      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
-      max:  3500.e-6  # Value of maximum strains [-]
-    strains_spar_cap_ps:
-      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
-      max:  3500.e-6  # Value of maximum strains [-]
-    tip_deflection:
-      flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
-      margin: 1.4175
-    rail_transport:
-      flag: False
-      8_axle: False
-      4_axle: False
-    stall:
-      flag: False     # Constraint on minimum stall margin
-      margin: 0.05233 # Value of minimum stall margin in [rad]
-    chord:
-      flag: False # Constraint on maximum chord
-      max: 4.75   # Value of maximum chord in [m]
-    frequency:
-      flap_above_3P: False
-      edge_above_3P: False
-      flap_below_3P: False
-      edge_below_3P: False
-    moment_coefficient:
-      flag: False
-      max: 0.15 #0.16333
-      min: 0.13
-    match_cl_cd:
-      flag_cl: False
-      flag_cd: False
-      filename: /path2file.txt
-    match_L_D:
-      flag_L: False
-      flag_D: False
-      filename: /path2file.txt
-  tower:
-    height_constraint:
-      flag: False
-      lower_bound: 1.e-2
-      upper_bound: 1.e-2
-    stress:
-      flag: False
-    global_buckling:
-      flag: False
-    shell_buckling:
-      flag: False
-    constr_d_to_t:
-      flag: False
-    constr_taper:
-      flag: False
-    slope:
-      flag: False
-    frequency_1:
-      flag: False
-      lower_bound: 0.13
-      upper_bound: 0.40
-  control:
-    flap_control:
-      flag: False
-      min: 0.0
-      max: 0.1
-    rotor_overspeed:
-      flag: False
-      min: 0.0
-      max: 0.2
+merit_figure: 'blade_tip_deflection'
 
 driver:
   optimization:
     flag: False           # Flag to enable optimization
-    tol: 1.e-2            # Optimality tolerance
-    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
-    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 100         # Maximum number of iterations (SLSQP)
-    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-3      # Step size for finite differencing
-    form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: True            # Flag to enable design of experiments
-    run_parallel: False    # Flag to run using parallel processing
-    generator: Uniform    # Type of input generator. (Uniform)
-    num_samples: 5        # number of samples for (Uniform only)
+    run_parallel: False   # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator: [Uniform, FullFact, PlackettBurman, BoxBehnken, LatinHypercube]
+    num_samples: 5        # number of samples (Uniform and LatinHypercube only)
+    seed: 12345           # random number generator seed (Uniform and LatinHypercube only)
 
 recorder:
-    flag: False             # Flag to activate OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder

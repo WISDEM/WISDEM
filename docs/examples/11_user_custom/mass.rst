@@ -19,7 +19,7 @@ There are a number of user options available in the yaml-input file that give th
 - Use of "outfitting factors" that estimates otherwise unresolved mass
 
 User mass overrides
---------------------
+++++++++++++++++++++
 
 Internally, WISDEM computes its mass estimate using its standard approach, then adjusts both the mass and moment of inertia to match the specified user value.
 
@@ -72,13 +72,14 @@ The yaml code below shows the user mass variable names (acknowledging that no tu
 
 
 Adjustment of material properties
-----------------------------------
+++++++++++++++++++++++++++++++++++++++++
 
 Another approach would be to edit the material properties to arrive at the overall desired mass value.  This is applicable to the blade, drivetrain, and support structure components that rely on the material properties defined in the ``materials`` section of the geometry yaml-file.  For instance, if a user wanted to adjust the mass properties for a monopile, a new material could be created, such as "monopile-steel", that has a different density than what might be found in a material property datasheet.  Adjustment of material density would also impact moment of inertia calculations in a similar proportion.
 
 
 Outfitting factors
---------------------
+++++++++++++++++++++++++++++++++++++++++
+
 
 Some structural support components offer an "outfitting factor" to capture mass elements that are not described in the geometry-yaml parameterization or estimated separately by WISDEM.  For a wind turbine tower, this includes lights, platforms, elevators or ladders, cabling, etc.  For a monopile or floating platform member, this might include internal scantling, bulkheads, water ballast management systems, etc.  The outfitting factors acts as a multiplier on the mass calculation along the length of the component.  The outfitting factor usage is:
 
