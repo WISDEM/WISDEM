@@ -84,7 +84,7 @@ Depending on whether you are running a design optimization or not, WISDEM may ta
 Plotting Outputs in the GUI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-WISDEM outputs results in a variety of formats including `xlsx`, `csv`, python pickle (`pkl`), Numpy archives (`npz`), and Matlab archives (`mat`).  The next section details working with those files directly.  The GUI also provides for simple output plotting.  Select the `pkl` or `csv` or `xlsx` file from the selection dialog and the GUI will populate the available variables for plotting.  Select the x-axis variable first and then the GUI will reduce the y-axis options to those variables of the same length.  Click on `Line Plot` to display the plot.  For now, only one line can be displayed at a time for quick interrogation. 
+WISDEM outputs results in a variety of formats including `xlsx`, `csv`, python pickle (`pkl`), Numpy archives (`npz`), and Matlab archives (`mat`).  The next section details working with those files directly.  The GUI also provides for simple output plotting.  Select the `pkl` or `csv` or `xlsx` file from the selection dialog and the GUI will populate the available variables for plotting.  Select the x-axis variable first and then the GUI will reduce the y-axis options to those variables of the same length.  Click on `Line Plot` to display the plot.  For now, only one line can be displayed at a time for quick interrogation. Zoom and pan features are available through mouse actions on the plot or axis area.
 
 .. figure:: /images/yaml/wisdem_gui_output.png
 
