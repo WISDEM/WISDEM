@@ -1038,10 +1038,18 @@ class WindTurbineOntologyPython(object):
             K = []
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 Ki = np.zeros(21)
-                Ki[11] = wt_opt["rotorse.EA"][i]
-                Ki[15] = wt_opt["rotorse.EIxx"][i]
-                Ki[18] = wt_opt["rotorse.EIyy"][i]
-                Ki[20] = wt_opt["rotorse.GJ"][i]
+                Ki[0] = wt_opt["rotorse.re.generate_KI.K"][i,0,0]
+                Ki[6] = wt_opt["rotorse.re.generate_KI.K"][i,1,1]
+                Ki[11] = wt_opt["rotorse.re.generate_KI.K"][i,2,2]
+                Ki[12] = wt_opt["rotorse.re.generate_KI.K"][i,2,3]
+                Ki[13] = wt_opt["rotorse.re.generate_KI.K"][i,2,4]
+                Ki[14] = wt_opt["rotorse.re.generate_KI.K"][i,2,5]
+                Ki[15] = wt_opt["rotorse.re.generate_KI.K"][i,3,3]
+                Ki[16] = wt_opt["rotorse.re.generate_KI.K"][i,3,4]
+                Ki[17] = wt_opt["rotorse.re.generate_KI.K"][i,3,5]
+                Ki[18] = wt_opt["rotorse.re.generate_KI.K"][i,4,4]
+                Ki[19] = wt_opt["rotorse.re.generate_KI.K"][i,4,5]
+                Ki[20] = wt_opt["rotorse.re.generate_KI.K"][i,5,5]
                 K.append(Ki.tolist())
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"]["values"] = K
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"] = {}
@@ -1051,17 +1059,17 @@ class WindTurbineOntologyPython(object):
             I = []
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 Ii = np.zeros(21)
-                Ii[0] = wt_opt["rotorse.rhoA"][i]
-                Ii[5] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
-                Ii[6] = wt_opt["rotorse.rhoA"][i]
-                Ii[10] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
-                Ii[11] = wt_opt["rotorse.rhoA"][i]
-                Ii[12] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
-                Ii[13] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
-                Ii[15] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                # Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                Ii[18] = wt_opt["rotorse.re.precomp.flap_iner"][i]
-                Ii[20] = wt_opt["rotorse.rhoJ"][i]
+                Ii[0] = wt_opt["rotorse.re.generate_KI.I"][i,0,0]
+                Ii[5] = wt_opt["rotorse.re.generate_KI.I"][i,0,5]
+                Ii[6] = wt_opt["rotorse.re.generate_KI.I"][i,1,1]
+                Ii[10] = wt_opt["rotorse.re.generate_KI.I"][i,1,5]
+                Ii[11] = wt_opt["rotorse.re.generate_KI.I"][i,2,2]
+                Ii[12] = wt_opt["rotorse.re.generate_KI.I"][i,2,3]
+                Ii[13] = wt_opt["rotorse.re.generate_KI.I"][i,2,4]
+                Ii[15] = wt_opt["rotorse.re.generate_KI.I"][i,3,3]
+                Ii[16] = wt_opt["rotorse.re.generate_KI.I"][i,3,4]
+                Ii[18] = wt_opt["rotorse.re.generate_KI.I"][i,4,4]
+                Ii[20] = wt_opt["rotorse.re.generate_KI.I"][i,5,5]
                 I.append(Ii.tolist())
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"]["values"] = I
 

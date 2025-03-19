@@ -538,6 +538,10 @@ class FloatingSystem(om.Group):
 
     def setup(self):
         opt = self.options["modeling_options"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         self.add_subsystem("plat", PlatformFrame(options=opt), promotes=["*"])
         self.add_subsystem("mux", PlatformTurbineSystem(options=opt), promotes=["*"])
+
+        for k in range(n_member):
+            self.set_input_defaults(f"member{k}:nodes_xyz", val=NULL * np.ones((MEMMAX, 3)), units="m")
