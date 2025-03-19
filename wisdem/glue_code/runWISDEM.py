@@ -86,7 +86,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     if modeling_options["General"]["verbosity"] == False:
         wt_opt.set_solver_print(level=-1)
 
-    # Setup openmdao problem
+    # Set working directory and setup openmdao problem
+    wt_opt.options['work_dir'] = folder_output
     wt_opt.setup()
 
     # Load initial wind turbine data from wt_initial to the openmdao problem
