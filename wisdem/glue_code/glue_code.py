@@ -789,6 +789,7 @@ class WT_RNTA(om.Group):
             self.connect("drivese.lss_mass", "tcc.lss_mass")
             self.connect("drivese.mean_bearing_mass", "tcc.main_bearing_mass")
             self.connect("drivese.gearbox_mass", "tcc.gearbox_mass")
+            self.connect("nacelle.gearbox_torque_density", "tcc.gearbox_torque_density")
             self.connect("drivese.hss_mass", "tcc.hss_mass")
             self.connect("drivese.brake_mass", "tcc.brake_mass")
             self.connect("drivese.generator_mass", "tcc.generator_mass")
