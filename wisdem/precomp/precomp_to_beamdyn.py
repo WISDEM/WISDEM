@@ -32,7 +32,7 @@ class TransformCrossSectionMatrix(object):
         M3 = R @ M2 @ R.T
         return M3
 
-def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, edge_iner, flap_iner, x_sc, y_sc, kxs = 1., kys = 0.6):
+def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, edge_iner, flap_iner, x_tc, y_tc, kxs = 1., kys = 0.6):
     """
     Given PreComp cross-sectional stiffness inputs, 
     returns 6x6 stiffness matrix at the x=0 y=0
@@ -60,8 +60,8 @@ def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ,
         - GJ: torsional stiffness
         - rhoJ: polar moment of inertia, used to estimate shear stiffness terms
         - A: cross sectional area, used to estimate shear stiffness terms
-        - x_sc: x coordinate of shear center
-        - y_sc: y coordinate of shear center
+        - x_tc: x coordinate of tension (elastic) center
+        - y_tc: y coordinate of tension (elastic) center
         - kxs: stiffness shear along x (default = 1.)
         - kys: stiffness shear along y (default = 0.6)
     """
@@ -85,7 +85,7 @@ def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ,
     
     # Translate matrix back to origin
     transform = TransformCrossSectionMatrix()
-    T = transform.CrossSectionTranslationMatrix(-x_sc, -y_sc)
+    T = transform.CrossSectionTranslationMatrix(-x_tc, -y_tc)
     K_ref = T.T @ K_sc @ T 
 
     return K_ref
