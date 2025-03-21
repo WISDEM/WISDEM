@@ -1931,6 +1931,7 @@ properties:
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
+                        default: []
                         items:
                             type: object
                             required:

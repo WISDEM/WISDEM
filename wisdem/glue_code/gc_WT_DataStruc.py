@@ -2391,7 +2391,8 @@ class Floating(om.Group):
         jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
         # Rigid body IVCs
-        rb_ivc = self.add_subsystem("rigid_bodies", om.IndepVarComp(), promotes=["*"])
+        if floating_init_options['rigid_bodies']['n_bodies'] > 0:
+            rb_ivc = self.add_subsystem("rigid_bodies", om.IndepVarComp(), promotes=["*"])
         for k in range(floating_init_options['rigid_bodies']['n_bodies']):
             rb_ivc.add_output(f"rigid_body_{k}_node", val=np.zeros(3), units="m", desc="location of rigid body")
             rb_ivc.add_output(f"rigid_body_{k}_mass", val=0.0, units="kg", desc="point mass of rigid body")
