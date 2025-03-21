@@ -546,7 +546,7 @@ class WindTurbineOntologyPython(object):
             ]
             self.modeling_options["mooring"]["n_nodes"] = n_nodes
             self.modeling_options["mooring"]["n_lines"] = n_lines
-            self.modeling_options["mooring"]["n_anchors"] = n_lines
+            self.modeling_options["mooring"]["n_anchors"] = np.sum(np.array([n['node_type'] == 'fixed' for n in self.wt_init['components']['mooring']['nodes']]))
             self.modeling_options["mooring"]["n_line_types"] = n_line_types
             self.modeling_options["mooring"]["n_anchor_types"] = n_anchor_types
             self.modeling_options["mooring"]["node_type"] = [""] * n_nodes

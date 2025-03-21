@@ -2877,6 +2877,7 @@ class MooringJoints(om.ExplicitComponent):
         n_nodes = mooring_init_options["n_nodes"]
         n_attach = mooring_init_options["n_attach"]
         n_lines = mooring_init_options["n_lines"]
+        n_anchors = mooring_init_options["n_anchors"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
         self.add_input("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
@@ -2886,8 +2887,8 @@ class MooringJoints(om.ExplicitComponent):
         self.add_output("fairlead_nodes", val=np.zeros((n_attach, 3)), units="m")
         self.add_output("fairlead", val=np.zeros(n_lines), units="m")
         self.add_output("fairlead_radius", val=np.zeros(n_attach), units="m")
-        self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")
-        self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
+        self.add_output("anchor_nodes", val=np.zeros((n_anchors, 3)), units="m")
+        self.add_output("anchor_radius", val=np.zeros(n_anchors), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         mooring_init_options = self.options["options"]["mooring"]
