@@ -1039,7 +1039,9 @@ class WindTurbineOntologyPython(object):
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 Ki = np.zeros(21)
                 Ki[0] = wt_opt["rotorse.re.generate_KI.K"][i,0,0]
+                Ki[5] = wt_opt["rotorse.re.generate_KI.K"][i,0,5]
                 Ki[6] = wt_opt["rotorse.re.generate_KI.K"][i,1,1]
+                Ki[10] = wt_opt["rotorse.re.generate_KI.K"][i,1,5]
                 Ki[11] = wt_opt["rotorse.re.generate_KI.K"][i,2,2]
                 Ki[12] = wt_opt["rotorse.re.generate_KI.K"][i,2,3]
                 Ki[13] = wt_opt["rotorse.re.generate_KI.K"][i,2,4]
