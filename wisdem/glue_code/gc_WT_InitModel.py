@@ -539,13 +539,13 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
 
         # Fatigue params
-        if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+        if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
             wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
 
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+        elif layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
@@ -1179,9 +1179,14 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         usr_defined_flag = {}
         for coeff in usr_defined_coeffs:
             usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
-            coeff_length = len(floating["members"][i][coeff])
-            if usr_defined_flag[coeff]:
-                assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length. Please correct."
+            if isinstance(floating["members"][i][coeff], list):
+                coeff_length = len(floating["members"][i][coeff])
+                if usr_defined_flag[coeff]:
+                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+            else: 
+            # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
+                floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
+
 
         diameter_assigned = False
         for j, kgrp in enumerate(float_opt["members"]["groups"]):

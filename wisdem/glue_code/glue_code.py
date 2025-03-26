@@ -152,7 +152,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
-            self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -181,29 +181,10 @@ class WT_RNTA(om.Group):
             self.connect("env.shear_exp", "rotorse.shearExp")
             self.connect(
                 "configuration.n_blades",
-                ["rotorse.nBlades", "rotorse.re.total_blade_properties.n_blades"],
+                ["rotorse.nBlades", "rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
             )
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
-
-            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
-                # constr is not available right now if using user defined blade elastic properties
-                # TODO YL: move it back when constr is available
-                self.connect(
-                "configuration.n_blades",
-                "rotorse.rs.constr.blade_number",
-                )
-                self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
-
-                # Connections to rotor elastic and frequency analysis
-                self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
-                self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
-
-            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
-            elif not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
-                # for user defined blade elastic properties, no cost or split components
-                self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
-
+            self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
             # Connections to RotorPower
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
@@ -221,9 +202,17 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.generator_efficiency", "rotorse.rp.powercurve.generator_efficiency")
             self.connect("env.weibull_k", "rotorse.rp.cdf.k")
             self.connect("configuration.turb_class", "rotorse.rp.gust.turbulence_class")
-            
 
+            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
+            elif not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
+
+            # Connections to rotor elastic and frequency analysis
             if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
+                self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
+
                 self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.re.precomp.layer_start_nd")
                 self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.re.precomp.layer_end_nd")
                 self.connect("blade.internal_structure_2d_fem.layer_web", "rotorse.re.precomp.layer_web")
@@ -246,12 +235,6 @@ class WT_RNTA(om.Group):
                 self.connect("materials.nu", "rotorse.re.precomp.nu")
                 self.connect("materials.rho", "rotorse.re.precomp.rho")
 
-                # Conncetions to rail transport module
-                if (
-                    modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-                    or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-                ):
-                    self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
                 # Connections from blade struct parametrization to rotor load anlysis
                 spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
                 self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
@@ -702,13 +685,6 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_node", "floatingse.transition_node")
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
-
-            # Rigid bodies
-            for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
-                self.connect(f"floating.rigid_body_{k}_node",f"floatingse.rigid_body_{k}_node")
-                self.connect(f"floating.rigid_body_{k}_mass",f"floatingse.rigid_body_{k}_mass")
-                self.connect(f"floating.rigid_body_{k}_inertia",f"floatingse.rigid_body_{k}_inertia")
-
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
                 self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
@@ -814,7 +790,7 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
-            self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "tcons.Rtip")
             self.connect("blade.high_level_blade_props.blade_ref_axis", "tcons.ref_axis_blade")
             self.connect("hub.cone", "tcons.precone")
             self.connect("nacelle.uptilt", "tcons.tilt")
@@ -842,6 +818,7 @@ class WT_RNTA(om.Group):
             self.connect("drivese.lss_mass", "tcc.lss_mass")
             self.connect("drivese.mean_bearing_mass", "tcc.main_bearing_mass")
             self.connect("drivese.gearbox_mass", "tcc.gearbox_mass")
+            self.connect("nacelle.gearbox_torque_density", "tcc.gearbox_torque_density")
             self.connect("drivese.hss_mass", "tcc.hss_mass")
             self.connect("drivese.brake_mass", "tcc.brake_mass")
             self.connect("drivese.generator_mass", "tcc.generator_mass")
@@ -990,7 +967,7 @@ class WindPark(om.Group):
         if modeling_options["flags"]["blade"]:
             self.add_subsystem("financese", PlantFinance(verbosity=modeling_options["General"]["verbosity"]))
             self.add_subsystem(
-                "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
+                "outputs_2_screen", Outputs_2_Screen(verbosity=modeling_options["General"]["verbosity"])
             )
 
         # BOS inputs
@@ -1056,6 +1033,7 @@ class WindPark(om.Group):
                 # Inputs into LandBOSSE
                 self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
                 self.connect("costs.turbine_number", "landbosse.num_turbines")
+                self.connect("tcc.turbine_cost_kW", "landbosse.turbine_capex_kW")
                 self.connect("configuration.rated_power", "landbosse.turbine_rating_MW")
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
                 self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")
