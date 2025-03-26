@@ -862,8 +862,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt['drivese.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
         wt_opt['drivese.above_yaw_cm']      = nacelle['elastic_properties_mb']['system_center_mass']  # TODO: figure out difference with nacelle_cm
         wt_opt['drivese.generator_rotor_I'] = nacelle['drivetrain']['generator_inertia_user']
-        wt_opt['drivese.rna_I_TT']          = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
-        wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
+        wt_opt['drivese.rna_I_TT']          = nacelle['elastic_properties_mb']['system_inertia_tt']  # TODO: check these
+        wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt']  # TODO: check these
 
         # Are these even in WISDEM? 
         # Why are we required to define it here?
