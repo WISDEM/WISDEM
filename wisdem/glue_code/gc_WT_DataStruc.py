@@ -404,12 +404,16 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                         desc="Number of planets for epicyclic stages (use 0 for parallel)",
                     )
 
-            # Mulit-body properties
-            # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
-            # nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-            # nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-            # nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-            # nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+            else:
+                # Mulit-body properties
+                # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
+                nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+                nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+                nacelle_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
+                nacelle_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
+                nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+                nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+
             self.add_subsystem("nacelle", nacelle_ivc)
 
             # Generator inputs
@@ -663,8 +667,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
             self.connect("high_level_tower_props.tower_ref_axis", "tower_grid.ref_axis")
-        if modeling_options["flags"]["nacelle"]:
-            self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
+        # if modeling_options["flags"]["nacelle"]:
+        # TODO: check this hack
+        self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
 
 
 class Blade(om.Group):
@@ -697,16 +702,18 @@ class Blade(om.Group):
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
-        for i in range(rotorse_options["n_layers"]):
-            opt_var.add_output(
-                "s_opt_layer_%d"%i,
-                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
-            )
-            opt_var.add_output(
-                "layer_%d_opt"%i,
-                units="m",
-                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
-            )
+
+        if not rotorse_options["user_defined_blade_elastic"]:
+            for i in range(rotorse_options["n_layers"]):
+                opt_var.add_output(
+                    "s_opt_layer_%d"%i,
+                    val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+                )
+                opt_var.add_output(
+                    "layer_%d_opt"%i,
+                    units="m",
+                    val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+                )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -785,29 +792,31 @@ class Blade(om.Group):
             self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
-        self.add_subsystem(
-            "internal_structure_2d_fem",
-            Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
-        )
-        self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
-        self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
-        self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
-        self.connect("outer_shape_bem.pitch_axis", "internal_structure_2d_fem.pitch_axis")
+        # when not using the user-defined elastic properties only
+        if not rotorse_options["user_defined_blade_elastic"]:
+            self.add_subsystem(
+                "internal_structure_2d_fem",
+                Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+            )
+            self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
+            self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
+            self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
+            self.connect("outer_shape_bem.pitch_axis", "internal_structure_2d_fem.pitch_axis")
 
-        self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
+            self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
 
-        self.add_subsystem(
-            "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
-        )  # Parameterize struct (spar caps ss and ps)
+            self.add_subsystem(
+                "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
+            )  # Parameterize struct (spar caps ss and ps)
 
-        # Connections to blade struct parametrization
-        for i in range(rotorse_options["n_layers"]):
-            self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
-            self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
+            # Connections to blade struct parametrization
+            for i in range(rotorse_options["n_layers"]):
+                self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
+                self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
-        self.connect("outer_shape_bem.s", "ps.s")
-        # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
-        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+            self.connect("outer_shape_bem.s", "ps.s")
+            # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
+            self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
 
         # Fatigue specific parameters
         fat_var = om.IndepVarComp()
@@ -1163,6 +1172,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
+        # Is this unique an issue? Does it assume no two airfoils have the same relative thickness?
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
         profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
         coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
@@ -2381,6 +2391,15 @@ class Floating(om.Group):
         jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
+        # Rigid body IVCs
+        if floating_init_options['rigid_bodies']['n_bodies'] > 0:
+            rb_ivc = self.add_subsystem("rigid_bodies", om.IndepVarComp(), promotes=["*"])
+        for k in range(floating_init_options['rigid_bodies']['n_bodies']):
+            rb_ivc.add_output(f"rigid_body_{k}_node", val=np.zeros(3), units="m", desc="location of rigid body")
+            rb_ivc.add_output(f"rigid_body_{k}_mass", val=0.0, units="kg", desc="point mass of rigid body")
+            rb_ivc.add_output(f"rigid_body_{k}_inertia", val=np.zeros(3), units="kg*m**2", desc="inertia of rigid body")
+
+
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
         for k in range(len(floating_init_options["joints"]["design_variable_data"])):
@@ -2658,6 +2677,9 @@ class AggregateJoints(om.ExplicitComponent):
         node_r = np.zeros(n_joint_tot)
         intersects = np.zeros(n_joint_tot)
 
+        if n_joints + sum(memopt["n_axial_joints"]) > n_joint_tot:
+            raise Exception(f'WISDEM has detected {n_joints + sum(memopt["n_axial_joints"])}, but only {n_joint_tot} have been defined in the yaml')
+
         # Now add axial joints
         member_list = list(range(n_members))
         count = n_joints
@@ -2856,6 +2878,7 @@ class MooringJoints(om.ExplicitComponent):
         n_nodes = mooring_init_options["n_nodes"]
         n_attach = mooring_init_options["n_attach"]
         n_lines = mooring_init_options["n_lines"]
+        n_anchors = mooring_init_options["n_anchors"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
         self.add_input("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
@@ -2865,8 +2888,8 @@ class MooringJoints(om.ExplicitComponent):
         self.add_output("fairlead_nodes", val=np.zeros((n_attach, 3)), units="m")
         self.add_output("fairlead", val=np.zeros(n_lines), units="m")
         self.add_output("fairlead_radius", val=np.zeros(n_attach), units="m")
-        self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")
-        self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
+        self.add_output("anchor_nodes", val=np.zeros((n_anchors, 3)), units="m")
+        self.add_output("anchor_radius", val=np.zeros(n_anchors), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         mooring_init_options = self.options["options"]["mooring"]

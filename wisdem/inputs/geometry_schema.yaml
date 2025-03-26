@@ -217,7 +217,7 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
-                        default: {}
+                        # default: {}
                         required:
                             - reference_axis
                             - layers
@@ -595,6 +595,13 @@ properties:
                                 unit: kg
                                 minimum: 0.
                                 maximum: 1.e+9
+                                default: 0.0
+                            generator_inertia_user:
+                                type: number
+                                description: User input override of generator inertia
+                                unit: kg*m^2
+                                minimum: 0.
+                                maximum: 1.e+15
                                 default: 0.0
                             generator_rpm_efficiency_user:
                                 type: object
@@ -1926,6 +1933,7 @@ properties:
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
+                        default: []
                         items:
                             type: object
                             required:

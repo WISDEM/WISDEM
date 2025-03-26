@@ -1,7 +1,7 @@
 import copy
 
 import numpy as np
-from openmdao.api import Group, ExplicitComponent
+from openmdao.api import Group, ExplicitComponent, IndepVarComp
 from scipy.interpolate import PchipInterpolator
 
 from wisdem.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
@@ -62,7 +62,6 @@ class RunPreComp(ExplicitComponent):
         self.add_input(
             "uptilt", val=0.0, units="deg", desc="Nacelle uptilt angle. A standard machine has positive values."
         )
-        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         # Inner structure
         self.add_input(
@@ -273,19 +272,6 @@ class RunPreComp(ExplicitComponent):
             desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
 
-        # Outputs - Overall beam properties
-        self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
-        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
-        self.add_output(
-            "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
-        )
-        self.add_output("mass_all_blades", val=0.0, units="kg", desc="mass of all blades")
-        self.add_output(
-            "I_all_blades",
-            shape=6,
-            units="kg*m**2",
-            desc="mass moments of inertia of all blades in hub c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
-        )
 
         self.add_output(
             "sc_ss_mats",
@@ -842,7 +828,50 @@ class RunPreComp(ExplicitComponent):
         outputs["yu_te"] = yu_te
         outputs["yl_te"] = yl_te
 
+       
+       
+class TotalBladeProperties(ExplicitComponent):
         # Compute mass and inertia of blade and rotor
+        # YL: move the below out and create a new compute total blade properties component so it can be used for both user-defined and precomp blades
+    # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+
+        # Inputs
+        self.add_input(
+            "r",
+            val=np.zeros(n_span),
+            units="m",
+            desc="radial locations where blade is defined (should be increasing and not go all the way to hub or tip)",
+        )
+        self.add_input("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
+        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
+
+
+        # Outputs - Overall beam properties
+        self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
+        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
+        self.add_output(
+            "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
+        )
+        self.add_output("mass_all_blades", val=0.0, units="kg", desc="mass of all blades")
+        self.add_output(
+            "I_all_blades",
+            shape=6,
+            units="kg*m**2",
+            desc="mass moments of inertia of all blades in hub c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
+        )
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        rhoA_joint = inputs["rhoA"]
+
+
         blade_mass = np.trapz(rhoA_joint, inputs["r"])
         blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
         blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
@@ -1079,6 +1108,7 @@ class RotorElasticity(Group):
 
         # Get elastic properties by running precomp
         promote_list = [
+            "A",
             "EA",
             "EIxx",
             "EIyy",
@@ -1100,7 +1130,112 @@ class RotorElasticity(Group):
             "flap_iner",
             "theta",
         ]
-        self.add_subsystem(
+
+        if modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        # TODO YL: change name precomp to more general name, such as "ComputeElasticProperties"
+            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        
+            blade_elastic_ivc = IndepVarComp()
+            # Outputs - Distributed beam properties
+            # YL: Try to match what precomp gives
+            blade_elastic_ivc.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
+            # TODO YL: any way to get area so that pyframe3DD can run properly?
+            blade_elastic_ivc.add_output("A", val=np.ones(n_span), units="m**2", desc="cross sectional area")
+            blade_elastic_ivc.add_output("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
+            blade_elastic_ivc.add_output(
+                "EIxx",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            )
+            blade_elastic_ivc.add_output(
+                "EIyy",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
+            )
+            blade_elastic_ivc.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+            blade_elastic_ivc.add_output(
+                "GJ",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            )
+            blade_elastic_ivc.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
+            blade_elastic_ivc.add_output("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
+            blade_elastic_ivc.add_output(
+                "Tw_iner",
+                val=np.zeros(n_span),
+                units="deg",
+                desc="Orientation of the section principal inertia axes with respect the blade reference plane",
+            )
+            blade_elastic_ivc.add_output(
+                "x_ec",
+                val=np.zeros(n_span),
+                units="m",
+                desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system; the properties are computed about the shear center if using PreComp)",
+            )
+            blade_elastic_ivc.add_output(
+                "y_ec",
+                val=np.zeros(n_span),
+                units="m",
+                desc="y-distance to elastic center from point about which above structural properties are computed, which is the shear center if using PreComp",
+            )
+            blade_elastic_ivc.add_output(
+                "x_tc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the tension-center offset with respect to the XR-YR axes",
+            )
+            blade_elastic_ivc.add_output(
+                "y_tc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section tension-center with respect to the XR-YR axes",
+            )
+            blade_elastic_ivc.add_output(
+                "x_sc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the shear-center offset with respect to the XR-YR axes",
+            )
+            blade_elastic_ivc.add_output(
+                "y_sc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section shear-center with respect to the reference frame, XR-YR",
+            )
+            blade_elastic_ivc.add_output(
+                "x_cg",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the center-of-mass offset with respect to the XR-YR axes",
+            )
+            blade_elastic_ivc.add_output(
+                "y_cg",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section center of mass with respect to the XR-YR axes",
+            )
+            blade_elastic_ivc.add_output(
+                "flap_iner",
+                val=np.zeros(n_span),
+                units="kg/m",
+                desc="Section flap inertia about the Y_G axis per unit length.",
+            )
+            blade_elastic_ivc.add_output(
+                "edge_iner",
+                val=np.zeros(n_span),
+                units="kg/m",
+                desc="Section lag inertia about the X_G axis per unit length",
+            )
+            # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
+            # self.add_output('eps_crit_te',      val=np.zeros(n_span), desc='critical strain in trailing-edge panels from panel buckling calculation')
+
+            # TODO YL: Below wil not be available from orcaflex, but maybe can set some reasonable defaults so the strains can still be computed and used for the constraints in optimization
+            blade_elastic_ivc.add_output(
+
+            self.add_subsystem(
             "precomp",
             RunPreComp(modeling_options=modeling_options, opt_options=opt_options),
             promotes=promote_list
@@ -1117,20 +1252,108 @@ class RotorElasticity(Group):
                 "te_ss_mats",
                 "te_ps_mats",
                 "xu_spar",
+                val=np.zeros(n_span),
+                desc="x-position of midpoint of spar cap on upper surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "xl_spar",
+                val=np.zeros(n_span),
+                desc="x-position of midpoint of spar cap on lower surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "yu_spar",
+                val=np.zeros(n_span),
+                desc="y-position of midpoint of spar cap on upper surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "yl_spar",
+                val=np.zeros(n_span),
+                desc="y-position of midpoint of spar cap on lower surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "xu_te",
+                val=np.zeros(n_span),
+                desc="x-position of midpoint of trailing-edge panel on upper surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "xl_te",
+                val=np.zeros(n_span),
+                desc="x-position of midpoint of trailing-edge panel on lower surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "yu_te",
+                val=np.zeros(n_span),
+                desc="y-position of midpoint of trailing-edge panel on upper surface for strain calculation",
+            )
+            blade_elastic_ivc.add_output(
                 "yl_te",
-                "blade_mass",
-                "blade_span_cg",
-                "blade_moment_of_inertia",
-                "mass_all_blades",
-                "I_all_blades",
-            ],
-        )
+                val=np.zeros(n_span),
+                desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
+            )
+
+            # Add to rotorelasticity group
+            promote_list = promote_list + [ 
+                        "Tw_iner",
+                        "x_ec",
+                        "y_ec",
+                        "x_tc",
+                        "y_tc",
+                        "x_cg",
+                        "y_cg",
+                        "xu_spar",
+                        "xl_spar",
+                        "yu_spar",
+                        "yl_spar",
+                        "xu_te",
+                        "xl_te",
+                        "yu_te",
+                        "yl_te",
+                    ]
+            print("promote_list",promote_list)
+            self.add_subsystem(
+                "precomp",
+                blade_elastic_ivc,
+                promotes=promote_list
+            )
+        else:
+            promote_list = promote_list + ["chord","theta", "pitch_axis", "coord_xy_interp",]
+            self.add_subsystem(
+                "precomp",
+                RunPreComp(modeling_options=modeling_options, opt_options=opt_options),
+                promotes=promote_list
+                + [
+                    "r",
+                    "Tw_iner",
+                    "precurve",
+                    "presweep",
+                    "x_ec",
+                    "y_ec",
+                    "x_tc",
+                    "y_tc",
+                    "x_cg",
+                    "y_cg",
+                    "sc_ss_mats",
+                    "sc_ps_mats",
+                    "te_ss_mats",
+                    "te_ps_mats",
+                    "xu_spar",
+                    "xl_spar",
+                    "yu_spar",
+                    "yl_spar",
+                    "xu_te",
+                    "xl_te",
+                    "yu_te",
+                    "yl_te",
+                    "blade_mass",
+                    "blade_span_cg",
+                    "blade_moment_of_inertia",
+                    "mass_all_blades",
+                    "I_all_blades",
+                ],
+            )
+
+        # Compute total blade properties
+        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])
 
         self.add_subsystem(
             "generate_KI",

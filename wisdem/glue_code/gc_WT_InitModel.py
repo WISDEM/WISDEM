@@ -111,7 +111,10 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV['aero_shape']
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
-    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
+    if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
+    else: 
+        wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties_mb"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
@@ -601,6 +604,44 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
     return wt_opt
 
+def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_elastic_properties_mb):
+    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+    nd_span = wt_opt["blade.outer_shape_bem.s_default"]
+    # TODO YL: maybe I can pass in the inertia twist throught the twist in six_x_six
+    stiff_grid = user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["grid"]
+    stiff_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["values"])
+
+    inertia_grid = user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["grid"]
+    inertia_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["values"])
+
+    # 21-element inertia matrix
+    # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
+    # M   = [m, 0, 0, 0, 0, -mYcm, m, 0, 0, 0, mXcm, m,  mYcm, -mXcm, 0,  iedge, -icp, 0,  iflap, 0,  iplr]
+
+    # 21-element stiffness matrix
+    # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
+    # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
+
+    wt_opt["rotorse.EA"] = PchipInterpolator(stiff_grid, stiff_matrix[:,11])(nd_span)
+    wt_opt["rotorse.EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,15])(nd_span)
+    wt_opt["rotorse.EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,18])(nd_span)
+    wt_opt["rotorse.GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,20])(nd_span)
+    wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix[:,20])(nd_span) # TODO YL: confirm if this is iplr
+    # wt_opt["rotorse.Tw_iner"]
+    # wt_opt["rotorse.x_ec"]
+    # wt_opt["rotorse.y_ec"]
+    # wt_opt["rotorse.x_tc"]
+    # wt_opt["rotorse.x_sc"]
+    # wt_opt["rotorse.y_sc"]
+    wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,12]/inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.re.precomp.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,18])(nd_span)
+    wt_opt["rotorse.re.precomp.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,15])(nd_span)
+
+    return wt_opt
+
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
@@ -706,6 +747,7 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 def assign_hub_values(wt_opt, hub, flags):
     wt_opt["hub.diameter"] = hub["diameter"]
+    wt_opt["hub.radius"] = hub["diameter"] / 2
     wt_opt["hub.cone"] = hub["cone_angle"]
     # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
     if flags["hub"]:
@@ -724,6 +766,9 @@ def assign_hub_values(wt_opt, hub, flags):
         wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
         wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
         wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
+    else:
+        wt_opt['drivese.hub_system_mass']   = hub['elastic_properties_mb']['system_mass']
+        wt_opt['drivese.hub_system_I']      = hub['elastic_properties_mb']['system_inertia']
 
     return wt_opt
 
@@ -806,6 +851,35 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             else:
                 myeff = np.zeros((n_pc, 2))
             wt_opt["generator.generator_efficiency_user"] = myeff
+
+    else:
+
+        # Should we check for some required inputs?
+        wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['system_center_mass']
+        wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['system_inertia']
+        
+        wt_opt['drivese.above_yaw_mass']    = nacelle['elastic_properties_mb']['system_mass']
+        wt_opt['drivese.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
+        wt_opt['drivese.above_yaw_cm']      = nacelle['elastic_properties_mb']['system_center_mass']  # TODO: figure out difference with nacelle_cm
+        wt_opt['drivese.generator_rotor_I'] = nacelle['drivetrain']['generator_inertia_user']
+        wt_opt['drivese.rna_I_TT']          = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
+        wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
+
+        # Are these even in WISDEM? 
+        # Why are we required to define it here?
+        # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
+        # Is there an automated way to set up the outputs of drivese here?
+        wt_opt['drivese.drivetrain_spring_constant']        = 0
+        wt_opt['drivese.drivetrain_damping_coefficient']    = 0
+
+
+        # wt_opt['drivese.lss_wohler_exp'] =0 # pCrunch doesn't like this
+        # wt_opt['drivese.lss_wohler_A'] = 0  # pCrunch doesn't like this
+        # wt_opt['drivese.lss_Xt'] =  0 
+        # wt_opt['drivese.lss_axial_load2stress'] =   0 
+        # wt_opt['drivese.lss_shear_load2stress'] =   0 
+        
+        print('here')
 
     return wt_opt
 
@@ -1078,6 +1152,13 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
     wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
     wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
     wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
+
+    # Assign rigid body info
+    for k, rb in enumerate(floating['rigid_bodies']):
+        rb_joint_index = floating_init_options['joints']['name2idx'][rb['joint1']]
+        wt_opt[f"floating.rigid_body_{k}_node"] = floating["joints"][rb_joint_index]["location"]
+        wt_opt[f"floating.rigid_body_{k}_mass"] = rb['mass']
+        wt_opt[f"floating.rigid_body_{k}_inertia"] = rb['moments_of_inertia']
 
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
