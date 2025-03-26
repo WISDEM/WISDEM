@@ -96,11 +96,11 @@ class WT_RNA(om.Group):
             drive_ivc.add_output('drivetrain_damping_coefficient',     val=0, units='N*m*s/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
 
 
-            drive_ivc.add_output('lss_wohler_exp', val=0, desc= 'Figure out what to do with this here')
-            drive_ivc.add_output('lss_wohler_A', val=0, desc= 'Figure out what to do with this here')
-            drive_ivc.add_output('lss_Xt', val=0, desc= 'Figure out what to do with this here')
-            drive_ivc.add_output('lss_axial_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
-            drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_wohler_exp', val=3.0, desc= 'Whohler exponent of steel_drive')
+            drive_ivc.add_output('lss_wohler_A', val=3.5534648443719767e10, desc= 'Wohler intercept of steel_drive')
+            drive_ivc.add_output('lss_Xt', val=814.e+006, desc= 'Ultimate stress of steel_drive')
+            drive_ivc.add_output('lss_axial_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here. Not yet used in WEIS.')
+            drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here. Not yet used in WEIS.')
 
             self.add_subsystem("drivese", drive_ivc)
             print('here')
