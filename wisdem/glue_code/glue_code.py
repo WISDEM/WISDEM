@@ -75,6 +75,35 @@ class WT_RNA(om.Group):
 
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+        else:
+            # Add pass through info for drivese
+            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
+            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            drive_ivc = om.IndepVarComp()
+            drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
+            drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
+            drive_ivc.add_output('rna_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+            drive_ivc.add_output('above_yaw_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+            drive_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            drive_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+            drive_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
+            drive_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
+            # Are these even in WISDEM? 
+            # Why are we required to define it here?
+            # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
+            # Is there an automated way to set up the outputs of drivese here?
+            drive_ivc.add_output('drivetrain_spring_constant',     val=0, units='N*m/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+            drive_ivc.add_output('drivetrain_damping_coefficient',     val=0, units='N*m*s/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+
+
+            drive_ivc.add_output('lss_wohler_exp', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_wohler_A', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_Xt', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_axial_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
+
+            self.add_subsystem("drivese", drive_ivc)
+            print('here')
 
             
 class WT_RNTA(om.Group):
@@ -153,10 +182,14 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
             self.connect("env.shear_exp", "rotorse.shearExp")
-            self.connect(
-                "configuration.n_blades",
-                ["rotorse.nBlades", "rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
-            )
+            self.connect("configuration.n_blades", "rotorse.nBlades")
+            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                self.connect(
+                    "configuration.n_blades",
+                    ["rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
+                )
+            else:
+                self.connect("configuration.n_blades", "rotorse.re.total_blade_properties.n_blades")                
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
             self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
@@ -659,6 +692,13 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_node", "floatingse.transition_node")
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
+
+            # Rigid bodies
+            for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
+                self.connect(f"floating.rigid_body_{k}_node",f"floatingse.rigid_body_{k}_node")
+                self.connect(f"floating.rigid_body_{k}_mass",f"floatingse.rigid_body_{k}_mass")
+                self.connect(f"floating.rigid_body_{k}_inertia",f"floatingse.rigid_body_{k}_inertia")
+
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
                 self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
