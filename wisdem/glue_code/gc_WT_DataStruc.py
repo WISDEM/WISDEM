@@ -188,7 +188,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Hub inputs
         if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
-            self.add_subsystem("hub", Hub(flags=modeling_options["flags"]))
+            self.add_subsystem("hub", Hub(flags=modeling_options["flags"],
+                                          user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]))
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -278,6 +279,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
 
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
+            
             if modeling_options["flags"]["nacelle"]:
                 nacelle_ivc.add_output(
                     "distance_hub_mb",
@@ -404,18 +406,21 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                         desc="Number of planets for epicyclic stages (use 0 for parallel)",
                     )
 
-            else:
-                # Mulit-body properties
-                # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
-                nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-                nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-                nacelle_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
-                nacelle_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
-                nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-                nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-
+                    
+            if modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]:
+                drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
+                drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
+                nacelle_ivc.add_output('system_mass_user', val=0.0, units='kg')
+                nacelle_ivc.add_output('system_cm_user',  val=np.zeros(3), units='m')
+                nacelle_ivc.add_output('system_inertia_user', val=np.zeros(6), units='kg*m**2')
+                nacelle_ivc.add_output('system_inertia_TT_user', val=np.zeros(6), units='kg*m**2')
+                nacelle_ivc.add_output('yaw_mass_user', val=0.0, units='kg')
+                nacelle_ivc.add_output('generator_rotor_I_user',       val=np.zeros(3), units='kg*m**2')
+                nacelle_ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
+                nacelle_ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
+                
             self.add_subsystem("nacelle", nacelle_ivc)
-
+            
             # Generator inputs
             generator_ivc = om.IndepVarComp()
             generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
@@ -511,6 +516,22 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             self.add_subsystem("generator", generator_ivc)
 
+            
+        if not modeling_options["flags"]["nacelle"]:
+            # User wants to bypass all of DrivetrainSE with elastic summary properties
+            drivese_ivc = om.IndepVarComp()
+            drivese_ivc.add_output('hub_system_mass_user', val=0, units='kg')
+            drivese_ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
+            drivese_ivc.add_output('hub_system_cm_user', val=0.0, units='m')
+            #nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            #nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+            #nacelle_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
+            #nacelle_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
+            #nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+            #nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+            self.add_subsystem("drivese", drivese_ivc)
+                
+             
         # Tower inputs
         if modeling_options["flags"]["tower"]:
             tower_init_options = modeling_options["WISDEM"]["TowerSE"]
@@ -2151,18 +2172,36 @@ class Hub(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
     def initialize(self):
         self.options.declare("flags")
+        self.options.declare("user_elastic")
 
     def setup(self):
         ivc = self.add_subsystem("hub_indep_vars", om.IndepVarComp(), promotes=["*"])
 
-        ivc.add_output(
-            "cone",
-            val=0.0,
-            units="rad",
-            desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.",
-        )
-        # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
-        ivc.add_output("diameter", val=0.0, units="m")
+        if self.options["flags"]["hub"] or self.options["flags"]["blade"]:
+            ivc.add_output(
+                "cone",
+                val=0.0,
+                units="rad",
+                desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.",
+            )
+            # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
+            ivc.add_output("diameter", val=0.0, units="m")
+
+            exec_comp = om.ExecComp(
+                "radius = 0.5 * diameter",
+                units="m",
+                radius={
+                    "desc": "Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line."
+                },
+            )
+            self.add_subsystem("compute_radius", exec_comp, promotes=["*"])
+            
+
+        if self.options["user_elastic"]:
+            ivc.add_output('hub_system_mass_user', val=0, units='kg')
+            ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
+            ivc.add_output('hub_system_cm_user', val=0.0, units='m')
+            
         if self.options["flags"]["hub"]:
             ivc.add_output("flange_t2shell_t", val=0.0)
             ivc.add_output("flange_OD2hub_D", val=0.0)
@@ -2179,15 +2218,7 @@ class Hub(om.Group):
             ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
             ivc.add_output("spinner_mass_user", val=0.0, units="kg")
             ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
-
-        exec_comp = om.ExecComp(
-            "radius = 0.5 * diameter",
-            units="m",
-            radius={
-                "desc": "Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line."
-            },
-        )
-        self.add_subsystem("compute_radius", exec_comp, promotes=["*"])
+            
 
 
 class Compute_Grid(om.ExplicitComponent):

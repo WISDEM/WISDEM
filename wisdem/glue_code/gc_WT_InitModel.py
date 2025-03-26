@@ -48,11 +48,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
-    if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
-        hub = wt_init["components"]["hub"]
-        wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"])
-    else:
-        hub = {}
+    hub = wt_init["components"]["hub"]
+    wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"])
 
     if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
         nacelle = wt_init["components"]["nacelle"]
@@ -745,30 +742,37 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
     return wt_opt
 
 
-def assign_hub_values(wt_opt, hub, flags):
-    wt_opt["hub.diameter"] = hub["diameter"]
-    wt_opt["hub.radius"] = hub["diameter"] / 2
-    wt_opt["hub.cone"] = hub["cone_angle"]
-    # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
+def assign_hub_values(wt_opt, hub, flags, user_elastic):
+    if flags["hub"] or flags["blade"]:
+        wt_opt["hub.diameter"] = hub["diameter"]
+        wt_opt["hub.radius"]   = hub["diameter"] / 2
+        wt_opt["hub.cone"]     = hub["cone_angle"]
+        # wt_opt['hub.drag_coeff'] = hub['drag_coefficient'] # GB: This doesn't connect to anything
+    if user_elastic:
+        wt_opt['hub.hub_system_mass_user']    = hub['elastic_properties_mb']['system_mass']
+        wt_opt['hub.hub_system_I_user']       = hub['elastic_properties_mb']['system_inertia']
+        wt_opt['hub.hub_system_cm_user']      = hub['elastic_properties_mb']['system_center_mass']
     if flags["hub"]:
-        wt_opt["hub.flange_t2shell_t"] = hub["flange_t2shell_t"]
-        wt_opt["hub.flange_OD2hub_D"] = hub["flange_OD2hub_D"]
-        wt_opt["hub.flange_ID2flange_OD"] = hub["flange_ID2OD"]
-        wt_opt["hub.hub_in2out_circ"] = hub["hub_blade_spacing_margin"]
-        wt_opt["hub.hub_stress_concentration"] = hub["hub_stress_concentration"]
-        wt_opt["hub.n_front_brackets"] = hub["n_front_brackets"]
-        wt_opt["hub.n_rear_brackets"] = hub["n_rear_brackets"]
-        wt_opt["hub.clearance_hub_spinner"] = hub["clearance_hub_spinner"]
-        wt_opt["hub.spin_hole_incr"] = hub["spin_hole_incr"]
+        wt_opt["hub.flange_t2shell_t"]            = hub["flange_t2shell_t"]
+        wt_opt["hub.flange_OD2hub_D"]             = hub["flange_OD2hub_D"]
+        wt_opt["hub.flange_ID2flange_OD"]         = hub["flange_ID2OD"]
+        wt_opt["hub.hub_in2out_circ"]             = hub["hub_blade_spacing_margin"]
+        wt_opt["hub.hub_stress_concentration"]    = hub["hub_stress_concentration"]
+        wt_opt["hub.n_front_brackets"]            = hub["n_front_brackets"]
+        wt_opt["hub.n_rear_brackets"]             = hub["n_rear_brackets"]
+        wt_opt["hub.clearance_hub_spinner"]       = hub["clearance_hub_spinner"]
+        wt_opt["hub.spin_hole_incr"]              = hub["spin_hole_incr"]
         wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
-        wt_opt["hub.hub_material"] = hub["hub_material"]
-        wt_opt["hub.spinner_material"] = hub["spinner_material"]
-        wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
-        wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
-        wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
+        wt_opt["hub.hub_material"]                = hub["hub_material"]
+        wt_opt["hub.spinner_material"]            = hub["spinner_material"]
+        wt_opt["hub.spinner_mass_user"]           = hub["spinner_mass_user"]
+        wt_opt["hub.pitch_system_mass_user"]      = hub["pitch_system_mass_user"]
+        wt_opt["hub.hub_shell_mass_user"]         = hub["hub_shell_mass_user"]
     else:
-        wt_opt['drivese.hub_system_mass']   = hub['elastic_properties_mb']['system_mass']
-        wt_opt['drivese.hub_system_I']      = hub['elastic_properties_mb']['system_inertia']
+        # Not this is set in 'drivese' IndepVarComp to mimic DrivetrainSE as set in gc_WT_DataStruct
+        wt_opt['drivese.hub_system_mass']         = hub['elastic_properties_mb']['system_mass']
+        wt_opt['drivese.hub_system_I']            = hub['elastic_properties_mb']['system_inertia']
+        wt_opt['drivese.hub_system_cm']           = hub['elastic_properties_mb']['system_center_mass']
 
     return wt_opt
 

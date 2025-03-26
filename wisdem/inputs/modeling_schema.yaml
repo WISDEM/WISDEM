@@ -178,6 +178,10 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
+                    user_defined_elastic:
+                        type: boolean
+                        default: False
+                        description: Flag to use only user-defined elastic properties
                     model_generator:
                         type: boolean
                         default: False

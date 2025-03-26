@@ -487,6 +487,10 @@ class Hub_Adder(om.ExplicitComponent):
         self.add_input("spinner_cm", val=0.0, units="m")
         self.add_input("spinner_I", val=np.zeros(6), units="kg*m**2")
 
+        self.add_input("hub_system_mass_user", val=0.0, units="kg")
+        self.add_input("hub_system_cm_user", val=0.0, units="m")
+        self.add_input("hub_system_I_user", val=np.zeros(6), units="kg*m**2")
+
         self.add_output("hub_system_mass", val=0.0, units="kg")
         self.add_output("hub_system_cost", val=0.0, units="USD")
         self.add_output("hub_system_cm", val=0.0, units="m")
@@ -497,16 +501,23 @@ class Hub_Adder(om.ExplicitComponent):
         m_pitch = float(inputs["pitch_mass"][0])
         m_hub = float(inputs["hub_mass"][0])
         m_spin = float(inputs["spinner_mass"][0])
+        m_user = float(inputs["hub_system_mass_user"][0])
         cm_hub = float(inputs["hub_cm"][0])
         cm_spin = float(inputs["spinner_cm"][0])
+        cm_user = inputs["hub_system_cm_user"]
+        I_user = inputs["hub_system_cm_user"]
 
         # Mass and cost totals
         m_total = m_pitch + m_hub + m_spin
-        c_total = inputs["pitch_cost"] + inputs["hub_cost"] + inputs["spinner_cost"]
+        coeff = 1.0 if m_user == 0.0 else m_user / m_total
+        m_total *= coeff
+        c_total = coeff * inputs["pitch_cost"] + inputs["hub_cost"] + inputs["spinner_cost"]
 
         # CofM total
         cm_total = ((m_pitch + m_hub) * cm_hub + m_spin * cm_spin) / m_total
-
+        if cm_user != 0.0:
+            cm_total = cm_user
+        
         # I total
         I_total = util.assembleI(np.zeros(6))
         r = np.array([cm_hub - cm_total, 0.0, 0.0])
@@ -514,7 +525,10 @@ class Hub_Adder(om.ExplicitComponent):
         I_total += util.assembleI(inputs["pitch_I"]) + m_pitch * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
         r = np.array([cm_spin - cm_total, 0.0, 0.0])
         I_total += util.assembleI(inputs["spinner_I"]) + m_spin * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
-
+        I_total *= coeff
+        if np.any(I_user):
+            I_total = I_user
+        
         # Outputs
         outputs["hub_system_mass"] = m_total
         outputs["hub_system_cost"] = c_total
@@ -603,6 +617,9 @@ class Hub_System(om.Group):
                 "pitch_mass",
                 "pitch_cost",
                 "pitch_I",
+                "hub_system_mass_user",
+                "hub_system_cm_user",
+                "hub_system_I_user",
                 "hub_system_mass",
                 "hub_system_cost",
                 "hub_system_cm",
