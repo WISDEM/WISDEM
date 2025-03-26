@@ -77,8 +77,6 @@ class WT_RNA(om.Group):
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
         else:
             # Add pass through info for drivese
-            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
-            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
             drive_ivc = om.IndepVarComp()
             drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
             drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
@@ -103,7 +101,6 @@ class WT_RNA(om.Group):
             drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here. Not yet used in WEIS.')
 
             self.add_subsystem("drivese", drive_ivc)
-            print('here')
 
             
 class WT_RNTA(om.Group):

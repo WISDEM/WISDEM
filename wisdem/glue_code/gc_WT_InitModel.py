@@ -872,15 +872,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt['drivese.drivetrain_spring_constant']        = 0
         wt_opt['drivese.drivetrain_damping_coefficient']    = 0
 
-
-        # wt_opt['drivese.lss_wohler_exp'] =0 # pCrunch doesn't like this
-        # wt_opt['drivese.lss_wohler_A'] = 0  # pCrunch doesn't like this
-        # wt_opt['drivese.lss_Xt'] =  0 
-        # wt_opt['drivese.lss_axial_load2stress'] =   0 
-        # wt_opt['drivese.lss_shear_load2stress'] =   0 
-        
-        print('here')
-
     return wt_opt
 
 
