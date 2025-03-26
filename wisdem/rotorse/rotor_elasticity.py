@@ -274,19 +274,6 @@ class RunPreComp(ExplicitComponent):
             desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
 
-        # Outputs - Overall beam properties
-        self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
-        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
-        self.add_output(
-            "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
-        )
-        self.add_output("mass_all_blades", val=0.0, units="kg", desc="mass of all blades")
-        self.add_output(
-            "I_all_blades",
-            shape=6,
-            units="kg*m**2",
-            desc="mass moments of inertia of all blades in hub c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
-        )
 
         self.add_output(
             "sc_ss_mats",
@@ -843,27 +830,7 @@ class RunPreComp(ExplicitComponent):
         outputs["yu_te"] = yu_te
         outputs["yl_te"] = yl_te
 
-        # Compute mass and inertia of blade and rotor
-        blade_mass = np.trapz(rhoA_joint, inputs["r"])
-        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
-        blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
-        # tilt = inputs["uptilt"]
-        n_blades = discrete_inputs["n_blades"]
-        mass_all_blades = n_blades * blade_mass
-        Ibeam = n_blades * blade_moment_of_inertia
-        Ixx = Ibeam
-        Iyy = Ibeam / 2.0  # azimuthal average for 2 blades, exact for 3+
-        Izz = Ibeam / 2.0
-        Ixy = 0.0
-        Ixz = 0.0
-        Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
-        I_all_blades = np.r_[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]
 
-        outputs["blade_mass"] = blade_mass
-        outputs["blade_span_cg"] = blade_span_cg
-        outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
-        outputs["mass_all_blades"] = mass_all_blades
-        outputs["I_all_blades"] = I_all_blades
 
 class TotalBladeProperties(ExplicitComponent):
     # Only run when user bypasses PreComp with inputs of blade elastic properties!
@@ -1156,7 +1123,6 @@ class RotorElasticity(Group):
             "y_cg",
             "edge_iner",
             "flap_iner",
-            "theta",
         ]
 
         if modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
@@ -1167,7 +1133,7 @@ class RotorElasticity(Group):
             # Outputs - Distributed beam properties
             # YL: Try to match what precomp gives
             blade_elastic_ivc.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
-            blade_elastic_ivc.add_output("A", val=np.zeros(n_span), units="m**2", desc="cross sectional area")
+            blade_elastic_ivc.add_output("A", val=np.ones(n_span), units="m**2", desc="cross sectional area")
             blade_elastic_ivc.add_output("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
             blade_elastic_ivc.add_output(
                 "EIxx",
@@ -1291,13 +1257,22 @@ class RotorElasticity(Group):
                 val=np.zeros(n_span),
                 desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
             )
-            
+
+
 
             # Make IVC look like running precomp
-            self.add_subsystem("precomp", blade_elastic_ivc, promotes=['*'])
+            self.add_subsystem("precomp", blade_elastic_ivc, promotes=promote_list+ [ 
+                        "A",
+                        "xu_spar",
+                        "xl_spar",
+                        "yu_spar",
+                        "yl_spar",
+                        "xu_te",
+                        "xl_te",
+                        "yu_te",
+                        "yl_te",
+                    ])
 
-            # Compute total blade properties
-            self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
         else:
 
             self.add_subsystem(
@@ -1307,6 +1282,7 @@ class RotorElasticity(Group):
                 + [
                     "r",
                     "chord",
+                    "theta",
                     "A",
                     "precurve",
                     "presweep",
@@ -1324,16 +1300,15 @@ class RotorElasticity(Group):
                     "xl_te",
                     "yu_te",
                     "yl_te",
-                    "blade_mass",
-                    "blade_span_cg",
-                    "blade_moment_of_inertia",
-                    "mass_all_blades",
-                    "I_all_blades",
                 ],
             )
-
+        # YL: should enable the KI matrix to be generated from the user-define elastic properties directly if user bypasses precomps
         self.add_subsystem(
             "generate_KI",
             generate_KI(modeling_options=modeling_options),
             promotes=promote_list,
         )
+        
+
+        # Compute total blade properties
+        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])

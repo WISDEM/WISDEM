@@ -626,6 +626,12 @@ def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_ela
     wt_opt["rotorse.EA"] = PchipInterpolator(stiff_grid, stiff_matrix[:,11])(nd_span)
     wt_opt["rotorse.EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,15])(nd_span)
     wt_opt["rotorse.EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,18])(nd_span)
+    wt_opt["rotorse.EIxy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,1])(nd_span)
+    wt_opt["rotorse.re.EA_EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,12])(nd_span)
+    wt_opt["rotorse.re.EA_EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,13])(nd_span)
+    wt_opt["rotorse.re.EIxx_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,17])(nd_span)
+    wt_opt["rotorse.re.EIyy_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,19])(nd_span)
+    wt_opt["rotorse.re.EA_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,14])(nd_span)
     wt_opt["rotorse.GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,20])(nd_span)
     wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix[:,0])(nd_span)
     wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix[:,20])(nd_span) # TODO YL: confirm if this is iplr
@@ -637,8 +643,8 @@ def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_ela
     # wt_opt["rotorse.y_sc"]
     wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,12]/inertia_matrix[:,0])(nd_span)
     wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,0])(nd_span)
-    wt_opt["rotorse.re.precomp.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,18])(nd_span)
-    wt_opt["rotorse.re.precomp.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,15])(nd_span)
+    wt_opt["rotorse.re.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,18])(nd_span)
+    wt_opt["rotorse.re.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,15])(nd_span)
 
     return wt_opt
 

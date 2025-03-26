@@ -182,17 +182,12 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
             self.connect("env.shear_exp", "rotorse.shearExp")
-            self.connect("configuration.n_blades", "rotorse.nBlades")
-            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
-                self.connect(
-                    "configuration.n_blades",
-                    ["rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
-                )
-            else:
-                self.connect("configuration.n_blades", "rotorse.re.total_blade_properties.n_blades")                
+            self.connect(
+                "configuration.n_blades",
+                ["rotorse.nBlades", "rotorse.re.total_blade_properties.n_blades"],
+            )
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
-            self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
-
+            
             # Connections to RotorPower
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
@@ -217,8 +212,13 @@ class WT_RNTA(om.Group):
 
             # Connections to rotor elastic and frequency analysis
             if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                self.connect(
+                "configuration.n_blades",
+                "rotorse.rs.constr.blade_number",
+                )
                 self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
                 self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
+                self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
                 self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.re.precomp.layer_start_nd")
                 self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.re.precomp.layer_end_nd")
