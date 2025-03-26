@@ -1035,21 +1035,21 @@ class WindTurbineOntologyPython(object):
                 if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = wt_opt["rotorse.rs.bjs.joint_mass"][0]
 
-            self.wt_init["components"]["blade"]["elastic_properties_mb"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"] = {}
             if not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
-                self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["reference_axis"] = self.wt_init[
+                self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["reference_axis"] = self.wt_init[
                 "components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]
             else:
                 # TODO YL: need to confirm this is ok
-                self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["reference_axis"] = self.wt_init[
+                self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["reference_axis"] = self.wt_init[
                 "components"]["blade"]["outer_shape_bem"]["reference_axis"]
             
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["twist"] = self.wt_init[
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["twist"] = self.wt_init[
                 "components"
             ]["blade"]["outer_shape_bem"]["twist"]
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"]["grid"] = wt_opt[
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
             K = []
@@ -1070,9 +1070,9 @@ class WindTurbineOntologyPython(object):
                 Ki[19] = wt_opt["rotorse.re.generate_KI.K"][i,4,5]
                 Ki[20] = wt_opt["rotorse.re.generate_KI.K"][i,5,5]
                 K.append(Ki.tolist())
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"]["values"] = K
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"][
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["values"] = K
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"][
                 "grid"
             ] = wt_opt["blade.outer_shape_bem.s"].tolist()
             I = []
@@ -1090,7 +1090,7 @@ class WindTurbineOntologyPython(object):
                 Ii[18] = wt_opt["rotorse.re.generate_KI.I"][i,4,4]
                 Ii[20] = wt_opt["rotorse.re.generate_KI.I"][i,5,5]
                 I.append(Ii.tolist())
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"]["values"] = I
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"]["values"] = I
 
         # Update hub
         if self.modeling_options["flags"]["hub"]:
