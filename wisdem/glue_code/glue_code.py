@@ -276,12 +276,6 @@ class WT_RNTA(om.Group):
                 self.connect("materials.nu", "rotorse.re.precomp.nu")
                 self.connect("materials.rho", "rotorse.re.precomp.rho")
 
-                # Conncetions to rail transport module
-                if (
-                    modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-                    or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-                ):
-                    self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
                 # Connections from blade struct parametrization to rotor load anlysis
                 spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
                 self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
