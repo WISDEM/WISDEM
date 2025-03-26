@@ -1,6 +1,6 @@
+import openmdao.api as om
 import pandas as pd
 import pytest
-import openmdao.api as om
 
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
@@ -16,7 +16,7 @@ def landbosse_costs_by_module_type_operation():
     prob.model = LandBOSSE()
     prob.setup()
     prob.run_model()
-    #prob.model.list_inputs(units=True, desc=False)
+    # prob.model.list_inputs(units=True)
     landbosse_costs_by_module_type_operation = prob["landbosse_costs_by_module_type_operation"]
     return landbosse_costs_by_module_type_operation
 
@@ -65,6 +65,7 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     )
 
     comparison["% delta"] = (comparison["Cost / project actual"] / comparison["Cost / project expected"] - 1) * 100
+
     comparison.to_csv(validation_output_csv, index=False)
 
     # If the comparison dataframe is empty, that means there are no common
@@ -103,7 +104,4 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
     result = compare_expected_to_actual(
         costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
     )
-
     assert result
-
-    

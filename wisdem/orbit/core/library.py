@@ -107,7 +107,7 @@ def initialize_library(library_path):
         raise ValueError("Invalid library path.")
 
     os.environ["DATA_LIBRARY"] = str(library_path)
-    print(f"ORBIT library intialized at '{library_path}'")
+    # print(f"ORBIT library intialized at '{library_path}'")
 
 
 def extract_library_data(config, additional_keys=None):
