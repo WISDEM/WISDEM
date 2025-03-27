@@ -673,11 +673,11 @@ def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_ela
     wt_opt["rotorse.re.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix["i_edge"][:])(nd_span)
 
     # Compute other properties
-    Ex = wt_opt["rotorse.EIxx"]/wt_opt["rotorse.re.precomp.edge_iner"]
-    Ey = wt_opt["rotorse.EIyy"]/wt_opt["rotorse.re.precomp.flap_iner"]
-    Ax = wt_opt["rotorse.EA"]/Ex
-    Ay = wt_opt["rotorse.EA"]/Ey
-    wt_opt["rotorse.A"] = (Ax+Ay)/2
+    # Ex = wt_opt["rotorse.EIxx"]/wt_opt["rotorse.re.edge_iner"]
+    # Ey = wt_opt["rotorse.EIyy"]/wt_opt["rotorse.re.flap_iner"]
+    # Ax = wt_opt["rotorse.EA"]/Ex
+    # Ay = wt_opt["rotorse.EA"]/Ey
+    # wt_opt["rotorse.A"] = (Ax+Ay)/2
 
     return wt_opt
 
