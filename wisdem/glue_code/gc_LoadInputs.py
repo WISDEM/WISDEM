@@ -1052,7 +1052,7 @@ class WindTurbineOntologyPython(object):
                 "blade.outer_shape_bem.s"
             ].tolist()
 
-            stiff_terms = [11, 16, 22, 26, 33, 34, 35, 36, 44, 45, 46, 55, 56, 66]
+            stiff_terms = [11, 12, 13, 14, 15, 16, 22, 23, 24, 25, 26, 33, 34, 35, 36, 44, 45, 46, 55, 56, 66]
             for term in stiff_terms:
                  self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["K"+str(term)] = np.array(wt_opt["rotorse.re.generate_KI.K"][:,int(term//10-1),int(term%10-1)]).tolist()
 
