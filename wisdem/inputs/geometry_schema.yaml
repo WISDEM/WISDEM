@@ -515,9 +515,11 @@ properties:
                                 description: Mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, ....
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             system_inertia:
                                 type: array
                                 description: Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -527,6 +529,7 @@ properties:
                             system_center_mass:
                                 type: array
                                 description: Center of mass of the hub system. Work in progress.
+                                default: [0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: m
@@ -1229,14 +1232,17 @@ properties:
                                 description: Mass of the nacelle system, including the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             yaw_mass:
                                 type: number
                                 description: Mass of the yaw system.
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             system_inertia:
                                 type: array
                                 description: Inertia of the nacelle system with respect to the center of mass. The sum includes the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -1246,6 +1252,7 @@ properties:
                             system_inertia_tt:
                                 type: array
                                 description: Inertia of the nacelle system with respect to the tower top. The sum includes the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -1255,6 +1262,7 @@ properties:
                             system_center_mass:
                                 type: array
                                 description: Center of mass of the nacelle system, including the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: m
@@ -1266,11 +1274,13 @@ properties:
                                 description: Equivalent spring constant for the drivetrain system 
                                 unit: N*m/rad
                                 minimum: 0.0
+                                default: 0.0
                             damping_coefficient:
                                 type: number
                                 description: Equivalent damping coefficient for the drivetrain system
                                 unit: N*m*s/rad
                                 minimum: 0.0
+                                default: 0.0
             tower:
                 type: object
                 required:
