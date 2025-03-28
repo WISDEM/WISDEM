@@ -618,28 +618,58 @@ def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_ela
     # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
     # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
 
-    wt_opt["rotorse.EA"] = PchipInterpolator(stiff_grid, stiff_matrix[:,11])(nd_span)
-    wt_opt["rotorse.EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,15])(nd_span)
-    wt_opt["rotorse.EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,18])(nd_span)
-    wt_opt["rotorse.EIxy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,1])(nd_span)
-    wt_opt["rotorse.re.EA_EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,12])(nd_span)
-    wt_opt["rotorse.re.EA_EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,13])(nd_span)
-    wt_opt["rotorse.re.EIxx_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,17])(nd_span)
-    wt_opt["rotorse.re.EIyy_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,19])(nd_span)
-    wt_opt["rotorse.re.EA_GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,14])(nd_span)
-    wt_opt["rotorse.GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,20])(nd_span)
-    wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix[:,0])(nd_span)
-    wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix[:,20])(nd_span) # TODO YL: confirm if this is iplr
-    # wt_opt["rotorse.Tw_iner"]
+    # Assemble stiffnees and inertia matrices
+    K11 = PchipInterpolator(stiff_grid, stiff_matrix["K11"][:])(nd_span)
+    K22 = PchipInterpolator(stiff_grid, stiff_matrix["K22"][:])(nd_span)
+    K33 = PchipInterpolator(stiff_grid, stiff_matrix["K33"][:])(nd_span)
+    K44 = PchipInterpolator(stiff_grid, stiff_matrix["K44"][:])(nd_span)
+    K55 = PchipInterpolator(stiff_grid, stiff_matrix["K55"][:])(nd_span)
+    K66 = PchipInterpolator(stiff_grid, stiff_matrix["K66"][:])(nd_span)
+    K12 = PchipInterpolator(stiff_grid, stiff_matrix["K12"][:])(nd_span)
+    K13 = PchipInterpolator(stiff_grid, stiff_matrix["K13"][:])(nd_span)
+    K14 = PchipInterpolator(stiff_grid, stiff_matrix["K14"][:])(nd_span)
+    K15 = PchipInterpolator(stiff_grid, stiff_matrix["K15"][:])(nd_span)
+    K16 = PchipInterpolator(stiff_grid, stiff_matrix["K16"][:])(nd_span)
+    K23 = PchipInterpolator(stiff_grid, stiff_matrix["K23"][:])(nd_span)
+    K24 = PchipInterpolator(stiff_grid, stiff_matrix["K24"][:])(nd_span)
+    K25 = PchipInterpolator(stiff_grid, stiff_matrix["K25"][:])(nd_span)
+    K26 = PchipInterpolator(stiff_grid, stiff_matrix["K26"][:])(nd_span)
+    K34 = PchipInterpolator(stiff_grid, stiff_matrix["K34"][:])(nd_span)
+    K35 = PchipInterpolator(stiff_grid, stiff_matrix["K35"][:])(nd_span)
+    K36 = PchipInterpolator(stiff_grid, stiff_matrix["K36"][:])(nd_span)
+    K45 = PchipInterpolator(stiff_grid, stiff_matrix["K45"][:])(nd_span)
+    K46 = PchipInterpolator(stiff_grid, stiff_matrix["K46"][:])(nd_span)
+    K56 = PchipInterpolator(stiff_grid, stiff_matrix["K56"][:])(nd_span)
+
+    wt_opt["rotorse.EA"] = K33
+    wt_opt["rotorse.EIxx"] = K44
+    wt_opt["rotorse.EIyy"] = K55
+    wt_opt["rotorse.GJ"] = K66
+    wt_opt["rotorse.EIxy"] = K12
+    wt_opt["rotorse.re.EA_EIxx"] = K34
+    wt_opt["rotorse.re.EA_EIyy"] = K35
+    wt_opt["rotorse.re.EIxx_GJ"] = K46
+    wt_opt["rotorse.re.EIyy_GJ"] = K56
+    wt_opt["rotorse.re.EA_GJ"] = K36
+
+
+    wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix["mass"][:])(nd_span)
+    # TODO YL: can we change precomp output to J? I don't see rhoJ anywhere.
+    wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix["i_plr"][:])(nd_span) # TODO YL: confirm if this is iplr
+    # wt_opt["rotorse.Tw_iner"] = PchipInterpolator(twist_grid, twist_inertia)(nd_span)
     # wt_opt["rotorse.x_ec"]
     # wt_opt["rotorse.y_ec"]
-    # wt_opt["rotorse.x_tc"]
-    # wt_opt["rotorse.x_sc"]
-    # wt_opt["rotorse.y_sc"]
-    wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,12]/inertia_matrix[:,0])(nd_span)
-    wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,0])(nd_span)
-    wt_opt["rotorse.re.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,18])(nd_span)
-    wt_opt["rotorse.re.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,15])(nd_span)
+    wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_y"][:])(nd_span)
+    wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_x"][:])(nd_span)
+    wt_opt["rotorse.re.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix["i_flap"][:])(nd_span)
+    wt_opt["rotorse.re.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix["i_edge"][:])(nd_span)
+
+    # Compute other properties
+    # Ex = wt_opt["rotorse.EIxx"]/wt_opt["rotorse.re.edge_iner"]
+    # Ey = wt_opt["rotorse.EIyy"]/wt_opt["rotorse.re.flap_iner"]
+    # Ax = wt_opt["rotorse.EA"]/Ex
+    # Ay = wt_opt["rotorse.EA"]/Ey
+    # wt_opt["rotorse.A"] = (Ax+Ay)/2
 
     return wt_opt
 
