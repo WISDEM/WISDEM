@@ -48,17 +48,15 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
+    user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]
     hub = wt_init["components"]["hub"]
-    wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"])
+    wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
 
-    if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
-        nacelle = wt_init["components"]["nacelle"]
-        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"])
+    nacelle = wt_init["components"]["nacelle"]
+    wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
 
-        if modeling_options["flags"]["generator"]:
-            wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle)
-    else:
-        nacelle = {}
+    if modeling_options["flags"]["generator"]:
+        wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle)
 
     if modeling_options["flags"]["RNA"]:
         RNA = wt_init["components"]["RNA"]
@@ -111,7 +109,7 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
         wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
     else: 
-        wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties_mb"])
+        wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
@@ -601,16 +599,16 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
     return wt_opt
 
-def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_elastic_properties_mb):
+def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_elastic_properties):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
     n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
     nd_span = wt_opt["blade.outer_shape_bem.s_default"]
     # TODO YL: maybe I can pass in the inertia twist throught the twist in six_x_six
-    stiff_grid = user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["grid"]
-    stiff_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["values"])
+    stiff_grid = user_defined_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
+    stiff_matrix = np.array(user_defined_elastic_properties["six_x_six"]["stiff_matrix"]["values"])
 
-    inertia_grid = user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["grid"]
-    inertia_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["values"])
+    inertia_grid = user_defined_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
+    inertia_matrix = np.array(user_defined_elastic_properties["six_x_six"]["inertia_matrix"]["values"])
 
     # 21-element inertia matrix
     # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
@@ -754,10 +752,7 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         wt_opt["hub.radius"]   = hub["diameter"] / 2
         wt_opt["hub.cone"]     = hub["cone_angle"]
         # wt_opt['hub.drag_coeff'] = hub['drag_coefficient'] # GB: This doesn't connect to anything
-    if user_elastic:
-        wt_opt['hub.hub_system_mass_user']    = hub['elastic_properties_mb']['system_mass']
-        wt_opt['hub.hub_system_I_user']       = hub['elastic_properties_mb']['system_inertia']
-        wt_opt['hub.hub_system_cm_user']      = hub['elastic_properties_mb']['system_center_mass']
+    
     if flags["hub"]:
         wt_opt["hub.flange_t2shell_t"]            = hub["flange_t2shell_t"]
         wt_opt["hub.flange_OD2hub_D"]             = hub["flange_OD2hub_D"]
@@ -774,22 +769,30 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         wt_opt["hub.spinner_mass_user"]           = hub["spinner_mass_user"]
         wt_opt["hub.pitch_system_mass_user"]      = hub["pitch_system_mass_user"]
         wt_opt["hub.hub_shell_mass_user"]         = hub["hub_shell_mass_user"]
+
+        if user_elastic:
+            wt_opt['hub.hub_system_mass_user']    = hub['elastic_properties']['mass']
+            wt_opt['hub.hub_system_I_user']       = hub['elastic_properties']['inertia']
+            wt_opt['hub.hub_system_cm_user']      = hub['elastic_properties']['location']
     else:
-        # Not this is set in 'drivese' IndepVarComp to mimic DrivetrainSE as set in gc_WT_DataStruct
-        wt_opt['drivese.hub_system_mass']         = hub['elastic_properties_mb']['system_mass']
-        wt_opt['drivese.hub_system_I']            = hub['elastic_properties_mb']['system_inertia']
-        wt_opt['drivese.hub_system_cm']           = hub['elastic_properties_mb']['system_center_mass']
+        # Note that this is stored in the drivese namespace per gc_WT_DataStruct to mimic DrivetrainSE
+        wt_opt['drivese.hub_system_mass']         = hub['elastic_properties']['mass']
+        wt_opt['drivese.hub_system_I']            = hub['elastic_properties']['inertia']
+        wt_opt['drivese.hub_system_cm']           = hub['elastic_properties']['location']
+        
 
     return wt_opt
 
 
-def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
-    # Common direct and geared
-    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
-    wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
-    wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
-    wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
-    wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
+def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
+    if flags["nacelle"] or flags["blade"]:
+        # Common direct and geared
+        wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
+        wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
+        wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
+        wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
+        wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
+        
     if flags["nacelle"]:
         wt_opt["nacelle.distance_hub_mb"] = nacelle["drivetrain"]["distance_hub_mb"]
         wt_opt["nacelle.distance_mb_mb"] = nacelle["drivetrain"]["distance_mb_mb"]
@@ -811,6 +814,17 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
         wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
 
+        if user_elastic:
+            wt_opt['nacelle.yaw_mass_user']          = nacelle['yaw']['elastic_properties']['mass']
+            wt_opt['nacelle.above_yaw_mass_user']    = nacelle['drivetrain']['elastic_properties']['mass']
+            wt_opt['nacelle.above_yaw_cm_user']      = nacelle['drivetrain']['elastic_properties']['location']
+            wt_opt['nacelle.above_yaw_I_TT_user']    = nacelle['drivetrain']['elastic_properties']['inertia']
+            wt_opt['nacelle.above_yaw_I_user']       = nacelle['drivetrain']['elastic_properties']['inertia']
+            wt_opt['nacelle.generator_rotor_I_user'] = 0.5*nacelle['drivetrain']['generator']['elastic_properties']['inertia']
+
+            wt_opt['nacelle.drivetrain_spring_constant_user']     = nacelle['elastic_properties']['spring_constant']
+            wt_opt['nacelle.drivetrain_damping_coefficient_user'] = nacelle['elastic_properties']['damping_coefficient']
+        
         if modeling_options["WISDEM"]["DriveSE"]["direct"]:
             if wt_opt["nacelle.gear_ratio"] > 1:
                 raise Exception(
@@ -863,33 +877,20 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["generator.generator_efficiency_user"] = myeff
 
     else:
-
-        # Should we check for some required inputs?
-        wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['system_center_mass']
-        wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['system_inertia']
-        
-        wt_opt['drivese.above_yaw_mass']    = nacelle['elastic_properties_mb']['system_mass']
-        wt_opt['drivese.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
-        wt_opt['drivese.above_yaw_cm']      = nacelle['elastic_properties_mb']['system_center_mass']  # TODO: figure out difference with nacelle_cm
-        wt_opt['drivese.generator_rotor_I'] = nacelle['drivetrain']['generator_inertia_user']
-        wt_opt['drivese.rna_I_TT']          = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
-        wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
-
-        # Are these even in WISDEM? 
-        # Why are we required to define it here?
-        # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
-        # Is there an automated way to set up the outputs of drivese here?
-        wt_opt['drivese.drivetrain_spring_constant']        = 0
-        wt_opt['drivese.drivetrain_damping_coefficient']    = 0
-
-
-        # wt_opt['drivese.lss_wohler_exp'] =0 # pCrunch doesn't like this
-        # wt_opt['drivese.lss_wohler_A'] = 0  # pCrunch doesn't like this
-        # wt_opt['drivese.lss_Xt'] =  0 
-        # wt_opt['drivese.lss_axial_load2stress'] =   0 
-        # wt_opt['drivese.lss_shear_load2stress'] =   0 
-        
-        print('here')
+        wt_opt['drivese.yaw_mass']          = nacelle['yaw']['elastic_properties']['mass']
+        wt_opt['drivese.above_yaw_mass']    = nacelle['drivetrain']['elastic_properties']['mass']
+        wt_opt['drivese.above_yaw_cm']      = nacelle['drivetrain']['elastic_properties']['location']
+        wt_opt['drivese.above_yaw_I_TT']    = nacelle['drivetrain']['elastic_properties']['inertia']
+        wt_opt['drivese.above_yaw_I']       = nacelle['drivetrain']['elastic_properties']['inertia']
+        wt_opt['drivese.generator_rotor_I'] = 0.5*nacelle['drivetrain']['generator']['elastic_properties']['inertia']
+        wt_opt['drivese.drivetrain_spring_constant']     = nacelle['elastic_properties']['spring_constant']
+        wt_opt['drivese.drivetrain_damping_coefficient'] = nacelle['elastic_properties']['damping_coefficient']
+        if wt_opt["nacelle.gear_ratio"] > 1:
+            wt_opt['drivese.gearbox_mass']  = nacelle['drivetrain']['gearbox']['elastic_properties']['mass']
+            wt_opt['drivese.gearbox_I']     = nacelle['drivetrain']['gearbox']['elastic_properties']['inertia']
+            #wt_opt['drivese.gearbox_cm']    = nacelle['drivetrain']['gearbox']['elastic_properties']['location']
+            #wt_opt['drivese.gearbox_stiffness'] = nacelle['drivetrain']['gearbox']['elastic_properties']['torsional_stiffness']
+            #wt_opt['drivese.gearbox_damping'] = nacelle['drivetrain']['gearbox']['elastic_properties']['torsional_damping']
 
     return wt_opt
 

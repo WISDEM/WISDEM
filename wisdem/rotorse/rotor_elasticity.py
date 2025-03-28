@@ -833,7 +833,6 @@ class RunPreComp(ExplicitComponent):
 
 
 class TotalBladeProperties(ExplicitComponent):
-    # Only run when user bypasses PreComp with inputs of blade elastic properties!
     def initialize(self):
         self.options.declare("modeling_options")
         self.options.declare("opt_options")
@@ -1302,6 +1301,7 @@ class RotorElasticity(Group):
                     "yl_te",
                 ],
             )
+            
         # YL: should enable the KI matrix to be generated from the user-define elastic properties directly if user bypasses precomps
         self.add_subsystem(
             "generate_KI",
@@ -1311,4 +1311,5 @@ class RotorElasticity(Group):
         
 
         # Compute total blade properties
-        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])
+        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options),
+                           promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])

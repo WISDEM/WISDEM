@@ -1161,6 +1161,8 @@ class DriveDynamics(om.ExplicitComponent):
         self.add_input("damping_ratio", val=0.0)
         self.add_input("blades_I", np.zeros(6), units="kg*m**2")
         self.add_input("hub_system_I", np.zeros(6), units="kg*m**2")
+        self.add_input("drivetrain_spring_constant_user", 0.0, units="N*m/rad")
+        self.add_input("drivetrain_damping_coefficient_user", 0.0, units="N*m*s/rad")
 
         self.add_output("drivetrain_spring_constant", 0.0, units="N*m/rad")
         self.add_output("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad")
@@ -1172,15 +1174,17 @@ class DriveDynamics(om.ExplicitComponent):
         gbr = inputs["gear_ratio"]
         zeta = inputs["damping_ratio"]
         rotor_I = inputs["blades_I"] + inputs["hub_system_I"]
+        k_user = inputs["drivetrain_spring_constant_user"]
+        c_user = inputs["drivetrain_damping_coefficient_user"]
 
         # springs in series, should be n^2*k1*k2/(k1+n^2*k2)
         # https://www.nrel.gov/docs/fy09osti/41160.pdf
         k_drive = k_lss if gbr == 1.0 else 1.0 / (1 / k_lss + 1 / k_hss / gbr / gbr)
-        outputs["drivetrain_spring_constant"] = k_drive
+        outputs["drivetrain_spring_constant"] = k_user if k_user != 0.0 else k_drive
 
         # Critical damping value
         c_crit = 2.0 * np.sqrt(k_drive * rotor_I[0])
-        outputs["drivetrain_damping_coefficient"] = zeta * c_crit
+        outputs["drivetrain_damping_coefficient"] = c_user if c_user != 0.0 else zeta * c_crit
 
 
 # --------------------------------------------

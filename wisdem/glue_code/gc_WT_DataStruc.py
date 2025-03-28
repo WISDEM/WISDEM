@@ -408,14 +408,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
                     
             if modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]:
-                drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
-                drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
-                nacelle_ivc.add_output('system_mass_user', val=0.0, units='kg')
-                nacelle_ivc.add_output('system_cm_user',  val=np.zeros(3), units='m')
-                nacelle_ivc.add_output('system_inertia_user', val=np.zeros(6), units='kg*m**2')
-                nacelle_ivc.add_output('system_inertia_TT_user', val=np.zeros(6), units='kg*m**2')
-                nacelle_ivc.add_output('yaw_mass_user', val=0.0, units='kg')
-                nacelle_ivc.add_output('generator_rotor_I_user',       val=np.zeros(3), units='kg*m**2')
+                #nacelle_ivc.add_output('generator_rotor_I_user',       val=np.zeros(3), units='kg*m**2')
+                nacelle_ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
+                nacelle_ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
+                nacelle_ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
+                nacelle_ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
                 nacelle_ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
                 nacelle_ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
                 
@@ -520,15 +517,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if not modeling_options["flags"]["nacelle"]:
             # User wants to bypass all of DrivetrainSE with elastic summary properties
             drivese_ivc = om.IndepVarComp()
-            drivese_ivc.add_output('hub_system_mass_user', val=0, units='kg')
-            drivese_ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
-            drivese_ivc.add_output('hub_system_cm_user', val=0.0, units='m')
-            #nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-            #nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-            #nacelle_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
-            #nacelle_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
-            #nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-            #nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+            drivese_ivc.add_output('hub_system_mass', val=0, units='kg')
+            drivese_ivc.add_output('hub_system_I', val=np.zeros(6), units='kg*m**2')
+            drivese_ivc.add_output('hub_system_cm', val=0.0, units='m')
+            drivese_ivc.add_output("drivetrain_spring_constant", 0.0, units="N*m/rad")
+            drivese_ivc.add_output("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad")
+            drivese_ivc.add_output("above_yaw_mass", 0.0, units="kg")
+            drivese_ivc.add_output("above_yaw_cm", np.zeros(3), units="m")
+            drivese_ivc.add_output("above_yaw_I", np.zeros(6), units="kg*m**2")
+            drivese_ivc.add_output("above_yaw_I_TT", np.zeros(6), units="kg*m**2")
+            drivese_ivc.add_output('yaw_mass', val=0.0, units='kg')
+            drivese_ivc.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
             self.add_subsystem("drivese", drivese_ivc)
                 
              
@@ -2196,11 +2195,6 @@ class Hub(om.Group):
             )
             self.add_subsystem("compute_radius", exec_comp, promotes=["*"])
             
-
-        if self.options["user_elastic"]:
-            ivc.add_output('hub_system_mass_user', val=0, units='kg')
-            ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
-            ivc.add_output('hub_system_cm_user', val=0.0, units='m')
             
         if self.options["flags"]["hub"]:
             ivc.add_output("flange_t2shell_t", val=0.0)
@@ -2218,7 +2212,11 @@ class Hub(om.Group):
             ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
             ivc.add_output("spinner_mass_user", val=0.0, units="kg")
             ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
-            
+
+            if self.options["user_elastic"]:
+                ivc.add_output('hub_system_mass_user', val=0, units='kg')
+                ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
+                ivc.add_output('hub_system_cm_user', val=0.0, units='m')
 
 
 class Compute_Grid(om.ExplicitComponent):

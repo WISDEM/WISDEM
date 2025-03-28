@@ -1261,6 +1261,16 @@ properties:
                                     minItems: 3
                                     maxItems: 3
                                     uniqueItems: false
+                            spring_constant:
+                                type: number
+                                description: Equivalent spring constant for the drivetrain system 
+                                unit: N*m/rad
+                                minimum: 0.0
+                            damping_coefficient:
+                                type: number
+                                description: Equivalent damping coefficient for the drivetrain system
+                                unit: N*m*s/rad
+                                minimum: 0.0
             tower:
                 type: object
                 required:
