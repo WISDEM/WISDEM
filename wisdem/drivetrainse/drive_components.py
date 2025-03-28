@@ -1186,5 +1186,4 @@ class DriveDynamics(om.ExplicitComponent):
         c_crit = 2.0 * np.sqrt(k_drive * rotor_I[0])
         outputs["drivetrain_damping_coefficient"] = c_user if c_user != 0.0 else zeta * c_crit
 
-
 # --------------------------------------------
