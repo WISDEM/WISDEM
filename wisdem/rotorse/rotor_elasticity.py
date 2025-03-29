@@ -1258,19 +1258,8 @@ class RotorElasticity(Group):
             )
 
 
-
             # Make IVC look like running precomp
-            self.add_subsystem("precomp", blade_elastic_ivc, promotes=promote_list+ [ 
-                        "A",
-                        "xu_spar",
-                        "xl_spar",
-                        "yu_spar",
-                        "yl_spar",
-                        "xu_te",
-                        "xl_te",
-                        "yu_te",
-                        "yl_te",
-                    ])
+            self.add_subsystem("precomp", blade_elastic_ivc, promotes=['*'])
 
         else:
 
@@ -1299,17 +1288,14 @@ class RotorElasticity(Group):
                     "xl_te",
                     "yu_te",
                     "yl_te",
+                    "n_blades",
                 ],
             )
-            
-        # YL: should enable the KI matrix to be generated from the user-define elastic properties directly if user bypasses precomps
-        self.add_subsystem(
-            "generate_KI",
-            generate_KI(modeling_options=modeling_options),
-            promotes=promote_list,
-        )
-        
 
         # Compute total blade properties
-        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options),
-                           promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])
+        self.add_subsystem("total_blade_properties",
+                           TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options),
+                           promotes=["*"])
+            
+        # YL: should enable the KI matrix to be generated from the user-define elastic properties directly if user bypasses precomps
+        self.add_subsystem("generate_KI", generate_KI(modeling_options=modeling_options), promotes=promote_list)

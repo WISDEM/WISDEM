@@ -155,7 +155,7 @@ class WT_RNTA(om.Group):
             self.connect("env.shear_exp", "rotorse.shearExp")
             self.connect(
                 "configuration.n_blades",
-                ["rotorse.nBlades", "rotorse.re.total_blade_properties.n_blades"],
+                ["rotorse.nBlades", "rotorse.re.n_blades"],
             )
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
             

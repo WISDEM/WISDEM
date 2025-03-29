@@ -49,11 +49,13 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         control = {}
 
     user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]
-    hub = wt_init["components"]["hub"]
-    wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
+    if "hub" in wt_init["components"]:
+        hub = wt_init["components"]["hub"]
+        wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
 
-    nacelle = wt_init["components"]["nacelle"]
-    wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
+    if "nacelle" in wt_init["components"]:
+        nacelle = wt_init["components"]["nacelle"]
+        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
 
     if modeling_options["flags"]["generator"]:
         wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle)
