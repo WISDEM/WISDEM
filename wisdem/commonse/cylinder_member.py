@@ -17,7 +17,7 @@ from wisdem.commonse.akima import Akima
 
 NULL = -9999
 MEMMAX = 200
-NREFINE = 1
+NREFINE_DEFAULT = 1
 
 # For rectangular
 # This assumes that the Ca only depends on the aspect ratio
@@ -138,7 +138,7 @@ class RectCrossSection(CrossSection):
         self.b = make_float(self.b)
 
 
-def get_nfull(npts, nref=NREFINE):
+def get_nfull(npts, nref=NREFINE_DEFAULT):
     n_full = int(1 + nref * (npts - 1))
     return n_full
 
@@ -609,7 +609,7 @@ class MemberDiscretization(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
         self.options.declare("member_shape_variables")
 
     def setup(self):
@@ -1118,7 +1118,7 @@ class MemberComplex(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
         self.options.declare("idx")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
 
     def setup(self):
         opt = self.options["options"]
