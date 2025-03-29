@@ -528,7 +528,6 @@ class PoseOptimization(object):
                 upper=z_options["upper_bound"],
             )
 
-        # TODO_YL: conditional?
         if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             if self.modeling["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
                 raise Exception("Blade structural design variables not available for user-defined blade elastic model. Please modify the modeling or optimization options.")
