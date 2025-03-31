@@ -178,11 +178,11 @@ class WT_RNTA(om.Group):
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
-            elif not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            elif not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
 
             # Connections to rotor elastic and frequency analysis
-            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.connect(
                 "configuration.n_blades",
                 "rotorse.rs.constr.blade_number",
@@ -340,7 +340,7 @@ class WT_RNTA(om.Group):
             self.connect("hub.hub_shell_mass_user", "drivese.hub_shell_mass_user")
             self.connect("hub.spinner_mass_user", "drivese.spinner_mass_user")
             self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
-            if modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]:
+            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
                 self.connect("hub.hub_system_mass_user", "drivese.hub_system_mass_user")
                 self.connect("hub.hub_system_cm_user", "drivese.hub_system_cm_user")
                 self.connect("hub.hub_system_I_user", "drivese.hub_system_I_user")

@@ -529,7 +529,7 @@ class PoseOptimization(object):
             )
 
         if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
-            if self.modeling["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if self.modeling["WISDEM"]["RotorSE"]["user_elastic"]:
                 raise Exception("Blade structural design variables not available for user-defined blade elastic model. Please modify the modeling or optimization options.")
             layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
             for i in range(len(blade_opt["structure"])):
@@ -1425,7 +1425,7 @@ class PoseOptimization(object):
                 init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
             
-            if not self.modeling["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not self.modeling["WISDEM"]["RotorSE"]["user_elastic"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
                 layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
                 for i in range(self.modeling["WISDEM"]["RotorSE"]["n_layers"]):

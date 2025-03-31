@@ -48,7 +48,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
-    user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]
+    user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_elastic"]
     if "hub" in wt_init["components"]:
         hub = wt_init["components"]["hub"]
         wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
@@ -108,10 +108,10 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV['aero_shape']
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
-    if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+    if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
         wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
     else: 
-        wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties"])
+        wt_opt = assign_user_elastic(wt_opt, modeling_options, blade["elastic_properties"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
@@ -601,16 +601,16 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
     return wt_opt
 
-def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_elastic_properties):
+def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
     n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
     nd_span = wt_opt["blade.outer_shape_bem.s_default"]
     # TODO YL: maybe I can pass in the inertia twist throught the twist in six_x_six
-    stiff_grid = user_defined_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
-    stiff_matrix = np.array(user_defined_elastic_properties["six_x_six"]["stiff_matrix"]["values"])
+    stiff_grid = user_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
+    stiff_matrix = np.array(user_elastic_properties["six_x_six"]["stiff_matrix"]["values"])
 
-    inertia_grid = user_defined_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
-    inertia_matrix = np.array(user_defined_elastic_properties["six_x_six"]["inertia_matrix"]["values"])
+    inertia_grid = user_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
+    inertia_matrix = np.array(user_elastic_properties["six_x_six"]["inertia_matrix"]["values"])
 
     # 21-element inertia matrix
     # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]

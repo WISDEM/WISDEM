@@ -2993,7 +2993,7 @@ class TotalBladeCosts(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        if self.options["modeling_options"]["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        if self.options["modeling_options"]["WISDEM"]["RotorSE"]["user_elastic"]:
             outputs["total_blade_cost"] = 0.0
         else:
             outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]

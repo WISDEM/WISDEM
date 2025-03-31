@@ -176,7 +176,7 @@ class WindTurbineOntologyPython(object):
 
             self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False # Is this always false? It is not in the schema and not changed anywhere else.
             self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed, this should be common so moved out of the conditional
-            if not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not self.modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
                 )
@@ -731,7 +731,7 @@ class WindTurbineOntologyPython(object):
                 blade_opt_options["aero_shape"]["L/D"]["n_opt"],
             )
         # # Blade structural design variables
-        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"] and (not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]):
+        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"] and (not self.modeling_options["WISDEM"]["RotorSE"]["user_elastic"]):
             n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
             layer_name = self.modeling_options["WISDEM"]["RotorSE"]["layer_name"]
             spars_tereinf = np.zeros(4, dtype=int)
@@ -901,7 +901,7 @@ class WindTurbineOntologyPython(object):
             # Update blade structure
             # TODO_YL: conditional?
             # Reference axis from blade outer shape
-            if not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not self.modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"] = self.wt_init[
                     "components"
                 ]["blade"]["outer_shape_bem"]["reference_axis"]
@@ -1036,7 +1036,7 @@ class WindTurbineOntologyPython(object):
 
             self.wt_init["components"]["blade"]["elastic_properties"] = {}
             self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"] = {}
-            if not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not self.modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["reference_axis"] = self.wt_init[
                 "components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]
             else:

@@ -1124,7 +1124,7 @@ class RotorElasticity(Group):
             "flap_iner",
         ]
 
-        if modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        if modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
         # TODO YL: change name precomp to more general name, such as "ComputeElasticProperties"
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         

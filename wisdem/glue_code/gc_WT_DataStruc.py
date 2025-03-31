@@ -189,7 +189,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Hub inputs
         if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
             self.add_subsystem("hub", Hub(flags=modeling_options["flags"],
-                                          user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]))
+                                          user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"]))
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -407,7 +407,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     )
 
                     
-            if modeling_options["WISDEM"]["DriveSE"]["user_defined_elastic"]:
+            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
                 #nacelle_ivc.add_output('generator_rotor_I_user',       val=np.zeros(3), units='kg*m**2')
                 nacelle_ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
                 nacelle_ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
@@ -722,7 +722,7 @@ class Blade(om.Group):
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
 
-        if not rotorse_options["user_defined_blade_elastic"]:
+        if not rotorse_options["user_elastic"]:
             for i in range(rotorse_options["n_layers"]):
                 opt_var.add_output(
                     "s_opt_layer_%d"%i,
@@ -812,7 +812,7 @@ class Blade(om.Group):
 
         # Import blade internal structure data and remap composites on the outer blade shape
         # when not using the user-defined elastic properties only
-        if not rotorse_options["user_defined_blade_elastic"]:
+        if not rotorse_options["user_elastic"]:
             self.add_subsystem(
                 "internal_structure_2d_fem",
                 Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
