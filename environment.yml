@@ -32,7 +32,7 @@ dependencies:
   - statsmodels
   - swig
   - pip:
-    - marmot-agents
+    - orbit-nrel
     - dearpygui
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

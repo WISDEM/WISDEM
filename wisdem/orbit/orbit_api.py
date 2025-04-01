@@ -10,7 +10,7 @@ from warnings import warn
 
 import openmdao.api as om
 
-from wisdem.orbit import ProjectManager
+from ORBIT import ProjectManager
 
 
 class Orbit(om.Group):

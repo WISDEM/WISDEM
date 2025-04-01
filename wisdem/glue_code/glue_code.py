@@ -15,7 +15,7 @@ from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 
 try:
-    from wisdem.orbit.api.wisdem import Orbit
+    from wisdem.orbit.orbit_api import Orbit
 except ImportError:
     print("WARNING: Be sure to pip install simpy and marmot-agents for offshore BOS runs")
 
