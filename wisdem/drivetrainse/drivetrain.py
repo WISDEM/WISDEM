@@ -173,7 +173,7 @@ class DrivetrainSE(om.Group):
         #self.set_input_defaults("uptower", True)
         #self.set_input_defaults("upwind", True)
         #self.set_input_defaults("n_blades", 3)
-
+       
         # Materials prep
         self.add_subsystem(
             "mat",

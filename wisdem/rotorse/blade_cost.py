@@ -2993,7 +2993,7 @@ class TotalBladeCosts(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        if self.options["modeling_options"]["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        if self.options["modeling_options"]["WISDEM"]["RotorSE"]["user_elastic"]:
             outputs["total_blade_cost"] = 0.0
         else:
             outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]
@@ -4024,7 +4024,7 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.fwf", "rc.fwf")
             self.connect("materials.roll_mass", "rc.roll_mass")
 
-        self.add_subsystem("total_bc", TotalBladeCosts())
+        self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")

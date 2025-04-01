@@ -75,32 +75,6 @@ class WT_RNA(om.Group):
 
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
-        else:
-            # Add pass through info for drivese
-            drive_ivc = om.IndepVarComp()
-            drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
-            drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
-            drive_ivc.add_output('rna_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
-            drive_ivc.add_output('above_yaw_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
-            drive_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-            drive_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-            drive_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
-            drive_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
-            # Are these even in WISDEM? 
-            # Why are we required to define it here?
-            # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
-            # Is there an automated way to set up the outputs of drivese here?
-            drive_ivc.add_output('drivetrain_spring_constant',     val=0, units='N*m/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
-            drive_ivc.add_output('drivetrain_damping_coefficient',     val=0, units='N*m*s/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
-
-
-            drive_ivc.add_output('lss_wohler_exp', val=3.0, desc= 'Whohler exponent of steel_drive')
-            drive_ivc.add_output('lss_wohler_A', val=3.5534648443719767e10, desc= 'Wohler intercept of steel_drive')
-            drive_ivc.add_output('lss_Xt', val=814.e+006, desc= 'Ultimate stress of steel_drive')
-            drive_ivc.add_output('lss_axial_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here. Not yet used in WEIS.')
-            drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here. Not yet used in WEIS.')
-
-            self.add_subsystem("drivese", drive_ivc)
 
             
 class WT_RNTA(om.Group):
@@ -179,17 +153,12 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
             self.connect("env.shear_exp", "rotorse.shearExp")
-            self.connect("configuration.n_blades", "rotorse.nBlades")
-            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
-                self.connect(
-                    "configuration.n_blades",
-                    ["rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
-                )
-            else:
-                self.connect("configuration.n_blades", "rotorse.re.total_blade_properties.n_blades")                
+            self.connect(
+                "configuration.n_blades",
+                ["rotorse.nBlades", "rotorse.re.n_blades"],
+            )
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
-            self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
-
+            
             # Connections to RotorPower
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
@@ -209,13 +178,18 @@ class WT_RNTA(om.Group):
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
-            elif not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            elif not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
 
             # Connections to rotor elastic and frequency analysis
-            if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+                self.connect(
+                "configuration.n_blades",
+                "rotorse.rs.constr.blade_number",
+                )
                 self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
                 self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
+                self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
                 self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.re.precomp.layer_start_nd")
                 self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.re.precomp.layer_end_nd")
@@ -366,6 +340,17 @@ class WT_RNTA(om.Group):
             self.connect("hub.hub_shell_mass_user", "drivese.hub_shell_mass_user")
             self.connect("hub.spinner_mass_user", "drivese.spinner_mass_user")
             self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
+            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
+                self.connect("hub.hub_system_mass_user", "drivese.hub_system_mass_user")
+                self.connect("hub.hub_system_cm_user", "drivese.hub_system_cm_user")
+                self.connect("hub.hub_system_I_user", "drivese.hub_system_I_user")
+                self.connect("nacelle.drivetrain_spring_constant_user", "drivese.drivetrain_spring_constant_user")
+                self.connect("nacelle.drivetrain_damping_coefficient_user", "drivese.drivetrain_damping_coefficient_user")
+                self.connect('nacelle.yaw_mass_user', 'drivese.yaw_mass_user')
+                self.connect('nacelle.above_yaw_mass_user', 'drivese.above_yaw_mass_user')
+                self.connect('nacelle.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
+                self.connect('nacelle.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
+                self.connect('nacelle.above_yaw_I_user', 'drivese.above_yaw_I_user')
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 
@@ -544,6 +529,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
+                
         # Connections to TowerSE
         if modeling_options["flags"]["tower"]:
             if modeling_options["flags"]["nacelle"]:
