@@ -462,7 +462,7 @@ components:
             gear_ratio: 1
             gearbox_efficiency: 1.0
         elastic_properties_mb:
-            system_mass: 1675175.0
+            system_mass: 675175.0
             yaw_mass: 0
             system_inertia:
             -  9912933.0
