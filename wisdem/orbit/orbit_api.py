@@ -596,7 +596,8 @@ class OrbitWisdem(om.ExplicitComponent):
             "project_parameters": {
                 "construction_insurance": float(inputs["construction_insurance"][0]),
                 "construction_financing": float(inputs["construction_financing"][0]),
-                "contingency": float(inputs["contingency"][0]),
+                "installation_contingency": 0.5*float(inputs["contingency"][0]),
+                "procurement_contingency": 0.5*float(inputs["contingency"][0]),
                 "site_auction_price": float(inputs["site_auction_price"][0]),
                 "site_assessment_cost": float(inputs["site_assessment_cost"][0]),
                 "construction_plan_cost": float(inputs["construction_plan_cost"][0]),
