@@ -3332,7 +3332,7 @@ definitions:
             default: [0.0, 0.0]
             items:
                 type: number
-                unit: N/m2
+                unit: Nm2
                 minItems: 2
                 uniqueItems: false
         tors_stiff:
@@ -3341,7 +3341,7 @@ definitions:
             default: [0.0, 0.0]
             items:
                 type: number
-                unit: N/m2
+                unit: Nm2
                 minItems: 2
                 uniqueItems: false
         shearshear_stiff:
@@ -3359,7 +3359,6 @@ definitions:
             default: [0.0, 0.0]
             items:
                 type: number
-                # TODO YL: check units
                 unit: N
                 minItems: 2
                 uniqueItems: false
@@ -3902,7 +3901,6 @@ definitions:
                         - grid
                         - K44
                         - K55
-                        # YL: Why isn't K33 required?
                     properties:
                         grid:
                             $ref: "#/definitions/distributed_data/grid_nd"

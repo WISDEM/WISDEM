@@ -733,6 +733,105 @@ class Blade(om.Group):
                     units="m",
                     val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
                 )
+        else:
+            user_KI = om.IndepVarComp()
+            n_span = rotorse_options["n_span"]
+            user_KI.add_output("K11", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K11 element of the stiffness matrix along blade span. K11 corresponds to the shear stiffness along the x axis (in a blade, x points to the trailing edge)",
+                               units="N")
+            user_KI.add_output("K22", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K22 element of the stiffness matrix along blade span. K22 corresponds to the shear stiffness along the y axis (in a blade, y points to the suction side)",
+                               units="N")
+            user_KI.add_output("K33", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K33 element of the stiffness matrix along blade span. K33 corresponds to the axial stiffness along the z axis (in a blade, z runs along the span and points to the tip)",
+                               units="N")
+            user_KI.add_output("K44", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K44 element of the stiffness matrix along blade span. K44 corresponds to the bending stiffness around the x axis (in a blade, x points to the trailing edge and K44 corresponds to the flapwise stiffness)",
+                               units="N*m**2")
+            user_KI.add_output("K55", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K55 element of the stiffness matrix along blade span. K55 corresponds to the bending stiffness around the y axis (in a blade, y points to the suction side and K55 corresponds to the edgewise stiffness)",
+                               units="N*m**2")
+            user_KI.add_output("K66", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of K66 element of the stiffness matrix along blade span. K66 corresponds to the torsional stiffness along the z axis (in a blade, z runs along the span and points to the tip)",
+                               units="N*m**2")
+            user_KI.add_output("K12", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K12 element of the stiffness matrix along blade span. K12 is a cross term between shear terms",
+                               units="N")
+            user_KI.add_output("K13", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K13 element of the stiffness matrix along blade span. K13 is a cross term shear - axial",
+                               units="N")
+            user_KI.add_output("K14", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K14 element of the stiffness matrix along blade span. K14 is a cross term shear - bending",
+                               units="N*m**2")
+            user_KI.add_output("K15", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K15 element of the stiffness matrix along blade span. K15 is a cross term shear - bending",
+                               units="N*m**2")
+            user_KI.add_output("K16", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K16 element of the stiffness matrix along blade span. K16 is a cross term shear - torsion",
+                               units="N*m**2")
+            user_KI.add_output("K23", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K23 element of the stiffness matrix along blade span. K23 is a cross term shear - axial",
+                               units="N*m**2")
+            user_KI.add_output("K24", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K24 element of the stiffness matrix along blade span. K24 is a cross term shear - bending",
+                               units="N/m**2")
+            user_KI.add_output("K25", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K25 element of the stiffness matrix along blade span. K25 is a cross term shear - bending",
+                               units="N*m**2")
+            user_KI.add_output("K26", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K26 element of the stiffness matrix along blade span. K26 is a cross term shear - torsion",
+                               units="N*m**2")
+            user_KI.add_output("K34", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K34 element of the stiffness matrix along blade span. K34 is a cross term axial - bending",
+                               units="N*m**2")
+            user_KI.add_output("K35", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K35 element of the stiffness matrix along blade span. K35 is a cross term axial - bending",
+                               units="N*m**2")
+            user_KI.add_output("K36", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K36 element of the stiffness matrix along blade span. K36 is a cross term axial - torsion",
+                               units="N*m**2")
+            user_KI.add_output("K45", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K45 element of the stiffness matrix along blade span. K45 is a cross term flapwise bending - edgewise bending",
+                               units="N*m**2")
+            user_KI.add_output("K46", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K46 element of the stiffness matrix along blade span. K46 is a cross term flapwise bending - torsion",
+                               units="N*m**2")
+            user_KI.add_output("K56", 
+                               val=np.zeros(n_span),  
+                               desc="Distribution of the K56 element of the stiffness matrix along blade span. K56 is a cross term edgewise bending - torsion",
+                               units="N*m**2")
+            
+            # mass matrix inputs
+            user_KI.add_output("mass", val=np.zeros(n_span),  desc="Mass per unit length along the beam, expressed in kilogram per meter", units="kg/m")
+            user_KI.add_output("cm_x", val=np.zeros(n_span),  desc="Distance between the reference axis and the center of mass along the x axis", units="m")
+            user_KI.add_output("cm_y", val=np.zeros(n_span),  desc="Distance between the reference axis and the center of mass along the y axis", units="m")
+            user_KI.add_output("i_edge", val=np.zeros(n_span),  desc="Edgewise mass moment of inertia per unit span (around y axis)", units="kg*m**2")
+            user_KI.add_output("i_flap", val=np.zeros(n_span),  desc="Flapwise mass moment of inertia per unit span (around x axis)", units="kg*m**2")
+            user_KI.add_output("i_plr", val=np.zeros(n_span),  desc="Polar moment of inertia per unit span (around z axis). Please note that for beam-like structures iplr must be equal to iedge plus iflap.", units="kg*m**2")
+            user_KI.add_output("i_cp", val=np.zeros(n_span),  desc="Sectional cross-product of inertia per unit span (cross term x y)", units="kg*m**2")
+
+            self.add_subsystem("user_KI", user_KI)
+
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM

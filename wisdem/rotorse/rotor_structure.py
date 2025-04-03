@@ -1902,9 +1902,7 @@ class RotorStructure(Group):
             promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
         if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
-            # missing spars_tereinf for using this ComputeStrains for blade with user defined elastic properties
 
-            # TODO YL: can we find ways to set default or still compute constraints for user defined blade? 
             self.add_subsystem(
                 "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
             )

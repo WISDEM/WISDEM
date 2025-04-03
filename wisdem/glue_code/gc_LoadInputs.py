@@ -1054,19 +1054,19 @@ class WindTurbineOntologyPython(object):
 
             stiff_terms = [11, 12, 13, 14, 15, 16, 22, 23, 24, 25, 26, 33, 34, 35, 36, 44, 45, 46, 55, 56, 66]
             for term in stiff_terms:
-                 self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["K"+str(term)] = np.array(wt_opt["rotorse.re.generate_KI.K"][:,int(term//10-1),int(term%10-1)]).tolist()
+                 self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["K"+str(term)] = np.array(wt_opt["rotorse.re.K"][:,int(term//10-1),int(term%10-1)]).tolist()
 
             self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"] = {}
 
             I = {}
             I["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
-            I["mass"] = wt_opt["rotorse.re.generate_KI.I"][:,0,0].tolist()
+            I["mass"] = wt_opt["rotorse.re.I"][:,0,0].tolist()
             I["cm_x"] = wt_opt["rotorse.re.x_cg"].tolist()
             I["cm_y"] = wt_opt["rotorse.re.y_cg"].tolist()
-            I["i_edge"] = wt_opt["rotorse.re.generate_KI.I"][:,3,3].tolist()
-            I["i_flap"] = wt_opt["rotorse.re.generate_KI.I"][:,4,4].tolist()
-            I["i_plr"] = I["i_edge"] + I["i_flap"]
-            I["i_cp"] = wt_opt["rotorse.re.generate_KI.I"][:,3,4].tolist()
+            I["i_edge"] = wt_opt["rotorse.re.I"][:,3,3].tolist()
+            I["i_flap"] = wt_opt["rotorse.re.I"][:,4,4].tolist()
+            I["i_plr"] = (np.asarray(I["i_edge"]) + np.asarray(I["i_flap"])).tolist()
+            I["i_cp"] = wt_opt["rotorse.re.I"][:,3,4].tolist()
 
             self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"] = I
 
