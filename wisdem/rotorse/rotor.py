@@ -174,11 +174,10 @@ class RotorSEPerf(om.Group):
         )
 
         # promotion list for RotorStructure
-        if modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        promoteRS = ["precurveTip", "presweepTip", "blade_span_cg"]
+        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
             # Can't promote s when designConstraint component is not added
-            promoteRS = ["precurveTip", "presweepTip", "blade_span_cg"]
-        else:
-            promoteRS = ["s", "precurveTip", "presweepTip", "blade_span_cg"]
+            promoteRS = promoteRS+["s"]
 
         self.add_subsystem(
             "rs",
