@@ -1476,7 +1476,7 @@ class KI_to_Elastic(ExplicitComponent):
                 angle = np.arccos(v3[0,0])
             else:
                 angle = -np.arcsin(v3[0,1])
-            R = transform.CrossSectionRotationMatrix(angle)
+            R = transform.CrossSectionRotationMatrix(-angle) # negative because from ref to inertia
             I_cg = R.T @ I_cg @ R
 
             # assign inertia matrix to outputs
