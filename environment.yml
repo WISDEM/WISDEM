@@ -11,7 +11,7 @@ dependencies:
   - meson
   - moorpy
   - ninja
-  - nlopt=2.8.0
+  - nlopt
   - numpy
   - numpydoc
   - openmdao
@@ -22,7 +22,7 @@ dependencies:
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python-benedict<0.33.2
+  - python-benedict
   - pyyaml
   - ruamel.yaml
   - scipy
@@ -32,7 +32,7 @@ dependencies:
   - statsmodels
   - swig
   - pip:
-    - orbit-nrel>=1.2
+    - orbit-nrel>=1.2.1
     - dearpygui
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
