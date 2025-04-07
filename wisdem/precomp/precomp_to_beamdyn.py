@@ -29,7 +29,7 @@ class TransformCrossSectionMatrix(object):
         M2 = T.T @ M1 @ T 
         # Rotation 
         R = self.CrossSectionRotationMatrix(alpha)
-        M3 = R @ M2 @ R.T
+        M3 = R.T @ M2 @ R
         return M3
 
 def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, edge_iner, flap_iner, x_tc, y_tc, kxs = 1., kys = 0.6):
@@ -127,7 +127,7 @@ def pc2bd_I(rhoA, edge_iner, flap_iner, rhoJ, x_cg, y_cg, Tw_iner, aero_twist):
         I_cg, 
         -x_cg, 
         -y_cg, 
-        Tw_iner - aero_twist,
+        aero_twist - Tw_iner,
         )
     
     # Zero out some terms that must be exactly zero in BeamDyn
