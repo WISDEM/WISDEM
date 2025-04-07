@@ -183,10 +183,7 @@ class WT_RNTA(om.Group):
 
             # Connections to rotor elastic and frequency analysis
             if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
-                self.connect(
-                "configuration.n_blades",
-                "rotorse.rs.constr.blade_number",
-                )
+                self.connect("configuration.n_blades", "rotorse.rs.constr.blade_number")
                 self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
                 self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
