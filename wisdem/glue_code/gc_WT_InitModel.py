@@ -602,15 +602,15 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     return wt_opt
 
 def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
-    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+
     n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
     nd_span = wt_opt["blade.outer_shape_bem.s_default"]
-    # TODO YL: maybe I can pass in the inertia twist throught the twist in six_x_six
+
     stiff_grid = user_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
-    stiff_matrix = np.array(user_elastic_properties["six_x_six"]["stiff_matrix"]["values"])
+    stiff_matrix = user_elastic_properties["six_x_six"]["stiff_matrix"]
 
     inertia_grid = user_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
-    inertia_matrix = np.array(user_elastic_properties["six_x_six"]["inertia_matrix"]["values"])
+    inertia_matrix = user_elastic_properties["six_x_six"]["inertia_matrix"]
 
     # 21-element inertia matrix
     # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
@@ -643,35 +643,35 @@ def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     K46 = PchipInterpolator(stiff_grid, stiff_matrix["K46"][:])(nd_span)
     K56 = PchipInterpolator(stiff_grid, stiff_matrix["K56"][:])(nd_span)
 
-    wt_opt["rotorse.EA"] = K33
-    wt_opt["rotorse.EIxx"] = K44
-    wt_opt["rotorse.EIyy"] = K55
-    wt_opt["rotorse.GJ"] = K66
-    wt_opt["rotorse.EIxy"] = K12
-    wt_opt["rotorse.re.EA_EIxx"] = K34
-    wt_opt["rotorse.re.EA_EIyy"] = K35
-    wt_opt["rotorse.re.EIxx_GJ"] = K46
-    wt_opt["rotorse.re.EIyy_GJ"] = K56
-    wt_opt["rotorse.re.EA_GJ"] = K36
+    wt_opt["blade.user_KI.K33"] = K33
+    wt_opt["blade.user_KI.K11"] = K11
+    wt_opt["blade.user_KI.K22"] = K22
+    wt_opt["blade.user_KI.K13"] = K13
+    wt_opt["blade.user_KI.K14"] = K14
+    wt_opt["blade.user_KI.K15"] = K15
+    wt_opt["blade.user_KI.K16"] = K16
+    wt_opt["blade.user_KI.K23"] = K23
+    wt_opt["blade.user_KI.K24"] = K24
+    wt_opt["blade.user_KI.K25"] = K25
+    wt_opt["blade.user_KI.K26"] = K26
+    wt_opt["blade.user_KI.K12"] = K12
+    wt_opt["blade.user_KI.K34"] = K34
+    wt_opt["blade.user_KI.K35"] = K35
+    wt_opt["blade.user_KI.K36"] = K36
+    wt_opt["blade.user_KI.K44"] = K44
+    wt_opt["blade.user_KI.K45"] = K45
+    wt_opt["blade.user_KI.K46"] = K46
+    wt_opt["blade.user_KI.K55"] = K55
+    wt_opt["blade.user_KI.K56"] = K56
+    wt_opt["blade.user_KI.K66"] = K66
 
-
-    wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix["mass"][:])(nd_span)
-    # TODO YL: can we change precomp output to J? I don't see rhoJ anywhere.
-    wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix["i_plr"][:])(nd_span) # TODO YL: confirm if this is iplr
-    # wt_opt["rotorse.Tw_iner"] = PchipInterpolator(twist_grid, twist_inertia)(nd_span)
-    # wt_opt["rotorse.x_ec"]
-    # wt_opt["rotorse.y_ec"]
-    wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_y"][:])(nd_span)
-    wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_x"][:])(nd_span)
-    wt_opt["rotorse.re.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix["i_flap"][:])(nd_span)
-    wt_opt["rotorse.re.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix["i_edge"][:])(nd_span)
-
-    # Compute other properties
-    # Ex = wt_opt["rotorse.EIxx"]/wt_opt["rotorse.re.edge_iner"]
-    # Ey = wt_opt["rotorse.EIyy"]/wt_opt["rotorse.re.flap_iner"]
-    # Ax = wt_opt["rotorse.EA"]/Ex
-    # Ay = wt_opt["rotorse.EA"]/Ey
-    # wt_opt["rotorse.A"] = (Ax+Ay)/2
+    wt_opt["blade.user_KI.mass"] = PchipInterpolator(inertia_grid, inertia_matrix["mass"][:])(nd_span)
+    wt_opt["blade.user_KI.i_plr"] = PchipInterpolator(inertia_grid, inertia_matrix["i_plr"][:])(nd_span) 
+    wt_opt["blade.user_KI.cm_y"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_y"][:])(nd_span)
+    wt_opt["blade.user_KI.cm_x"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_x"][:])(nd_span)
+    wt_opt["blade.user_KI.i_flap"] = PchipInterpolator(inertia_grid, inertia_matrix["i_flap"][:])(nd_span)
+    wt_opt["blade.user_KI.i_edge"] = PchipInterpolator(inertia_grid, inertia_matrix["i_edge"][:])(nd_span)
+    wt_opt["blade.user_KI.i_cp"] = PchipInterpolator(inertia_grid, inertia_matrix["i_cp"][:])(nd_span)
 
     return wt_opt
 

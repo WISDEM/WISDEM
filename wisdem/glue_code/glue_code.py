@@ -318,6 +318,41 @@ class WT_RNTA(om.Group):
                     self.connect("materials.fwf", "rotorse.rc.fwf")
                     self.connect("materials.fvf", "rotorse.rc.fvf")
                     self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
+                
+            else:
+                # connections for user-defined blade elastic properties
+                # stiffness matrix
+                self.connect("blade.user_KI.K11", "rotorse.re.K11")
+                self.connect("blade.user_KI.K22", "rotorse.re.K22")
+                self.connect("blade.user_KI.K33", "rotorse.re.K33")
+                self.connect("blade.user_KI.K44", "rotorse.re.K44")
+                self.connect("blade.user_KI.K55", "rotorse.re.K55")
+                self.connect("blade.user_KI.K66", "rotorse.re.K66")
+                self.connect("blade.user_KI.K12", "rotorse.re.K12")
+                self.connect("blade.user_KI.K13", "rotorse.re.K13")
+                self.connect("blade.user_KI.K14", "rotorse.re.K14")
+                self.connect("blade.user_KI.K15", "rotorse.re.K15")
+                self.connect("blade.user_KI.K16", "rotorse.re.K16")
+                self.connect("blade.user_KI.K23", "rotorse.re.K23")
+                self.connect("blade.user_KI.K24", "rotorse.re.K24")
+                self.connect("blade.user_KI.K25", "rotorse.re.K25")
+                self.connect("blade.user_KI.K26", "rotorse.re.K26")
+                self.connect("blade.user_KI.K34", "rotorse.re.K34")
+                self.connect("blade.user_KI.K35", "rotorse.re.K35")
+                self.connect("blade.user_KI.K36", "rotorse.re.K36")
+                self.connect("blade.user_KI.K45", "rotorse.re.K45")
+                self.connect("blade.user_KI.K46", "rotorse.re.K46")
+                self.connect("blade.user_KI.K56", "rotorse.re.K56")
+
+                # mass matrix
+                self.connect("blade.user_KI.mass", "rotorse.re.mass")
+                self.connect("blade.user_KI.cm_x", "rotorse.re.cm_x")
+                self.connect("blade.user_KI.cm_y", "rotorse.re.cm_y")
+                self.connect("blade.user_KI.i_edge", "rotorse.re.i_edge")
+                self.connect("blade.user_KI.i_flap", "rotorse.re.i_flap")
+                self.connect("blade.user_KI.i_plr", "rotorse.re.i_plr")
+                self.connect("blade.user_KI.i_cp", "rotorse.re.i_cp")
+                
 
 
         # Connections to DriveSE
