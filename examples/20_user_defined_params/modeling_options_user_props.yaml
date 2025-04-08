@@ -7,7 +7,7 @@ RotorSE:
     n_span: 60
 DriveSE:
     flag: False
-    user_defined_elastic_props: True
+    user_elastic: True
 TowerSE:
     flag: True
 FixedBottomSE:

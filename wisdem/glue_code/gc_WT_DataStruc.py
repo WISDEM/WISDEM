@@ -408,7 +408,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
                     
             if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
-                #nacelle_ivc.add_output('generator_rotor_I_user',       val=np.zeros(3), units='kg*m**2')
                 nacelle_ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
                 nacelle_ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
                 nacelle_ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
@@ -421,6 +420,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             # Generator inputs
             generator_ivc = om.IndepVarComp()
             generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
+            generator_ivc.add_output('generator_rotor_I_user', val=np.zeros(3), units='kg*m**2')
             if modeling_options["flags"]["generator"]:
                 generator_ivc.add_output("B_r", val=1.2, units="T")
                 generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")

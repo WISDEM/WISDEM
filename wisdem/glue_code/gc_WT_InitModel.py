@@ -874,7 +874,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
             wt_opt['nacelle.above_yaw_cm_user']      = nacelle['elastic_properties_mb']['system_center_mass']
             wt_opt['nacelle.above_yaw_I_TT_user']    = nacelle['elastic_properties_mb']['system_inertia_tt']
             wt_opt['nacelle.above_yaw_I_user']       = nacelle['elastic_properties_mb']['system_inertia']
-            #wt_opt['nacelle.generator_rotor_I_user'] = 0.5*nacelle['drivetrain']['generator']['elastic_properties']['inertia']
 
             wt_opt['nacelle.drivetrain_spring_constant_user']     = nacelle['elastic_properties_mb']['spring_constant']
             wt_opt['nacelle.drivetrain_damping_coefficient_user'] = nacelle['elastic_properties_mb']['damping_coefficient']
@@ -914,6 +913,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
         wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
+        wt_opt['generator.generator_rotor_I_user'] = nacelle['drivetrain']['generator_rotor_inertia_user']
         if not modeling_options["flags"]["generator"]:
             wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
 
@@ -937,7 +937,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         #wt_opt['drivese.above_yaw_cm']      = nacelle['drivetrain']['elastic_properties']['location']
         #wt_opt['drivese.above_yaw_I_TT']    = nacelle['drivetrain']['elastic_properties']['inertia']
         #wt_opt['drivese.above_yaw_I']       = nacelle['drivetrain']['elastic_properties']['inertia']
-        #wt_opt['drivese.generator_rotor_I'] = 0.5*nacelle['drivetrain']['generator']['elastic_properties']['inertia']
+        #wt_opt['drivese.generator_rotor_I'] = nacelle['drivetrain']['elastic_properties']['generator_rotor_inertia']
         #wt_opt['drivese.drivetrain_spring_constant']     = nacelle['elastic_properties']['spring_constant']
         #wt_opt['drivese.drivetrain_damping_coefficient'] = nacelle['elastic_properties']['damping_coefficient']
         #if wt_opt["nacelle.gear_ratio"] > 1:
@@ -952,7 +952,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt['drivese.above_yaw_cm']      = nacelle['elastic_properties_mb']['system_center_mass']
         wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt']
         wt_opt['drivese.above_yaw_I']       = nacelle['elastic_properties_mb']['system_inertia']
-        #wt_opt['drivese.generator_rotor_I'] = nacelle['elastic_properties_mb']['inertia']
+        wt_opt['drivese.generator_rotor_I'] = nacelle['elastic_properties_mb']['generator_rotor_inertia']
         wt_opt['drivese.drivetrain_spring_constant']     = nacelle['elastic_properties_mb']['spring_constant']
         wt_opt['drivese.drivetrain_damping_coefficient'] = nacelle['elastic_properties_mb']['damping_coefficient']
 
