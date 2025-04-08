@@ -11,7 +11,7 @@ dependencies:
   - meson
   - moorpy
   - ninja
-  - nlopt
+  - nlopt<=2.8
   - numpy
   - numpydoc
   - openmdao
