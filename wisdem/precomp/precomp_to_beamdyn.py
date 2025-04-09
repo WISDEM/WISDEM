@@ -24,12 +24,12 @@ class TransformCrossSectionMatrix(object):
         return R
 
     def CrossSectionRotoTranslationMatrix(self, M1, x, y, alpha):
+        # Rotation
+        R = self.CrossSectionRotationMatrix(alpha)
+        M2 = R.T @ M1 @ R
         # Translation
         T = self.CrossSectionTranslationMatrix(x, y)
-        M2 = T.T @ M1 @ T 
-        # Rotation 
-        R = self.CrossSectionRotationMatrix(alpha)
-        M3 = R.T @ M2 @ R
+        M3 = T.T @ M2 @ T
         return M3
 
 def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, edge_iner, flap_iner, x_tc, y_tc, kxs = 1., kys = 0.6):
