@@ -1420,11 +1420,11 @@ class KI_to_Elastic(ExplicitComponent):
             K3 = np.array([[K_ref[n, m+3] for m in range(3)] for n in range(3)])
             try:
                 Y = np.linalg.solve(K1, -K3)
-                x_sc = -Y[2, 0]
-                y_sc = Y[1, 0]
+                x_sc = -Y[1, 2]
+                y_sc = Y[0, 2]
 
-                x_tc = Y[0, 2]
-                y_tc = -Y[0, 1]
+                x_tc = Y[2, 1]
+                y_tc = -Y[2, 0]
             except:
                 print(f"Failed to compute shear center and tension center at section {i}.")
                 if (K_ref[3,3] == 0) and (K_ref[4,4] == 0):
@@ -1436,9 +1436,7 @@ class KI_to_Elastic(ExplicitComponent):
                     x_tc = 0
                     y_tc = 0
 
-                    print("Check if K11, K22, K33 are non-zeros and correct. Shear center and tension center valuse are set to zeros.")
-
-                
+                    print("Check if K11, K22, K33 are non-zeros and correct. Shear center and tension center valuse are set to zeros.") 
             # Transform stiffness matrix to elastic center/tension center
             transform = TransformCrossSectionMatrix()
             T = transform.CrossSectionTranslationMatrix(x_tc, y_tc)
@@ -1472,6 +1470,7 @@ class KI_to_Elastic(ExplicitComponent):
             I3 = np.array([[I_cg[n+3, m+3] for m in range(3)] for n in range(3)]) 
             (w3, v3) = np.linalg.eig(I3)
 
+            # This angle solve is likely working only within in [-pi/2, pi/2]
             if np.abs(v3[0,0]) < np.abs(v3[0,1]):
                 angle = np.arccos(v3[0,0])
             else:
@@ -1485,7 +1484,7 @@ class KI_to_Elastic(ExplicitComponent):
             outputs["rhoJ"][i] = I_cg[5,5] # This is actually J - edge+flap
             outputs["edge_iner"][i] = I_cg[3,3]
             outputs["flap_iner"][i] = I_cg[4,4]
-            outputs["Tw_iner"][i] = np.rad2deg(angle+aero_twist[i])
+            outputs["Tw_iner"][i] = np.rad2deg(aero_twist[i]-angle)
             outputs["x_cg"][i] = x_cg
             outputs["y_cg"][i] = y_cg
 

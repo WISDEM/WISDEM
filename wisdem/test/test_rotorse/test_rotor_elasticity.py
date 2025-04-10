@@ -1,11 +1,30 @@
 import unittest
+import os
 
 import numpy as np
 import numpy.testing as npt
+import openmdao.api as om
 
 import wisdem.rotorse.rotor_elasticity as rel
 from wisdem.commonse.cross_sections import Tube
+from wisdem.rotorse.rotor_elasticity import generate_KI, KI_to_Elastic
+import wisdem.precomp.properties as prop
+import wisdem.precomp.precomp_to_beamdyn as pc2bd
 
+try:
+   import cPickle as pickle
+except Exception:
+   import pickle
+
+mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
+# https://stackoverflow.com/questions/20716812/saving-and-loading-multiple-objects-in-pickle-file
+def loadall(filename):
+    with open(os.path.join(mydir, filename), "rb") as f:
+        while True:
+            try:
+                yield pickle.load(f)
+            except EOFError:
+                break
 
 class TestRE(unittest.TestCase):
     def setUp(self):
@@ -190,6 +209,181 @@ class TestRE(unittest.TestCase):
         idx = np.int_(np.floor(0.5*self.inputs["r"].size))
         npt.assert_almost_equal(self.outputs["blade_span_cg"], self.inputs["r"][idx], decimal=1)
         npt.assert_almost_equal(self.outputs["blade_moment_of_inertia"], self.outputs["blade_mass"]*self.inputs["r"][-1]**2/3.0, decimal=-1)
+
+    def test_KI_to_Elastic(self):
+
+        fnames = ['../test_precomp/section_dump_iea15mw.pkl']
+        
+        for f in fnames:
+            with self.subTest(f=f):
+                myitems = loadall(f)
+                nsec = myitems.__next__()
+                for k in range(nsec):
+                    with self.subTest(i=k):
+                        chord = myitems.__next__()
+                        theta = myitems.__next__()
+                        th_prime = myitems.__next__()
+                        le_loc = myitems.__next__()
+                        xnode = myitems.__next__()
+                        ynode = myitems.__next__()
+                        E1 = myitems.__next__()
+                        E2 = myitems.__next__()
+                        G12 = myitems.__next__()
+                        nu12 = myitems.__next__()
+                        rho = myitems.__next__()
+                        locU = myitems.__next__()
+                        n_laminaU = myitems.__next__()
+                        n_pliesU = myitems.__next__()
+                        tU = myitems.__next__()
+                        thetaU = myitems.__next__()
+                        mat_idxU = myitems.__next__()
+                        locL = myitems.__next__()
+                        n_laminaL = myitems.__next__()
+                        n_pliesL = myitems.__next__()
+                        tL = myitems.__next__()
+                        thetaL = myitems.__next__()
+                        mat_idxL = myitems.__next__()
+                        nwebs = myitems.__next__()
+                        locW = myitems.__next__()
+                        n_laminaW = myitems.__next__()
+                        n_pliesW = myitems.__next__()
+                        tW = myitems.__next__()
+                        thetaW = myitems.__next__()
+                        mat_idxW = myitems.__next__()
+
+                        results_fort = myitems.__next__()
+                        results_py = prop.properties(chord,
+                                                     theta,
+                                                     th_prime,
+                                                     le_loc,
+                                                     xnode,
+                                                     ynode,
+                                                     E1,
+                                                     E2,
+                                                     G12,
+                                                     nu12,
+                                                     rho,
+                                                     locU,
+                                                     n_laminaU,
+                                                     n_pliesU,
+                                                     tU,
+                                                     thetaU,
+                                                     mat_idxU,
+                                                     locL,
+                                                     n_laminaL,
+                                                     n_pliesL,
+                                                     tL,
+                                                     thetaL,
+                                                     mat_idxL,
+                                                     nwebs,
+                                                     locW,
+                                                     n_laminaW,
+                                                     n_pliesW,
+                                                     tW,
+                                                     thetaW,
+                                                     mat_idxW,
+                                                     )
+
+                    if k==15:
+                        (eifbar,eilbar,gjbar,eabar,eiflbar,
+                        sfbar,slbar,sftbar,sltbar,satbar,
+                        z_sc,y_sc,ztc_ref,ytc_ref,
+                        mass,area,iflap_eta,ilag_zeta,tw_iner,
+                        zcm_ref,ycm_ref) = results_py
+
+                        EIxx  = eilbar
+                        EIyy  = eifbar
+                        GJ  = gjbar
+                        EA  = eabar
+                        EIxy  = eiflbar
+                        EA_EIxx  = slbar
+                        EA_EIyy  = sfbar
+                        EIxx_GJ  = sltbar
+                        EIyy_GJ  = sftbar
+                        EA_GJ  = satbar
+                        x_sc  = z_sc
+                        y_sc  = y_sc
+                        x_tc  = ztc_ref
+                        y_tc  = ytc_ref
+                        rhoA  = mass
+                        A  = area
+                        flap_iner  = iflap_eta
+                        edge_iner  = ilag_zeta
+                        Tw_iner  = tw_iner
+                        x_cg  = zcm_ref
+                        y_cg  = ycm_ref
+
+
+                        # Build stiffness matrix at the reference axis
+                        K_precomp = pc2bd.pc2bd_K(
+                            EA,
+                            EIxx,
+                            EIyy,
+                            EIxy,
+                            EA_EIxx,
+                            EA_EIyy,
+                            EIxx_GJ,
+                            EIyy_GJ,
+                            EA_GJ,
+                            GJ,
+                            flap_iner+edge_iner,
+                            edge_iner,
+                            flap_iner,
+                            x_sc,
+                            y_sc,
+                            )
+                        # Build inertia matrix at the reference axis
+                        I_precomp = pc2bd.pc2bd_I(
+                            rhoA,
+                            edge_iner,
+                            flap_iner,
+                            edge_iner+flap_iner,
+                            x_cg,
+                            y_cg,
+                            np.deg2rad(Tw_iner),
+                            np.deg2rad(theta),
+                            )
+                        
+
+                        dummy_options = {}
+                        dummy_options['WISDEM'] = {}
+                        dummy_options['WISDEM']['RotorSE'] = {}
+                        dummy_options['WISDEM']['RotorSE']["n_span"] = 1
+
+                        prob = om.Problem()
+                        prob.model.add_subsystem("KI_reverse", KI_to_Elastic(modeling_options=dummy_options), promotes=["*"])
+                        prob.setup()
+
+                        prob.set_val("K", K_precomp)
+                        prob.set_val("I", I_precomp)
+                        prob.set_val("theta", theta)
+
+                        prob.run_model()
+                        Tw_iner_back = prob.get_val("Tw_iner")
+                        x_cg_back = prob.get_val("x_cg")
+                        y_cg_back = prob.get_val("y_cg")
+                        edge_iner_back = prob.get_val("edge_iner")
+                        flap_iner_back = prob.get_val("flap_iner")
+                        EIxx_back = prob.get_val("EIxx")
+                        EIyy_back = prob.get_val("EIyy")
+                        x_tc_back = prob.get_val("x_tc")
+                        y_tc_back = prob.get_val("y_tc")
+                        x_sc_back = prob.get_val("x_sc")
+                        y_sc_back = prob.get_val("y_sc")
+                        GJ_back = prob.get_val("GJ")
+                        npt.assert_almost_equal(Tw_iner, Tw_iner_back, decimal=6)
+                        npt.assert_almost_equal(x_cg, x_cg_back, decimal=6)
+                        npt.assert_almost_equal(np.abs(edge_iner-edge_iner_back)/edge_iner, 0.0, decimal=6)
+                        npt.assert_almost_equal(np.abs(flap_iner-flap_iner_back)/flap_iner, 0.0, decimal=6)
+                        npt.assert_almost_equal(y_cg, y_cg_back, decimal=6)
+                        npt.assert_almost_equal(x_tc, x_tc_back, decimal=2)
+                        npt.assert_almost_equal(y_tc, y_tc_back, decimal=2)
+                        npt.assert_almost_equal(x_sc, x_sc_back, decimal=2)
+                        npt.assert_almost_equal(y_sc, y_sc_back, decimal=2)
+                        npt.assert_almost_equal(np.abs(EIxx-EIxx_back)/EIxx, 0.0, decimal=6)
+                        npt.assert_almost_equal(np.abs(EIyy-EIyy_back)/EIyy, 0.0, decimal=6)
+                        npt.assert_almost_equal(np.abs(GJ-GJ_back)/GJ, 0.0, decimal=6)
+
         
 if __name__ == "__main__":
     unittest.main()
