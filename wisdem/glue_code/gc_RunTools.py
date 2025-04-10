@@ -53,8 +53,13 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
                     np_data = np.array(rec_data[param])
                     if len(np_data.shape) < 3:
                         ax.plot(iterations, np_data)
+                    elif len(np_data.shape) == 3:
+                        for i in range(np_data.shape[2]):
+                            ax.plot(iterations, np_data[:,:,i])
                     else:
-                        ax.plot(iterations, np_data[:,:,0])
+                        print(
+                                f"Warning: Iteration plot not printed for {param} as they are arrays with more than 3 dimensions. Please check plotting logic."
+                            )
                     ax.set(xlabel="Number of Iterations", ylabel=param)
                     fig_name = "Convergence_trend_" + param + ".png"
                     fig.savefig(os.path.join(folder_output, fig_name))
