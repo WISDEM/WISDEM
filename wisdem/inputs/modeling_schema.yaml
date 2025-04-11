@@ -39,6 +39,10 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run this module
+                    user_elastic: &usere
+                        type: boolean
+                        default: False
+                        description: Flag to use only user-defined elastic properties for this module
                     n_aoa:
                         type: integer
                         default: 200
@@ -174,6 +178,7 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
+                    user_elastic: *usere
                     model_generator:
                         type: boolean
                         default: False
@@ -226,6 +231,7 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
+                    user_elastic: *usere
                     wind: &wind
                         type: string
                         enum: [PowerWind, LogisticWind]
@@ -298,6 +304,7 @@ properties:
                         default: monopile
                         description: Can be `monopile` or `jacket`.
                     flag: *flag
+                    user_elastic: *usere
                     wind: *wind
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
@@ -343,6 +350,7 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
+                    user_elastic: *usere
                     n_refine:
                         type: integer
                         default: 1

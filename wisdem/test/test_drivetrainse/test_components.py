@@ -516,6 +516,8 @@ class TestComponents(unittest.TestCase):
             inputs[k] = np.array( [inputs[k]] )
         inputs["blades_I"] = 30 * np.ones(6)
         inputs["hub_system_I"] = 20 * np.ones(6)
+        inputs["drivetrain_spring_constant_user"] = 0.0
+        inputs["drivetrain_damping_coefficient_user"] = 0.0
         
         myobj.compute(inputs, outputs)
         npt.assert_equal(outputs["drivetrain_spring_constant"], 2.0)
@@ -526,6 +528,11 @@ class TestComponents(unittest.TestCase):
         npt.assert_almost_equal(outputs["drivetrain_spring_constant"], 150.0 / (2 + 75))
         npt.assert_almost_equal(outputs["drivetrain_damping_coefficient"], np.sqrt(50 * 150.0 / (2 + 75)))
 
+        inputs["drivetrain_spring_constant_user"] = 1e2
+        inputs["drivetrain_damping_coefficient_user"] = 2e2
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["drivetrain_spring_constant"], 1e2)
+        npt.assert_almost_equal(outputs["drivetrain_damping_coefficient"], 2e2)
 
 if __name__ == "__main__":
     unittest.main()
