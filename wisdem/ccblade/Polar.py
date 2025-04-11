@@ -727,7 +727,7 @@ class Polar(object):
             cn = cl * np.cos(alpha * np.pi / 180) + cd * np.sin(alpha * np.pi / 180)
 
         # --- Zero lift
-        alpha0 = float(self.alpha0())
+        alpha0 = self.alpha0()
         cd0 = self.cd_interp(alpha0)
         cm0 = self.cm_interp(alpha0)
 
@@ -1292,14 +1292,17 @@ def _find_alpha0(alpha, coeff, window, direction='up', value_if_constant = np.na
     coeff = coeff[iwindow]
     alpha_zc, i_zc, s_zc = _zero_crossings(x=alpha, y=coeff, direction=direction)
 
-    if len(alpha_zc) == 1:
-        alpha0 = alpha_zc
+    if type(alpha_zc) == type(np.array([])) and alpha_zc.size == 1:
+        alpha0 = float(alpha_zc[0])
+        
+    elif len(alpha_zc) == 1:
+        alpha0 = float(alpha_zc)
     
     elif len(alpha_zc) > 1:
         logger.debug('WARN: Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
         logger.debug('>>> Using second zero')
         alpha_zc=alpha_zc[1:]
-        alpha0 = alpha_zc[0]
+        alpha0 = float(alpha_zc[0])
         #raise Exception('Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
     elif len(alpha_zc) == 0:
         alpha0 = 0.
@@ -1765,7 +1768,7 @@ def _find_linear_region(x, y, nMin, x0=None):
             iEnd = j + nMin
             if x0 is not None:
                 sl = np.linalg.lstsq(x[iStart:iEnd], y[iStart:iEnd], rcond=None)[0][0]
-                slp[iStart, j] = sl
+                slp[iStart, j] = sl[0]
                 off[iStart, j] = x0
                 y_lin = x[iStart:iEnd] * sl
             else:

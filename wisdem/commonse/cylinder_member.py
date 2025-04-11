@@ -17,7 +17,7 @@ from wisdem.commonse.akima import Akima
 
 NULL = -9999
 MEMMAX = 200
-NREFINE = 1
+NREFINE_DEFAULT = 1
 
 # For rectangular
 # This assumes that the Ca only depends on the aspect ratio
@@ -138,7 +138,7 @@ class RectCrossSection(CrossSection):
         self.b = make_float(self.b)
 
 
-def get_nfull(npts, nref=NREFINE):
+def get_nfull(npts, nref=NREFINE_DEFAULT):
     n_full = int(1 + nref * (npts - 1))
     return n_full
 
@@ -507,8 +507,11 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["axial_stff"] = E_param * Az
 
         # While the sections are simple, store cross section info for fatigue
+        cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
+        ax_load2stress[:, 0] = 1.0 / cross_section_xz
+        ax_load2stress[:, 1] = 1.0 / cross_section_xz
         ax_load2stress[:, 2] = 1.0 / isection.Area
         ax_load2stress[:, 3] = 1.0 / isection.Sx
         ax_load2stress[:, 4] = 1.0 / isection.Sy
@@ -606,7 +609,7 @@ class MemberDiscretization(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
         self.options.declare("member_shape_variables")
 
     def setup(self):
@@ -1115,7 +1118,7 @@ class MemberComplex(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
         self.options.declare("idx")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
 
     def setup(self):
         opt = self.options["options"]

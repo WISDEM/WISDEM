@@ -7,8 +7,6 @@ import wisdem.commonse.cylinder_member as mem
 from wisdem.commonse import NFREQ, gravity
 
 RIGID = 1e30
-NREFINE = 3
-
 
 class PreDiscretization(om.ExplicitComponent):
     """

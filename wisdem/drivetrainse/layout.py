@@ -563,7 +563,7 @@ class GearedLayout(Layout):
         outputs["s_lss"] = s_lss
 
         # ------- Bedplate I-beam properties ----------------
-        L_bedplate = L_drive * np.cos(tilt)
+        L_bedplate = (L_drive + 0.5 * D_hub) * np.cos(tilt)
         H_bedplate = H_drive - (L_drive + 0.5 * D_hub) * np.sin(tilt)  # Subtract thickness of platform plate
         outputs["L_bedplate"] = L_bedplate
         outputs["H_bedplate"] = H_bedplate

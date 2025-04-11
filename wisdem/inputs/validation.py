@@ -5,6 +5,7 @@ import jsonschema as json
 import ruamel.yaml as ry
 from functools import reduce
 import operator
+from openmdao.utils.mpi import MPI
 
 
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
@@ -145,7 +146,24 @@ def extend_with_default(validator_class):
 
 DefaultValidatingDraft7Validator = extend_with_default(json.Draft7Validator)
 
-def _validate(finput, fschema, defaults=True):
+def MPI_load_yaml(fname):
+    """
+    When MPI is active, loads a yaml on rank 0 and broadcasts it out
+
+    Args:
+        fname: file name of input yaml file
+
+    Returns:
+        dict: Dictionary corresponding to that yaml file
+    """
+
+    rank = MPI.COMM_WORLD.Get_rank()
+    dict_yaml = load_yaml(fname) if rank == 0 else None
+    dict_yaml = MPI.COMM_WORLD.bcast(dict_yaml, root = 0)
+
+    return dict_yaml
+
+def _validate(finput, fschema, defaults=True, rank_0 = False):
     """
     Validates a dictionary against a schema and returns the validated dictionary.
 
@@ -153,16 +171,43 @@ def _validate(finput, fschema, defaults=True):
         finput (dict or str): Dictionary or path to the YAML file to be validated.
         fschema (dict or str): Dictionary or path to the schema file to validate against.
         defaults (bool): Flag to indicate if default values should be integrated.
+        rank_0 (bool): Flag that should be set to true when the _validate function is
+        called with MPI turned on and rank=0. Otherwise it can be kept as default to False
 
     Returns:
         dict: Validated dictionary.
     """
-    schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
-    input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
+    if isinstance(fschema, dict):
+        schema_dict = fschema
+    else:
+        schema_dict = MPI_load_yaml(fschema) if (MPI and rank_0 == False) else load_yaml(fschema)
+
+    
+    if isinstance(finput, dict):
+        input_dict = finput
+    else:
+        input_dict = MPI_load_yaml(finput) if (MPI and rank_0 == False) else load_yaml(finput)
+
+    # schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
+    # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
     validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
     validator(schema_dict).validate(input_dict)
-    return input_dict
 
+    # Deep copy to ensure no shared references from yaml pointers and anchors
+    unique_input_dict = deep_copy_without_shared_refs(input_dict)
+
+    return unique_input_dict
+
+def deep_copy_without_shared_refs(obj):
+    """
+    Recursively creates a deep copy of the object, breaking any shared references.
+    """
+    if isinstance(obj, dict):
+        return {k: deep_copy_without_shared_refs(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [deep_copy_without_shared_refs(item) for item in obj]
+    else:
+        return obj  # Return the value directly if not a container
 
 # ---------------------
 def load_geometry_yaml(finput):
@@ -178,7 +223,7 @@ def load_analysis_yaml(finput):
 
 
 def write_geometry_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_geom, defaults=False)
+    _validate(instance, fschema_geom, defaults=False, rank_0=True)
     # Ensure the file output has a .yaml suffix
     if not foutput.endswith(".yaml"):
         foutput += ".yaml"
@@ -187,7 +232,7 @@ def write_geometry_yaml(instance : dict, foutput : str) -> None:
 
 
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_model, defaults=False)
+    _validate(instance, fschema_model, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
@@ -202,7 +247,7 @@ def write_modeling_yaml(instance : dict, foutput : str) -> None:
 
 
 def write_analysis_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_opt, defaults=False)
+    _validate(instance, fschema_opt, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
@@ -247,7 +292,6 @@ def remove_numpy(fst_vt : dict) -> dict:
         np.longdouble: float,
         np.csingle: float,
         np.cdouble: float,
-        np.float_: float,
         np.float16: float,
         np.float32: float,
         np.float64: float,

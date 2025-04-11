@@ -5,6 +5,7 @@ from wisdem.landbosse.model.ManagementCost import ManagementCost
 from wisdem.landbosse.model.FoundationCost import FoundationCost
 from wisdem.landbosse.model.SubstationCost import SubstationCost
 from wisdem.landbosse.model.TransportCost import TransportCost
+from wisdem.landbosse.model.TurbineCost import TurbineCost
 from wisdem.landbosse.model.GridConnectionCost import GridConnectionCost
 from wisdem.landbosse.model.SitePreparationCost import SitePreparationCost
 from wisdem.landbosse.model.CollectionCost import ArraySystem
@@ -71,6 +72,13 @@ class Manager:
             development_cost = DevelopmentCost(input_dict=self.input_dict, output_dict=self.output_dict,
                                           project_name=project_name)
             development_cost.run_module()
+
+            turbine_cost = TurbineCost(
+                input_dict=self.input_dict,
+                output_dict=self.output_dict,
+                project_name=project_name,
+            )
+            turbine_cost.run_module()
 
             erection_cost_output_dict = dict()
             erection_cost = ErectionCost(

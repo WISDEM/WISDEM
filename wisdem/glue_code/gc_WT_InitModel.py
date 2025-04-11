@@ -449,7 +449,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                                 "The end position of the layer "
                                 + internal_structure_2d_fem["layers"][i]["name"]
                                 + " is linked to the layer "
-                                + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"]
+                                + internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]
                                 + " , but this layer does not exist in the yaml."
                             )
             if "width" in internal_structure_2d_fem["layers"][i]:
@@ -536,13 +536,13 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
 
         # Fatigue params
-        if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+        if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
             wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
 
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+        elif layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
@@ -1107,9 +1107,14 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         usr_defined_flag = {}
         for coeff in usr_defined_coeffs:
             usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
-            coeff_length = len(floating["members"][i][coeff])
-            if usr_defined_flag[coeff]:
-                assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length. Please correct."
+            if isinstance(floating["members"][i][coeff], list):
+                coeff_length = len(floating["members"][i][coeff])
+                if usr_defined_flag[coeff]:
+                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+            else: 
+            # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
+                floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
+
 
         diameter_assigned = False
         for j, kgrp in enumerate(float_opt["members"]["groups"]):
@@ -1350,6 +1355,8 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
+    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
+    wt_opt["control.fix_pitch_regI12"] = control["pitch"]["fix_pitch_regI12"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
@@ -1413,8 +1420,8 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 def assign_bos_values(wt_opt, bos, offshore):
     wt_opt["bos.plant_turbine_spacing"] = bos["plant_turbine_spacing"]
     wt_opt["bos.plant_row_spacing"] = bos["plant_row_spacing"]
-    wt_opt["bos.commissioning_pct"] = bos["commissioning_pct"]
-    wt_opt["bos.decommissioning_pct"] = bos["decommissioning_pct"]
+    wt_opt["bos.commissioning_cost_kW"] = bos["commissioning_cost_kW"]
+    wt_opt["bos.decommissioning_cost_kW"] = bos["decommissioning_cost_kW"]
     wt_opt["bos.distance_to_substation"] = bos["distance_to_substation"]
     wt_opt["bos.distance_to_interconnection"] = bos["distance_to_interconnection"]
     if offshore:
@@ -1422,11 +1429,13 @@ def assign_bos_values(wt_opt, bos, offshore):
         wt_opt["bos.distance_to_landfall"] = bos["distance_to_landfall"]
         wt_opt["bos.port_cost_per_month"] = bos["port_cost_per_month"]
         wt_opt["bos.site_auction_price"] = bos["site_auction_price"]
-        wt_opt["bos.site_assessment_plan_cost"] = bos["site_assessment_plan_cost"]
         wt_opt["bos.site_assessment_cost"] = bos["site_assessment_cost"]
-        wt_opt["bos.construction_operations_plan_cost"] = bos["construction_operations_plan_cost"]
+        wt_opt["bos.construction_insurance"] = bos["construction_insurance"]
+        wt_opt["bos.construction_financing"] = bos["construction_financing"]
+        wt_opt["bos.contingency"] = bos["contingency"]
+        wt_opt["bos.construction_plan_cost"] = bos["construction_plan_cost"]
+        wt_opt["bos.installation_plan_cost"] = bos["installation_plan_cost"]
         wt_opt["bos.boem_review_cost"] = bos["boem_review_cost"]
-        wt_opt["bos.design_install_plan_cost"] = bos["design_install_plan_cost"]
     else:
         wt_opt["bos.interconnect_voltage"] = bos["interconnect_voltage"]
 

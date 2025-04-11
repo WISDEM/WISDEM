@@ -126,7 +126,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
-            self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -147,6 +147,8 @@ class WT_RNTA(om.Group):
 
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
+                self.connect("control.ps_percent", "rotorse.rp.powercurve.ps_percent")
+                self.connect("control.fix_pitch_regI12", "rotorse.rp.powercurve.fix_pitch_regI12")
             self.connect("control.rated_TSR", "rotorse.tsr")
             self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
@@ -187,12 +189,6 @@ class WT_RNTA(om.Group):
             self.connect("materials.nu", "rotorse.re.precomp.nu")
             self.connect("materials.rho", "rotorse.re.precomp.rho")
 
-            # Conncetions to rail transport module
-            if (
-                modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-                or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-            ):
-                self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
             # Connections from blade struct parametrization to rotor load anlysis
             spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
             self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
@@ -765,7 +761,7 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
-            self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
+            self.connect("blade.high_level_blade_props.Rtip", "tcons.Rtip")
             self.connect("blade.high_level_blade_props.blade_ref_axis", "tcons.ref_axis_blade")
             self.connect("hub.cone", "tcons.precone")
             self.connect("nacelle.uptilt", "tcons.tilt")
@@ -793,6 +789,7 @@ class WT_RNTA(om.Group):
             self.connect("drivese.lss_mass", "tcc.lss_mass")
             self.connect("drivese.mean_bearing_mass", "tcc.main_bearing_mass")
             self.connect("drivese.gearbox_mass", "tcc.gearbox_mass")
+            self.connect("nacelle.gearbox_torque_density", "tcc.gearbox_torque_density")
             self.connect("drivese.hss_mass", "tcc.hss_mass")
             self.connect("drivese.brake_mass", "tcc.brake_mass")
             self.connect("drivese.generator_mass", "tcc.generator_mass")
@@ -941,7 +938,7 @@ class WindPark(om.Group):
         if modeling_options["flags"]["blade"]:
             self.add_subsystem("financese", PlantFinance(verbosity=modeling_options["General"]["verbosity"]))
             self.add_subsystem(
-                "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
+                "outputs_2_screen", Outputs_2_Screen(verbosity=modeling_options["General"]["verbosity"])
             )
 
         # BOS inputs
@@ -988,23 +985,26 @@ class WindPark(om.Group):
                 self.connect("rotorse.rp.powercurve.rated_V", "orbit.turbine_rated_windspeed")
                 self.connect("bos.plant_turbine_spacing", "orbit.plant_turbine_spacing")
                 self.connect("bos.plant_row_spacing", "orbit.plant_row_spacing")
-                self.connect("bos.commissioning_pct", "orbit.commissioning_pct")
-                self.connect("bos.decommissioning_pct", "orbit.decommissioning_pct")
+                self.connect("bos.commissioning_cost_kW", "orbit.commissioning_cost_kW")
+                self.connect("bos.decommissioning_cost_kW", "orbit.decommissioning_cost_kW")
                 self.connect("bos.distance_to_substation", "orbit.plant_substation_distance")
                 self.connect("bos.distance_to_interconnection", "orbit.interconnection_distance")
                 self.connect("bos.site_distance", "orbit.site_distance")
                 self.connect("bos.distance_to_landfall", "orbit.site_distance_to_landfall")
                 self.connect("bos.port_cost_per_month", "orbit.port_cost_per_month")
+                self.connect("bos.construction_insurance", "orbit.construction_insurance")
+                self.connect("bos.construction_financing", "orbit.construction_financing")
+                self.connect("bos.contingency", "orbit.contingency")
                 self.connect("bos.site_auction_price", "orbit.site_auction_price")
-                self.connect("bos.site_assessment_plan_cost", "orbit.site_assessment_plan_cost")
                 self.connect("bos.site_assessment_cost", "orbit.site_assessment_cost")
-                self.connect("bos.construction_operations_plan_cost", "orbit.construction_operations_plan_cost")
+                self.connect("bos.construction_plan_cost", "orbit.construction_plan_cost")
+                self.connect("bos.installation_plan_cost", "orbit.installation_plan_cost")
                 self.connect("bos.boem_review_cost", "orbit.boem_review_cost")
-                self.connect("bos.design_install_plan_cost", "orbit.design_install_plan_cost")
             else:
                 # Inputs into LandBOSSE
                 self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
                 self.connect("costs.turbine_number", "landbosse.num_turbines")
+                self.connect("tcc.turbine_cost_kW", "landbosse.turbine_capex_kW")
                 self.connect("configuration.rated_power", "landbosse.turbine_rating_MW")
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
                 self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")
@@ -1021,8 +1021,8 @@ class WindPark(om.Group):
                 self.connect("tower_grid.foundation_height", "landbosse.foundation_height")
                 self.connect("bos.plant_turbine_spacing", "landbosse.turbine_spacing_rotor_diameters")
                 self.connect("bos.plant_row_spacing", "landbosse.row_spacing_rotor_diameters")
-                self.connect("bos.commissioning_pct", "landbosse.commissioning_pct")
-                self.connect("bos.decommissioning_pct", "landbosse.decommissioning_pct")
+                self.connect("bos.commissioning_cost_kW", "landbosse.commissioning_cost_kW")
+                self.connect("bos.decommissioning_cost_kW", "landbosse.decommissioning_cost_kW")
                 self.connect("bos.distance_to_substation", "landbosse.trench_len_to_substation_km")
                 self.connect("bos.distance_to_interconnection", "landbosse.distance_to_interconnect_mi")
                 self.connect("bos.interconnect_voltage", "landbosse.interconnect_voltage_kV")

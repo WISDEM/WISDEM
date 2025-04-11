@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-12, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14, macos-15]
 
     steps:
       - name: Set up QEMU
@@ -47,22 +47,14 @@ jobs:
 
       - name: Build wheels linux
         if: contains( matrix.os, 'ubuntu')
-        uses: pypa/cibuildwheel@v2.18.1
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
-
-      - name: Build wheels mac-12
-        if: contains( matrix.os, 'macos-12')
-        uses: pypa/cibuildwheel@v2.18.1
-        env:
-          CC: ${{ steps.install_cc.outputs.cc }}
-          CXX: ${{ steps.install_cc.outputs.cxx }}
-          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="12.0"
 
       - name: Build wheels mac-13
         if: contains( matrix.os, 'macos-13')
-        uses: pypa/cibuildwheel@v2.18.1
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -70,15 +62,23 @@ jobs:
 
       - name: Build wheels mac-14
         if: contains( matrix.os, 'macos-14')
-        uses: pypa/cibuildwheel@v2.18.1
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="14.0"
 
+      - name: Build wheels mac-15
+        if: contains( matrix.os, 'macos-15')
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="15.0"
+
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.18.1
+        uses: pypa/cibuildwheel@v2.22.0
           
       - uses: actions/upload-artifact@v4
         with:

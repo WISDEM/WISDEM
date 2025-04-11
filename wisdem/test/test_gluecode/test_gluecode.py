@@ -22,12 +22,12 @@ class TestRegression(unittest.TestCase):
 
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 23.9127972556, 2)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 23.65765001618882, 2)
         self.assertAlmostEqual(
             wt_opt["rotorse.blade_mass"][0], 16419.8666989212, 2
         )  # new value: improved interpolation
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.69068743609548, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 4.7295143980, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 53.431757079106646, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 4.458378462584996, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.7, 2)
 
     def test15MW(self):
@@ -35,12 +35,12 @@ class TestRegression(unittest.TestCase):
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.8576828154, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9000397734597, 1)
         self.assertAlmostEqual(
-            wt_opt["rotorse.blade_mass"][0], 68206.4068005262, 1
+            wt_opt["rotorse.blade_mass"][0], 68208.64259485099, 1
         )  # new value: improved interpolation
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 85.97885236005611, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.831825879332392, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 69.61418042145799, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.93986529952085, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):
@@ -48,12 +48,12 @@ class TestRegression(unittest.TestCase):
         fname_wt_input = test_dir + "IEA-3p4-130-RWT.yaml"
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.6216930312, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.586883417647216, 1)
         self.assertAlmostEqual(
-            wt_opt["rotorse.blade_mass"][0], 14528.4450828773, 1
+            wt_opt["rotorse.blade_mass"][0], 14528.445083090577, 1
         )  # new value: improved interpolation
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.99824836613984, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 7.3530140897, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 39.04539546625558, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 8.10488877465953, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 
 
