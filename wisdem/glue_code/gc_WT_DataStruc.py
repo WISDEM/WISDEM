@@ -185,13 +185,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             units="m",
             desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
         )
-
-        # Hub inputs
-        if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
-            self.add_subsystem("hub", Hub(flags=modeling_options["flags"],
-                                          user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"]))
-
-        # Control inputs
+      # Control inputs
         if modeling_options["flags"]["control"]:
             ctrl_ivc = self.add_subsystem("control", om.IndepVarComp())
             ctrl_ivc.add_output(
@@ -247,272 +241,23 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
                 self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
+        # Hub inputs
+        if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
+            self.add_subsystem("hub", Hub(flags=modeling_options["flags"],
+                                          user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"]))
+
         # Nacelle inputs
         if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
-            nacelle_ivc = om.IndepVarComp()
-            # Common direct and geared
-            nacelle_ivc.add_output(
-                "uptilt", val=0.0, units="rad", desc="Nacelle uptilt angle. A standard machine has positive values."
-            )
-            nacelle_ivc.add_output(
-                "distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top plane to hub flange"
-            )
-            nacelle_ivc.add_output(
-                "overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange"
-            )
-            nacelle_ivc.add_output(
-                "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
-            )
-            nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
-            nacelle_ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
-            nacelle_ivc.add_output(
-                "gearbox_radius_user",
-                val=0.0,
-                units="m",
-                desc="User override of gearbox radius (only used if gearbox_mass_user is > 0).",
-            )
-            nacelle_ivc.add_output(
-                "gearbox_length_user",
-                val=0.0,
-                units="m",
-                desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
-            )
+            self.add_subsystem("nacelle", Nacelle(flags=modeling_options["flags"],
+                                                  user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"],
+                                                  direct_drive=modeling_options["WISDEM"]["DriveSE"]["direct"]))
 
-            nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
-            
-            if modeling_options["flags"]["nacelle"]:
-                nacelle_ivc.add_output(
-                    "distance_hub_mb",
-                    val=0.0,
-                    units="m",
-                    desc="Distance from hub flange to first main bearing along shaft",
-                )
-                nacelle_ivc.add_output(
-                    "distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
-                )
-                nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
-                nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
-                nacelle_ivc.add_output(
-                    "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
-                )
-                nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
-                nacelle_ivc.add_output(
-                    "brake_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override regular regression-based calculation of brake mass with this value",
-                )
-                nacelle_ivc.add_output(
-                    "hvac_mass_coeff",
-                    val=0.025,
-                    units="kg/kW/m",
-                    desc="Regression-based scaling coefficient on machine rating to get HVAC system mass",
-                )
-                nacelle_ivc.add_output(
-                    "converter_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override regular regression-based calculation of converter mass with this value",
-                )
-                nacelle_ivc.add_output(
-                    "transformer_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override regular regression-based calculation of transformer mass with this value",
-                )
-                nacelle_ivc.add_output(
-                    "mb1_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override regular regression-based calculation of first main bearing mass with this value",
-                )
-                nacelle_ivc.add_output(
-                    "mb2_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override regular regression-based calculation of second main bearing mass with this value",
-                )
-                nacelle_ivc.add_discrete_output(
-                    "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
-                )
-                nacelle_ivc.add_output(
-                    "bedplate_mass_user",
-                    val=0.0,
-                    units="kg",
-                    desc="Override bottom-up calculation of bedplate mass with this value",
-                )
-
-                if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-                    # Direct only
-                    nacelle_ivc.add_output(
-                        "nose_diameter",
-                        val=np.zeros(2),
-                        units="m",
-                        desc="Diameter of nose (also called turret or spindle)",
-                    )
-                    nacelle_ivc.add_output(
-                        "nose_wall_thickness",
-                        val=np.zeros(2),
-                        units="m",
-                        desc="Thickness of nose (also called turret or spindle)",
-                    )
-                    nacelle_ivc.add_output(
-                        "bedplate_wall_thickness",
-                        val=np.zeros(4),
-                        units="m",
-                        desc="Thickness of hollow elliptical bedplate",
-                    )
-                else:
-                    # Geared only
-                    nacelle_ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
-                    nacelle_ivc.add_output(
-                        "hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft"
-                    )
-                    nacelle_ivc.add_output(
-                        "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
-                    )
-                    nacelle_ivc.add_output(
-                        "bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width"
-                    )
-                    nacelle_ivc.add_output(
-                        "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
-                    )
-                    nacelle_ivc.add_output(
-                        "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
-                    )
-                    nacelle_ivc.add_discrete_output(
-                        "gear_configuration",
-                        val="eep",
-                        desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration",
-                    )
-                    nacelle_ivc.add_discrete_output(
-                        "planet_numbers",
-                        val=[3, 3, 0],
-                        desc="Number of planets for epicyclic stages (use 0 for parallel)",
-                    )
-
-                    
-            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
-                nacelle_ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
-                nacelle_ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
-                nacelle_ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
-                nacelle_ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
-                nacelle_ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
-                nacelle_ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
-                
-            self.add_subsystem("nacelle", nacelle_ivc)
-            
-            # Generator inputs
-            generator_ivc = om.IndepVarComp()
-            generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
-            generator_ivc.add_output('generator_rotor_I_user', val=np.zeros(3), units='kg*m**2')
-            if modeling_options["flags"]["generator"]:
-                generator_ivc.add_output("B_r", val=1.2, units="T")
-                generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
-                generator_ivc.add_output("P_Fe0h", val=4.0, units="W/kg")
-                generator_ivc.add_output("S_N", val=-0.002)
-                generator_ivc.add_output("alpha_p", val=0.5 * np.pi * 0.7)
-                generator_ivc.add_output("b_r_tau_r", val=0.45)
-                generator_ivc.add_output("b_ro", val=0.004, units="m")
-                generator_ivc.add_output("b_s_tau_s", val=0.45)
-                generator_ivc.add_output("b_so", val=0.004, units="m")
-                generator_ivc.add_output("cofi", val=0.85)
-                generator_ivc.add_output("freq", val=60, units="Hz")
-                generator_ivc.add_output("h_i", val=0.001, units="m")
-                generator_ivc.add_output("h_sy0", val=0.0)
-                generator_ivc.add_output("h_w", val=0.005, units="m")
-                generator_ivc.add_output("k_fes", val=0.9)
-                generator_ivc.add_output("k_fillr", val=0.7)
-                generator_ivc.add_output("k_fills", val=0.65)
-                generator_ivc.add_output("k_s", val=0.2)
-                generator_ivc.add_discrete_output("m", val=3)
-                generator_ivc.add_output("mu_0", val=np.pi * 4e-7, units="m*kg/s**2/A**2")
-                generator_ivc.add_output("mu_r", val=1.06, units="m*kg/s**2/A**2")
-                generator_ivc.add_output("p", val=3.0)
-                generator_ivc.add_output("phi", val=np.deg2rad(90), units="rad")
-                generator_ivc.add_discrete_output("q1", val=6)
-                generator_ivc.add_discrete_output("q2", val=4)
-                generator_ivc.add_output("ratio_mw2pp", val=0.7)
-                generator_ivc.add_output("resist_Cu", val=1.8e-8 * 1.4, units="ohm/m")
-                generator_ivc.add_output("sigma", val=40e3, units="Pa")
-                generator_ivc.add_output("y_tau_p", val=1.0)
-                generator_ivc.add_output("y_tau_pr", val=10.0 / 12)
-
-                generator_ivc.add_output("I_0", val=0.0, units="A")
-                generator_ivc.add_output("d_r", val=0.0, units="m")
-                generator_ivc.add_output("h_m", val=0.0, units="m")
-                generator_ivc.add_output("h_0", val=0.0, units="m")
-                generator_ivc.add_output("h_s", val=0.0, units="m")
-                generator_ivc.add_output("len_s", val=0.0, units="m")
-                generator_ivc.add_output("n_r", val=0.0)
-                generator_ivc.add_output("rad_ag", val=0.0, units="m")
-                generator_ivc.add_output("t_wr", val=0.0, units="m")
-
-                generator_ivc.add_output("n_s", val=0.0)
-                generator_ivc.add_output("b_st", val=0.0, units="m")
-                generator_ivc.add_output("d_s", val=0.0, units="m")
-                generator_ivc.add_output("t_ws", val=0.0, units="m")
-
-                generator_ivc.add_output("rho_Copper", val=0.0, units="kg*m**-3")
-                generator_ivc.add_output("rho_Fe", val=0.0, units="kg*m**-3")
-                generator_ivc.add_output("rho_Fes", val=0.0, units="kg*m**-3")
-                generator_ivc.add_output("rho_PM", val=0.0, units="kg*m**-3")
-
-                generator_ivc.add_output("C_Cu", val=0.0, units="USD/kg")
-                generator_ivc.add_output("C_Fe", val=0.0, units="USD/kg")
-                generator_ivc.add_output("C_Fes", val=0.0, units="USD/kg")
-                generator_ivc.add_output("C_PM", val=0.0, units="USD/kg")
-
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
-                    generator_ivc.add_output("N_c", 0.0)
-                    generator_ivc.add_output("b", 0.0)
-                    generator_ivc.add_output("c", 0.0)
-                    generator_ivc.add_output("E_p", 0.0, units="V")
-                    generator_ivc.add_output("h_yr", val=0.0, units="m")
-                    generator_ivc.add_output("h_ys", val=0.0, units="m")
-                    generator_ivc.add_output("h_sr", 0.0, units="m", desc="Structural Mass")
-                    generator_ivc.add_output("h_ss", 0.0, units="m")
-                    generator_ivc.add_output("t_r", 0.0, units="m")
-                    generator_ivc.add_output("t_s", 0.0, units="m")
-
-                    generator_ivc.add_output("u_allow_pcent", 0.0)
-                    generator_ivc.add_output("y_allow_pcent", 0.0)
-                    generator_ivc.add_output("z_allow_deg", 0.0, units="deg")
-                    generator_ivc.add_output("B_tmax", 0.0, units="T")
-
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
-                    generator_ivc.add_output("tau_p", val=0.0, units="m")
-                    generator_ivc.add_output("h_ys", val=0.0, units="m")
-                    generator_ivc.add_output("h_yr", val=0.0, units="m")
-                    generator_ivc.add_output("b_arm", val=0.0, units="m")
-
-                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
-                    generator_ivc.add_output("B_symax", val=0.0, units="T")
-                    generator_ivc.add_output("S_Nmax", val=-0.2)
-
-            else:
-                # If using simple (regression) generator scaling, this is an optional input to override default values
-                n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
-                generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
-                generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
-
-            self.add_subsystem("generator", generator_ivc)
-
+        # Generator inputs
+        if modeling_options["flags"]["nacelle"]:
+            self.add_subsystem("generator", Generator(flags=modeling_options["flags"],
+                                                      user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"],
+                                                      gentype=modeling_options["WISDEM"]["DriveSE"]["generator"]["type"],
+                                                      n_pc=modeling_options["WISDEM"]["RotorSE"]["n_pc"]))
             
         if not modeling_options["flags"]["nacelle"]:
             # User wants to bypass all of DrivetrainSE with elastic summary properties
@@ -529,7 +274,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             drivese_ivc.add_output('yaw_mass', val=0.0, units='kg')
             drivese_ivc.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
             self.add_subsystem("drivese", drivese_ivc)
-                
              
         # Tower inputs
         if modeling_options["flags"]["tower"]:
@@ -2274,25 +2018,14 @@ class Hub(om.Group):
     def setup(self):
         ivc = self.add_subsystem("hub_indep_vars", om.IndepVarComp(), promotes=["*"])
 
-        if self.options["flags"]["hub"] or self.options["flags"]["blade"]:
-            ivc.add_output(
-                "cone",
-                val=0.0,
-                units="rad",
-                desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.",
-            )
-            # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
-            ivc.add_output("diameter", val=0.0, units="m")
+        ivc.add_output("cone", val=0.0, units="rad", desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.")
+        # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
+        ivc.add_output("diameter", val=0.0, units="m")
 
-            exec_comp = om.ExecComp(
-                "radius = 0.5 * diameter",
-                units="m",
-                radius={
-                    "desc": "Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line."
-                },
-            )
-            self.add_subsystem("compute_radius", exec_comp, promotes=["*"])
-            
+        exec_comp = om.ExecComp("radius = 0.5 * diameter", units="m", radius={
+            "desc": "Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line."
+        })
+        self.add_subsystem("compute_radius", exec_comp, promotes=["*"])
             
         if self.options["flags"]["hub"]:
             ivc.add_output("flange_t2shell_t", val=0.0)
@@ -2316,6 +2049,182 @@ class Hub(om.Group):
                 ivc.add_output('hub_system_I_user', val=np.zeros(6), units='kg*m**2')
                 ivc.add_output('hub_system_cm_user', val=0.0, units='m')
 
+
+class Nacelle(om.Group):
+    # Openmdao group with the hub data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare("flags")
+        self.options.declare("user_elastic")
+        self.options.declare("direct_drive")
+
+    def setup(self):
+        ivc = self.add_subsystem("nac_indep_vars", om.IndepVarComp(), promotes=["*"])
+
+        # Common direct and geared
+        ivc.add_output("uptilt", val=0.0, units="rad", desc="Nacelle uptilt angle. A standard machine has positive values.")
+        ivc.add_output("distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top plane to hub flange")
+        ivc.add_output("overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange")
+        ivc.add_output("gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive")
+        ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+        ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
+        ivc.add_output("gearbox_radius_user", val=0.0, units="m", desc="User override of gearbox radius (only used if gearbox_mass_user is > 0).")
+        ivc.add_output("gearbox_length_user", val=0.0, units="m", desc="User override of gearbox length (only used if gearbox_mass_user is > 0).")
+        ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
+
+        if self.options["flags"]["nacelle"]:
+            ivc.add_output("distance_hub_mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft")
+            ivc.add_output("distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft")
+            ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
+            ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
+            ivc.add_output("lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft")
+            ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
+            ivc.add_output("brake_mass_user", val=0.0, units="kg", desc="Override regular regression-based calculation of brake mass with this value")
+            ivc.add_output("hvac_mass_coeff", val=0.025, units="kg/kW/m", desc="Regression-based scaling coefficient on machine rating to get HVAC system mass")
+            ivc.add_output("converter_mass_user", val=0.0, units="kg", desc="Override regular regression-based calculation of converter mass with this value")
+            ivc.add_output("transformer_mass_user", val=0.0, units="kg", desc="Override regular regression-based calculation of transformer mass with this value")
+            ivc.add_output("mb1_mass_user", val=0.0, units="kg", desc="Override regular regression-based calculation of first main bearing mass with this value")
+            ivc.add_output("mb2_mass_user", val=0.0, units="kg", desc="Override regular regression-based calculation of second main bearing mass with this value")
+            ivc.add_discrete_output( "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
+            ivc.add_discrete_output( "mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
+            ivc.add_discrete_output( "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)")
+            ivc.add_discrete_output( "lss_material", val="steel", desc="Material name identifier for the low speed shaft")
+            ivc.add_discrete_output( "hss_material", val="steel", desc="Material name identifier for the high speed shaft")
+            ivc.add_discrete_output( "bedplate_material", val="steel", desc="Material name identifier for the bedplate")
+            ivc.add_output("bedplate_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of bedplate mass with this value")
+
+            if self.options["direct_drive"]:
+                # Direct only
+                ivc.add_output("nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)", )
+                ivc.add_output("nose_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of nose (also called turret or spindle)", )
+                ivc.add_output("bedplate_wall_thickness", val=np.zeros(4), units="m", desc="Thickness of hollow elliptical bedplate", )
+            else:
+                # Geared only
+                ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
+                ivc.add_output("hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft" )
+                ivc.add_output("hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft" )
+                ivc.add_output("bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width")
+                ivc.add_output("bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness")
+                ivc.add_output("bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness")
+                ivc.add_discrete_output("gear_configuration", val="eep", desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration")
+                ivc.add_discrete_output("planet_numbers", val=[3, 3, 0], desc="Number of planets for epicyclic stages (use 0 for parallel)")
+
+        if self.options["user_elastic"]:
+            ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
+            ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
+            ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
+            ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
+            ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
+            ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
+
+
+
+class Generator(om.Group):
+    # Openmdao group with the hub data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare("flags")
+        self.options.declare("user_elastic")
+        self.options.declare("gentype")
+        self.options.declare("n_pc")
+
+    def setup(self):
+        ivc = self.add_subsystem("gen_indep_vars", om.IndepVarComp(), promotes=["*"])
+
+        # Generator inputs
+        ivc = om.IndepVarComp()
+        if self.options["user_elastic"]:
+            ivc.add_output("generator_mass_user", val=0.0, units="kg")
+            ivc.add_output('generator_rotor_I_user', val=np.zeros(3), units='kg*m**2')
+        if self.options["flags"]["generator"]:
+            ivc.add_output("B_r", val=1.2, units="T")
+            ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
+            ivc.add_output("P_Fe0h", val=4.0, units="W/kg")
+            ivc.add_output("S_N", val=-0.002)
+            ivc.add_output("alpha_p", val=0.5 * np.pi * 0.7)
+            ivc.add_output("b_r_tau_r", val=0.45)
+            ivc.add_output("b_ro", val=0.004, units="m")
+            ivc.add_output("b_s_tau_s", val=0.45)
+            ivc.add_output("b_so", val=0.004, units="m")
+            ivc.add_output("cofi", val=0.85)
+            ivc.add_output("freq", val=60, units="Hz")
+            ivc.add_output("h_i", val=0.001, units="m")
+            ivc.add_output("h_sy0", val=0.0)
+            ivc.add_output("h_w", val=0.005, units="m")
+            ivc.add_output("k_fes", val=0.9)
+            ivc.add_output("k_fillr", val=0.7)
+            ivc.add_output("k_fills", val=0.65)
+            ivc.add_output("k_s", val=0.2)
+            ivc.add_discrete_output("m", val=3)
+            ivc.add_output("mu_0", val=np.pi * 4e-7, units="m*kg/s**2/A**2")
+            ivc.add_output("mu_r", val=1.06, units="m*kg/s**2/A**2")
+            ivc.add_output("p", val=3.0)
+            ivc.add_output("phi", val=np.deg2rad(90), units="rad")
+            ivc.add_discrete_output("q1", val=6)
+            ivc.add_discrete_output("q2", val=4)
+            ivc.add_output("ratio_mw2pp", val=0.7)
+            ivc.add_output("resist_Cu", val=1.8e-8 * 1.4, units="ohm/m")
+            ivc.add_output("sigma", val=40e3, units="Pa")
+            ivc.add_output("y_tau_p", val=1.0)
+            ivc.add_output("y_tau_pr", val=10.0 / 12)
+
+            ivc.add_output("I_0", val=0.0, units="A")
+            ivc.add_output("d_r", val=0.0, units="m")
+            ivc.add_output("h_m", val=0.0, units="m")
+            ivc.add_output("h_0", val=0.0, units="m")
+            ivc.add_output("h_s", val=0.0, units="m")
+            ivc.add_output("len_s", val=0.0, units="m")
+            ivc.add_output("n_r", val=0.0)
+            ivc.add_output("rad_ag", val=0.0, units="m")
+            ivc.add_output("t_wr", val=0.0, units="m")
+
+            ivc.add_output("n_s", val=0.0)
+            ivc.add_output("b_st", val=0.0, units="m")
+            ivc.add_output("d_s", val=0.0, units="m")
+            ivc.add_output("t_ws", val=0.0, units="m")
+
+            ivc.add_output("rho_Copper", val=0.0, units="kg*m**-3")
+            ivc.add_output("rho_Fe", val=0.0, units="kg*m**-3")
+            ivc.add_output("rho_Fes", val=0.0, units="kg*m**-3")
+            ivc.add_output("rho_PM", val=0.0, units="kg*m**-3")
+
+            ivc.add_output("C_Cu", val=0.0, units="USD/kg")
+            ivc.add_output("C_Fe", val=0.0, units="USD/kg")
+            ivc.add_output("C_Fes", val=0.0, units="USD/kg")
+            ivc.add_output("C_PM", val=0.0, units="USD/kg")
+
+            if self.options["gentype"] in ["pmsg_outer"]:
+                ivc.add_output("N_c", 0.0)
+                ivc.add_output("b", 0.0)
+                ivc.add_output("c", 0.0)
+                ivc.add_output("E_p", 0.0, units="V")
+                ivc.add_output("h_yr", val=0.0, units="m")
+                ivc.add_output("h_ys", val=0.0, units="m")
+                ivc.add_output("h_sr", 0.0, units="m", desc="Structural Mass")
+                ivc.add_output("h_ss", 0.0, units="m")
+                ivc.add_output("t_r", 0.0, units="m")
+                ivc.add_output("t_s", 0.0, units="m")
+
+                ivc.add_output("u_allow_pcent", 0.0)
+                ivc.add_output("y_allow_pcent", 0.0)
+                ivc.add_output("z_allow_deg", 0.0, units="deg")
+                ivc.add_output("B_tmax", 0.0, units="T")
+
+            if self.options["gentype"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                ivc.add_output("tau_p", val=0.0, units="m")
+                ivc.add_output("h_ys", val=0.0, units="m")
+                ivc.add_output("h_yr", val=0.0, units="m")
+                ivc.add_output("b_arm", val=0.0, units="m")
+
+            elif self.options["gentype"] in ["scig", "dfig"]:
+                ivc.add_output("B_symax", val=0.0, units="T")
+                ivc.add_output("S_Nmax", val=-0.2)
+
+        else:
+            # If using simple (regression) generator scaling, this is an optional input to override default values
+            n_pc = self.options["n_pc"]
+            ivc.add_output("generator_radius_user", val=0.0, units="m")
+            ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
+
+                               
 
 class Compute_Grid(om.ExplicitComponent):
     """
@@ -2403,8 +2312,7 @@ class Monopile(om.Group):
         n_layers = fixedbottomse_options["n_layers"]
 
         ivc = self.add_subsystem("monopile_indep_vars", om.IndepVarComp(), promotes=["*"])
-        ivc.add_output(
-            "diameter",
+        ivc.add_output(            "diameter",
             val=np.zeros(n_height),
             units="m",
             desc="1D array of the outer diameter values defined along the tower axis.",
@@ -2419,14 +2327,12 @@ class Monopile(om.Group):
             val=n_layers * [""],
             desc="1D array of the names of the materials of each layer modeled in the tower structure.",
         )
-        ivc.add_output(
-            "layer_thickness",
+        ivc.add_output(            "layer_thickness",
             val=np.zeros((n_layers, n_height)),
             units="m",
             desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
         )
-        ivc.add_output(
-            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+        ivc.add_output(            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
@@ -2446,54 +2352,45 @@ class Jacket(om.Group):
         n_legs = fixedbottomse_options["n_legs"]
 
         ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
-        ivc.add_output(
-            "foot_head_ratio",
+        ivc.add_output(            "foot_head_ratio",
             val=1.5,
             desc="Ratio of radius of foot (bottom) of jacket to head.",
         )
-        ivc.add_output(
-            "r_head",
+        ivc.add_output(            "r_head",
             val=0.0,
             units="m",
             desc="Radius of head (top) of jacket, in meters.",
         )
-        ivc.add_output(
-            "height",
+        ivc.add_output(            "height",
             val=0.0,
             units="m",
             desc="Overall jacket height, meters.",
         )
-        ivc.add_output(
-            "leg_diameter",
+        ivc.add_output(            "leg_diameter",
             val=0.0,
             units="m",
             desc="Leg diameter, meters. Constant throughout each leg.",
         )
-        ivc.add_output(
-            "leg_thickness",
+        ivc.add_output(            "leg_thickness",
             val=0.0,
             units="m",
             desc="Leg thickness, meters. Constant throughout each leg.",
         )
-        ivc.add_output(
-            "brace_diameters",
+        ivc.add_output(            "brace_diameters",
             val=np.zeros((n_bays)),
             units="m",
             desc="Brace diameter, meters. Array starts at the bottom of the jacket.",
         )
-        ivc.add_output(
-            "brace_thicknesses",
+        ivc.add_output(            "brace_thicknesses",
             val=np.zeros((n_bays)),
             units="m",
             desc="Brace thickness, meters. Array starts at the bottom of the jacket.",
         )
-        ivc.add_output(
-            "bay_spacing",
+        ivc.add_output(            "bay_spacing",
             val=np.zeros((n_bays + 1)),
             desc="Bay nodal spacing. Array starts at the bottom of the jacket.",
         )
-        ivc.add_output(
-            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
+        ivc.add_output(            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
         )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
@@ -3131,8 +3028,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 id_resin = i
         if self.options["composites"] and density_resin == 0.0:
             raise Exception(
-                "Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis"
-            )
+                "Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis")
 
         fvf = np.zeros(self.n_mat)
         fwf = np.zeros(self.n_mat)
@@ -3220,65 +3116,53 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
         )
-        ivc.add_output(
-            "E",
+        ivc.add_output(            "E",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.",
         )
-        ivc.add_output(
-            "G",
+        ivc.add_output(            "G",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.",
         )
-        ivc.add_output(
-            "nu",
+        ivc.add_output(            "nu",
             val=np.zeros([n_mat, 3]),
             desc="2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.",
         )
-        ivc.add_output(
-            "Xt",
+        ivc.add_output(            "Xt",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.",
         )
-        ivc.add_output(
-            "Xc",
+        ivc.add_output(            "Xc",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.",
         )
-        ivc.add_output(
-            "S",
+        ivc.add_output(            "S",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Shear Strength (USS) of the materials. Each row represents a material, the three columns represent S12, S13 and S23.",
         )
-        ivc.add_output(
-            "sigma_y",
+        ivc.add_output(            "sigma_y",
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
         )
-        ivc.add_output(
-            "wohler_exp",
+        ivc.add_output(            "wohler_exp",
             val=np.zeros(n_mat),
             desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
         )
-        ivc.add_output(
-            "wohler_intercept",
+        ivc.add_output(            "wohler_intercept",
             val=np.zeros(n_mat),
             desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
-        ivc.add_output(
-            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
+        ivc.add_output(            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
         )
-        ivc.add_output(
-            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
+        ivc.add_output(            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
         )
-        ivc.add_output(
-            "roll_mass",
+        ivc.add_output(            "roll_mass",
             val=np.zeros(n_mat),
             units="kg",
             desc="1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.",
@@ -3290,37 +3174,31 @@ class Materials(om.Group):
             val=-np.ones(n_mat),
             desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
         )
-        ivc.add_output(
-            "rho_fiber",
+        ivc.add_output(            "rho_fiber",
             val=np.zeros(n_mat),
             units="kg/m**3",
             desc="1D array of the density of the fibers of the materials.",
         )
-        ivc.add_output(
-            "rho",
+        ivc.add_output(            "rho",
             val=np.zeros(n_mat),
             units="kg/m**3",
             desc="1D array of the density of the materials. For composites, this is the density of the laminate.",
         )
-        ivc.add_output(
-            "rho_area_dry",
+        ivc.add_output(            "rho_area_dry",
             val=np.zeros(n_mat),
             units="kg/m**2",
             desc="1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(
-            "ply_t_from_yaml",
+        ivc.add_output(            "ply_t_from_yaml",
             val=np.zeros(n_mat),
             units="m",
             desc="1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(
-            "fvf_from_yaml",
+        ivc.add_output(            "fvf_from_yaml",
             val=np.zeros(n_mat),
             desc="1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(
-            "fwf_from_yaml",
+        ivc.add_output(            "fwf_from_yaml",
             val=np.zeros(n_mat),
             desc="1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.",
         )

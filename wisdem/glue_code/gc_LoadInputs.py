@@ -24,7 +24,7 @@ class WindTurbineOntologyPython(object):
         self.modeling_options["flags"] = {}
 
         # Backwards compatibility
-        modules = ["RotorSE", "DriveSE", "GeneratorSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
+        modules = ["RotorSE", "DriveSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
         for m in modules:
             if m in self.modeling_options:
                 self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
@@ -36,14 +36,10 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["flags"][k] = k in self.wt_init
 
         # Generator flag
-        self.modeling_options["flags"]["generator"] = False
-        if self.modeling_options["flags"]["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]:
-            self.modeling_options["flags"]["generator"] = True
-            if not "GeneratorSE" in self.modeling_options["WISDEM"]:
-                self.modeling_options["WISDEM"]["GeneratorSE"] = {}
-            self.modeling_options["WISDEM"]["GeneratorSE"]["type"] = self.wt_init["components"]["nacelle"]["generator"][
-                "generator_type"
-            ].lower()
+        self.modeling_options["flags"]["generator"] = (self.modeling_options["WISDEM"]["DriveSE"]["generator"]["model_generator"] and
+                                                       self.modeling_options["flags"]["nacelle"] and
+                                                       "generator" in self.wt_init["components"]["nacelle"])
+        self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["nacelle"]["generator"]["generator_type"].lower()
 
         # Offshore flags
         self.modeling_options["flags"]["floating"] = self.modeling_options["flags"]["floating_platform"]
@@ -230,13 +226,8 @@ class WindTurbineOntologyPython(object):
                     )
 
 
-        # Drivetrain
-        if self.modeling_options["flags"]["nacelle"]:
-            self.modeling_options["WISDEM"]["DriveSE"]["direct"] = self.wt_init["assembly"]["drivetrain"].lower() in [
-                "direct",
-                "direct_drive",
-                "pm_direct_drive",
-            ]
+        # Drivetrain config
+        self.modeling_options["WISDEM"]["DriveSE"]["direct"] = self.wt_init["assembly"]["drivetrain"].lower() in ["direct", "direct_drive", "pm_direct_drive"]
 
         # Tower
         if self.modeling_options["flags"]["tower"]:
@@ -1246,7 +1237,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["generator"]["C_Fes"] = float(wt_opt["generator.C_Fes"][0])
             self.wt_init["components"]["nacelle"]["generator"]["C_PM"] = float(wt_opt["generator.C_PM"][0])
 
-            if self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
+            if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
                 self.wt_init["components"]["nacelle"]["generator"]["N_c"] = float(wt_opt["generator.N_c"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["b"] = float(wt_opt["generator.b"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["c"] = float(wt_opt["generator.c"][0])
@@ -1269,13 +1260,13 @@ class WindTurbineOntologyPython(object):
                 )
                 self.wt_init["components"]["nacelle"]["generator"]["B_tmax"] = float(wt_opt["generator.B_tmax"][0])
 
-            if self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+            if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                 self.wt_init["components"]["nacelle"]["generator"]["tau_p"] = float(wt_opt["generator.tau_p"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["b_arm"] = float(wt_opt["generator.b_arm"][0])
 
-            elif self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
+            elif self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
                 self.wt_init["components"]["nacelle"]["generator"]["B_symax"] = float(wt_opt["generator.B_symax"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["S_Nmax"] = float(wt_opt["generator.S_Nmax"][0])
 

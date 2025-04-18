@@ -450,7 +450,6 @@ components:
     nacelle:
         drivetrain:
             uptilt: 0.10471975511966002
-            generator_inertia_user: 1836784.0
             distance_tt_hub: 5.614100000000008
             overhang: 12.032
             gear_ratio: 1
@@ -464,8 +463,7 @@ components:
         generator:
             elastic_properties_mb:
                 system_mass: 69360.0
-                system_inertia: [9912933.0, 10862815.0, 10360761.0, 0.0, 0.0, 0.0]
-                system_center_mass: [-4.528, -0.14, 4.098]
+                rotor_inertia: [9912933.0, 10862815.0, 10360761.0, 0.0, 0.0, 0.0]
     tower:
         outer_shape_bem:
             reference_axis: &id20000

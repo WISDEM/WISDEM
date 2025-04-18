@@ -407,7 +407,7 @@ class WT_RNTA(om.Group):
 
             self.connect("nacelle.distance_hub_mb", "drivese.L_h1")
             self.connect("nacelle.distance_mb_mb", "drivese.L_12")
-            self.connect("nacelle.L_generator", "drivese.L_generator")
+            self.connect("generator.L_generator", "drivese.L_generator")
             self.connect("nacelle.overhang", "drivese.overhang")
             self.connect("nacelle.distance_tt_hub", "drivese.drive_height")
             self.connect("nacelle.uptilt", "drivese.tilt")
@@ -465,7 +465,8 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
-            self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
+            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
+                self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
             if modeling_options["flags"]["generator"]:
                 self.connect("generator.B_r", "drivese.generator.B_r")
                 self.connect("generator.P_Fe0e", "drivese.generator.P_Fe0e")
@@ -523,7 +524,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.C_Fes", "drivese.generator.C_Fes")
                 self.connect("generator.C_PM", "drivese.generator.C_PM")
 
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
+                if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
                     self.connect("generator.N_c", "drivese.generator.N_c")
                     self.connect("generator.b", "drivese.generator.b")
                     self.connect("generator.c", "drivese.generator.c")
@@ -541,13 +542,13 @@ class WT_RNTA(om.Group):
                     self.connect("generator.B_tmax", "drivese.generator.B_tmax")
                     self.connect("rotorse.rp.powercurve.rated_mech", "drivese.generator.P_mech")
 
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                     self.connect("generator.tau_p", "drivese.generator.tau_p")
                     self.connect("generator.h_ys", "drivese.generator.h_ys")
                     self.connect("generator.h_yr", "drivese.generator.h_yr")
                     self.connect("generator.b_arm", "drivese.generator.b_arm")
 
-                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
+                elif modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
                     self.connect("generator.B_symax", "drivese.generator.B_symax")
                     self.connect("generator.S_Nmax", "drivese.generator.S_Nmax")
 

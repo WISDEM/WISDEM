@@ -201,7 +201,7 @@ class DrivetrainSE(om.Group):
         # Generator
         self.add_subsystem("rpm", dc.RPM_Input(n_pc=n_pc), promotes=["*"])
         if dogen:
-            gentype = self.options["modeling_options"]["WISDEM"]["GeneratorSE"]["type"]
+            gentype = self.options["modeling_options"]["WISDEM"]["DriveSE"]["generator"]["type"]
             self.add_subsystem(
                 "generator",
                 Generator(design=gentype, n_pc=n_pc),
