@@ -507,9 +507,15 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["axial_stff"] = E_param * Az
 
         # While the sections are simple, store cross section info for fatigue
-        cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
+        if len(z) == 1:
+            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+        else:
+            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
+            
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
+        if cross_section_xz == 0.0:
+            breakpoint()
         ax_load2stress[:, 0] = 1.0 / cross_section_xz
         ax_load2stress[:, 1] = 1.0 / cross_section_xz
         ax_load2stress[:, 2] = 1.0 / isection.Area

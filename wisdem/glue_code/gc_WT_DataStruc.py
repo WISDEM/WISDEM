@@ -2074,7 +2074,6 @@ class Nacelle(om.Group):
         if self.options["flags"]["nacelle"]:
             ivc.add_output("distance_hub_mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft")
             ivc.add_output("distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft")
-            ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
             ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
             ivc.add_output("lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft")
             ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
@@ -2117,7 +2116,6 @@ class Nacelle(om.Group):
             ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
 
 
-
 class Generator(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
     def initialize(self):
@@ -2130,7 +2128,7 @@ class Generator(om.Group):
         ivc = self.add_subsystem("gen_indep_vars", om.IndepVarComp(), promotes=["*"])
 
         # Generator inputs
-        ivc = om.IndepVarComp()
+        ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
         if self.options["user_elastic"]:
             ivc.add_output("generator_mass_user", val=0.0, units="kg")
             ivc.add_output('generator_rotor_I_user', val=np.zeros(3), units='kg*m**2')

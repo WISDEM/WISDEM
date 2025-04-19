@@ -104,6 +104,15 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     return wt_opt
 
 
+def MoI_setter(wt_opt, varstr, listin):
+    nn = len(listin)
+    if nn == 6:
+        wt_opt[varstr] = listin
+    elif nn == 3:
+        wt_opt[varstr][:3] = listin
+    else:
+        raise ValueError(f"When setting, {varstr}, expected 3 or 6 elements but found {nn}")
+
 def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV["aero_shape"]
@@ -805,22 +814,22 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         if user_elastic:
             # windio v2
             #wt_opt["hub.hub_system_mass_user"]    = hub["elastic_properties"]["mass"]
-            #wt_opt["hub.hub_system_I_user"]       = hub["elastic_properties"]["inertia"]
             #wt_opt["hub.hub_system_cm_user"]      = hub["elastic_properties"]["location"]
+            #MoI_setter(wt_opt, "hub.hub_system_I_user", hub["elastic_properties"]["inertia"])
             # windio v1
             wt_opt["hub.hub_system_mass_user"]    = hub["elastic_properties_mb"]["system_mass"]
-            wt_opt["hub.hub_system_I_user"]       = hub["elastic_properties_mb"]["system_inertia"]
             wt_opt["hub.hub_system_cm_user"]      = hub["elastic_properties_mb"]["system_center_mass"][0]
+            MoI_setter(wt_opt, "hub.hub_system_I_user", hub["elastic_properties_mb"]["system_inertia"])
     else:
         # Note that this is stored in the drivese namespace per gc_WT_DataStruct to mimic DrivetrainSE
         # windio v2
         #wt_opt["drivese.hub_system_mass"]         = hub["elastic_properties"]["mass"]
-        #wt_opt["drivese.hub_system_I"]            = hub["elastic_properties"]["inertia"]
         #wt_opt["drivese.hub_system_cm"]           = hub["elastic_properties"]["location"]
+        #MoI_setter(wt_opt, "drivese.hub_system_I", hub["elastic_properties"]["inertia"])
         # windio v1
         wt_opt["drivese.hub_system_mass"]         = hub["elastic_properties_mb"]["system_mass"]
-        wt_opt["drivese.hub_system_I"]            = hub["elastic_properties_mb"]["system_inertia"]
         wt_opt["drivese.hub_system_cm"]           = hub["elastic_properties_mb"]["system_center_mass"][0]
+        MoI_setter(wt_opt, "drivese.hub_system_I", hub["elastic_properties_mb"]["system_inertia"])
         # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
         
 
@@ -839,7 +848,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
     if flags["nacelle"]:
         wt_opt["nacelle.distance_hub_mb"] = nacelle["drivetrain"]["distance_hub_mb"]
         wt_opt["nacelle.distance_mb_mb"] = nacelle["drivetrain"]["distance_mb_mb"]
-        wt_opt["nacelle.L_generator"] = nacelle["generator"]["generator_length"]
         wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
         wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
         wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
@@ -862,16 +870,16 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
             #wt_opt["nacelle.yaw_mass_user"]          = nacelle["yaw"]["elastic_properties"]["mass"]
             #wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["drivetrain"]["elastic_properties"]["mass"]
             #wt_opt["nacelle.above_yaw_cm_user"]      = nacelle["drivetrain"]["elastic_properties"]["location"]
-            #wt_opt["nacelle.above_yaw_I_TT_user"]    = nacelle["drivetrain"]["elastic_properties"]["inertia"]
-            #wt_opt["nacelle.above_yaw_I_user"]       = nacelle["drivetrain"]["elastic_properties"]["inertia"]
+            #MoI_setter(wt_opt, "nacelle.above_yaw_I_TT_user", nacelle["drivetrain"]["elastic_properties"]["inertia"])
+            #MoI_setter(wt_opt, "nacelle.above_yaw_I_user", nacelle["drivetrain"]["elastic_properties"]["inertia"])
             #wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["elastic_properties"]["spring_constant"]
             #wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["elastic_properties"]["damping_coefficient"]
             # windio v1
             wt_opt["nacelle.yaw_mass_user"]          = nacelle["elastic_properties_mb"]["yaw_mass"]
             wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["elastic_properties_mb"]["system_mass"]
             wt_opt["nacelle.above_yaw_cm_user"]      = nacelle["elastic_properties_mb"]["system_center_mass"]
-            wt_opt["nacelle.above_yaw_I_TT_user"]    = nacelle["elastic_properties_mb"]["system_inertia_tt"]
-            wt_opt["nacelle.above_yaw_I_user"]       = nacelle["elastic_properties_mb"]["system_inertia"]
+            MoI_setter(wt_opt, "nacelle.above_yaw_I_TT_user", nacelle["elastic_properties_mb"]["system_inertia_tt"])
+            MoI_setter(wt_opt, "nacelle.above_yaw_I_user", nacelle["elastic_properties_mb"]["system_inertia"])
 
             wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["elastic_properties_mb"]["spring_constant"]
             wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
@@ -915,11 +923,11 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         #wt_opt["drivese.yaw_mass"]          = nacelle["yaw"]["elastic_properties"]["mass"]
         #wt_opt["drivese.above_yaw_mass"]    = nacelle["drivetrain"]["elastic_properties"]["mass"]
         #wt_opt["drivese.above_yaw_cm"]      = nacelle["drivetrain"]["elastic_properties"]["location"]
-        #wt_opt["drivese.above_yaw_I_TT"]    = nacelle["drivetrain"]["elastic_properties"]["inertia"]
-        #wt_opt["drivese.above_yaw_I"]       = nacelle["drivetrain"]["elastic_properties"]["inertia"]
-        #wt_opt["drivese.generator_rotor_I"] = nacelle["generator"]["elastic_properties"]["rotor_inertia"]
         #wt_opt["drivese.drivetrain_spring_constant"]     = nacelle["elastic_properties"]["spring_constant"]
         #wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties"]["damping_coefficient"]
+        #MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["drivetrain"]["elastic_properties"]["inertia"])
+        #MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["drivetrain"]["elastic_properties"]["inertia"])
+        #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
         #if wt_opt["nacelle.gear_ratio"] > 1:
         #    wt_opt["drivese.gearbox_mass"]  = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["mass"]
         #    wt_opt["drivese.gearbox_I"]     = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["inertia"]
@@ -930,19 +938,21 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["drivese.yaw_mass"]          = nacelle["elastic_properties_mb"]["yaw_mass"]
         wt_opt["drivese.above_yaw_mass"]    = nacelle["elastic_properties_mb"]["system_mass"]
         wt_opt["drivese.above_yaw_cm"]      = nacelle["elastic_properties_mb"]["system_center_mass"]
-        wt_opt["drivese.above_yaw_I_TT"]    = nacelle["elastic_properties_mb"]["system_inertia_tt"]
-        wt_opt["drivese.above_yaw_I"]       = nacelle["elastic_properties_mb"]["system_inertia"]
-        wt_opt["drivese.generator_rotor_I"] = nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"]
         wt_opt["drivese.drivetrain_spring_constant"]     = nacelle["elastic_properties_mb"]["spring_constant"]
         wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
+        MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["elastic_properties_mb"]["system_inertia_tt"])
+        MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["elastic_properties_mb"]["system_inertia"])
+        MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
 
     return wt_opt
 
-
 def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
+    wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
+    
     if flags["nacelle"] and user_elastic:
         wt_opt["generator.generator_mass_user"] = nacelle["generator"]["elastic_properties_mb"]["system_mass"]
-        wt_opt["generator.generator_rotor_I_user"] = nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"]
+        MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
+        #MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
     
     if flags["nacelle"] and not flags["generator"]:
         wt_opt["generator.generator_radius_user"] = nacelle["generator"]["generator_radius_user"]
@@ -1114,7 +1124,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         if modeling_options["flags"]["tower"]:
             wt_opt["towerse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["towerse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["towerse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
+            MoI_setter(wt_opt, "towerse.rna_I", modeling_options["WISDEM"]["Loading"]["moment_of_inertia"])
             n_dlc = modeling_options["WISDEM"]["n_dlc"]
             for k in range(n_dlc):
                 kstr = "" if n_dlc <= 1 else str(k + 1)
@@ -1126,7 +1136,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
             # Monopile has the option for joint tower-monopile analysis, so load it here too.  Not true for jackets
             wt_opt["fixedse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["fixedse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["fixedse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
+            MoI_setter(wt_opt, "fixedse.rna_I", modeling_options["WISDEM"]["Loading"]["moment_of_inertia"])
             wt_opt["fixedse.monopile.rna_F"] = F
             wt_opt["fixedse.monopile.rna_M"] = M
 

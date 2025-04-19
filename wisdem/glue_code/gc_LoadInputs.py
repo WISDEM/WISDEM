@@ -1,7 +1,6 @@
 import numpy as np
 
 import wisdem.inputs as sch
-from openmdao.utils.mpi import MPI
 
 
 class WindTurbineOntologyPython(object):
@@ -36,9 +35,9 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["flags"][k] = k in self.wt_init
 
         # Generator flag
-        self.modeling_options["flags"]["generator"] = (self.modeling_options["WISDEM"]["DriveSE"]["generator"]["model_generator"] and
-                                                       self.modeling_options["flags"]["nacelle"] and
-                                                       "generator" in self.wt_init["components"]["nacelle"])
+        self.modeling_options["flags"]["generator"] = (self.modeling_options["flags"]["nacelle"] and
+                                                       "generator" in self.wt_init["components"]["nacelle"] and
+                                                       self.wt_init["components"]["nacelle"]["generator"]["h_s"] > 0.0)
         self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["nacelle"]["generator"]["generator_type"].lower()
 
         # Offshore flags
@@ -231,18 +230,16 @@ class WindTurbineOntologyPython(object):
 
         # Tower
         if self.modeling_options["flags"]["tower"]:
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(
-                self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
+            svec = np.unique(
+                np.r_[
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+                ]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = len(
-                self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
-                "n_height"
-            ]
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
-                "n_layers"
-            ]
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(svec)
+            self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = len(self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"])
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
@@ -255,16 +252,8 @@ class WindTurbineOntologyPython(object):
                     monopile["outer_shape_bem"]["reference_axis"]["z"]["grid"],
                 ]
             )
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = len(svec)
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = len(
-                self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = self.modeling_options["WISDEM"][
-                "FixedBottomSE"
-            ]["n_height"]
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = self.modeling_options["WISDEM"][
-                "FixedBottomSE"
-            ]["n_layers"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = len(svec)
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = len(self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"])
 
         # Jacket
         if self.modeling_options["flags"]["jacket"]:
@@ -1098,7 +1087,7 @@ class WindTurbineOntologyPython(object):
                 wt_opt["nacelle.distance_mb_mb"][0]
             )
             self.wt_init["components"]["nacelle"]["drivetrain"]["generator_length"] = float(
-                wt_opt["nacelle.L_generator"][0]
+                wt_opt["generator.L_generator"][0]
             )
             if not self.modeling_options["flags"]["generator"]:
                 self.wt_init["components"]["nacelle"]["drivetrain"]["generator_mass_user"] = float(
