@@ -1068,9 +1068,16 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["hub"]["pitch_system_scaling_factor"] = float(
                 wt_opt["hub.pitch_system_scaling_factor"][0]
             )
+            # WindIO v1
             self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
             self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
             # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_center_mass'] = wt_opt["drivese.hub_system_cm"].tolist()
+            # WindIO v2
+            #self.wt_init["components"]["hub"]["elastic_properties"]['mass'] = float(wt_opt["drivese.hub_system_mass"][0])
+            #self.wt_init["components"]["hub"]["elastic_properties"]['inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
+            # self.wt_init["components"]["hub"]["elastic_properties"]['location'] = wt_opt["drivese.hub_system_cm"].tolist()
 
         # Update nacelle
         if self.modeling_options["flags"]["nacelle"]:
@@ -1086,22 +1093,6 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["distance_mb_mb"] = float(
                 wt_opt["nacelle.distance_mb_mb"][0]
             )
-            self.wt_init["components"]["nacelle"]["drivetrain"]["generator_length"] = float(
-                wt_opt["generator.L_generator"][0]
-            )
-            if not self.modeling_options["flags"]["generator"]:
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_mass_user"] = float(
-                    wt_opt["generator.generator_mass_user"][0]
-                )
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_radius_user"] = float(
-                    wt_opt["generator.generator_radius_user"][0]
-                )
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["grid"] = wt_opt[
-                    "generator.generator_efficiency_user"
-                ][:, 0].tolist()
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["values"] = wt_opt[
-                    "generator.generator_efficiency_user"
-                ][:, 1].tolist()
             s_lss = np.linspace(0.0, 1.0, len(wt_opt["nacelle.lss_diameter"])).tolist()
             self.wt_init["components"]["nacelle"]["drivetrain"]["lss_diameter"] = wt_opt[
                 "nacelle.lss_diameter"
@@ -1120,11 +1111,22 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["bedplate_material"] = wt_opt[
                 "nacelle.bedplate_material"
             ]
+            # WindIO v1
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.above_yaw_mass"][0])
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["yaw_mass"] = float(wt_opt["drivese.yaw_mass"][0])
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_center_mass"] = wt_opt["drivese.above_yaw_cm"].tolist()
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["spring_constant"] = float(wt_opt["drivese.drivetrain_spring_constant"][0])
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["damping_coefficient"] = float(wt_opt["drivese.drivetrain_damping_coefficient"][0])
+            # WindIO v2
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["mass"] = float(wt_opt["drivese.above_yaw_mass"][0])
+            #self.wt_init["components"]["nacelle"]["yaw"]["elastic_properties"]["mass"] = float(wt_opt["drivese.yaw_mass"][0])
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["location"] = wt_opt["drivese.above_yaw_cm"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["spring_constant"] = float(wt_opt["drivese.drivetrain_spring_constant"][0])
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["damping_coefficient"] = float(wt_opt["drivese.drivetrain_damping_coefficient"][0])
 
             if self.modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only
@@ -1169,6 +1171,17 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["nacelle"]["drivetrain"]["hss_material"] = wt_opt["nacelle.hss_material"]
 
         # Update generator
+        if self.modeling_options["flags"]["nacelle"]:
+            self.wt_init["components"]["nacelle"]["generator"]["generator_length"] = float(wt_opt["generator.L_generator"][0])
+            if self.modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
+                self.wt_init["components"]["nacelle"]["generator"]["generator_mass_user"] = float(wt_opt["generator.generator_mass_user"][0])
+                self.wt_init["components"]["nacelle"]["generator"]["generator_radius_user"] = float(wt_opt["generator.generator_radius_user"][0])
+            if not self.modeling_options["flags"]["generator"]:
+                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["grid"] = wt_opt["generator.generator_efficiency_user"][:, 0].tolist()
+                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["values"] = wt_opt["generator.generator_efficiency_user"][:, 1].tolist()
+            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.generator_mass"][0])
+            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["rotor_inertia"] = wt_opt["drivese.generator_rotor_I"].tolist()
+            
         if self.modeling_options["flags"]["generator"]:
             self.wt_init["components"]["nacelle"]["generator"]["B_r"] = float(wt_opt["generator.B_r"][0])
             self.wt_init["components"]["nacelle"]["generator"]["P_Fe0e"] = float(wt_opt["generator.P_Fe0e"][0])
