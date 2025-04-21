@@ -51,6 +51,7 @@ all_scripts = [
     "10_ccblade/example",
     "10_ccblade/gradients",
     "10_ccblade/precurve",
+    # 11/nrel-spar_oc3_user_mass_driver and user_elastic_driver covered by test_glue_code/test_gc_user_mass
     "11_user_custom/user_custom_opt",
     "11_user_custom/variable_override",
     "12_pyframe3dd/exB",

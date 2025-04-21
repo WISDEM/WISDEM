@@ -8,6 +8,8 @@ RotorSE:
 DriveSE:
     flag: False
     user_elastic: True
+    generator:
+        user_elastic: True
 TowerSE:
     flag: True
 FixedBottomSE:

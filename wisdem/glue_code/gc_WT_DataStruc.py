@@ -2132,7 +2132,13 @@ class Generator(om.Group):
         if self.options["user_elastic"]:
             ivc.add_output("generator_mass_user", val=0.0, units="kg")
             ivc.add_output('generator_rotor_I_user', val=np.zeros(3), units='kg*m**2')
-        if self.options["flags"]["generator"]:
+            
+        if not self.options["flags"]["generator"]:
+            # If using simple (regression) generator scaling, this is an optional input to override default values
+            n_pc = self.options["n_pc"]
+            ivc.add_output("generator_radius_user", val=0.0, units="m")
+            ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
+        else:
             ivc.add_output("B_r", val=1.2, units="T")
             ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
             ivc.add_output("P_Fe0h", val=4.0, units="W/kg")
@@ -2215,12 +2221,6 @@ class Generator(om.Group):
             elif self.options["gentype"] in ["scig", "dfig"]:
                 ivc.add_output("B_symax", val=0.0, units="T")
                 ivc.add_output("S_Nmax", val=-0.2)
-
-        else:
-            # If using simple (regression) generator scaling, this is an optional input to override default values
-            n_pc = self.options["n_pc"]
-            ivc.add_output("generator_radius_user", val=0.0, units="m")
-            ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
                                
 

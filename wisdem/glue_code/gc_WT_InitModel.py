@@ -57,7 +57,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         nacelle = wt_init["components"]["nacelle"]
         wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
         
-    if modeling_options["flags"]["nacelle"]:
+    if "generator" in wt_init["components"]["nacelle"]:
         user_elastic = modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"]
         wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
 
@@ -946,12 +946,12 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
     return wt_opt
 
 def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
-    wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
-
     if not flags["nacelle"]:
         #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
         MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
     else:
+        wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
+
         if user_elastic:
             wt_opt["generator.generator_mass_user"] = nacelle["generator"]["elastic_properties_mb"]["system_mass"]
             MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
