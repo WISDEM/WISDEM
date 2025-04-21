@@ -928,7 +928,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         #wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties"]["damping_coefficient"]
         #MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["drivetrain"]["elastic_properties"]["inertia"])
         #MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["drivetrain"]["elastic_properties"]["inertia"])
-        #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
         #if wt_opt["nacelle.gear_ratio"] > 1:
         #    wt_opt["drivese.gearbox_mass"]  = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["mass"]
         #    wt_opt["drivese.gearbox_I"]     = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["inertia"]
@@ -943,117 +942,120 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
         MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["elastic_properties_mb"]["system_inertia_tt"])
         MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["elastic_properties_mb"]["system_inertia"])
-        MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
 
     return wt_opt
 
 def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
     wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
-    
-    if flags["nacelle"] and user_elastic:
-        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["elastic_properties_mb"]["system_mass"]
-        MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
-        #MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
-    
-    if flags["nacelle"] and not flags["generator"]:
-        wt_opt["generator.generator_radius_user"] = nacelle["generator"]["generator_radius_user"]
 
-        eff_user = np.c_[
-            nacelle["generator"]["generator_rpm_efficiency_user"]["grid"],
-            nacelle["generator"]["generator_rpm_efficiency_user"]["values"],
-        ]
-        n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
-        if np.any(eff_user):
-            newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
-            neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
-            myeff = np.c_[newrpm, neweff]
+    if not flags["nacelle"]:
+        #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
+        MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
+    else:
+        if user_elastic:
+            wt_opt["generator.generator_mass_user"] = nacelle["generator"]["elastic_properties_mb"]["system_mass"]
+            MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
+            #MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
+    
+        if not flags["generator"]:
+            wt_opt["generator.generator_radius_user"] = nacelle["generator"]["generator_radius_user"]
+
+            eff_user = np.c_[
+                nacelle["generator"]["generator_rpm_efficiency_user"]["grid"],
+                nacelle["generator"]["generator_rpm_efficiency_user"]["values"],
+            ]
+            n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+            if np.any(eff_user):
+                newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
+                neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
+                myeff = np.c_[newrpm, neweff]
+            else:
+                myeff = np.zeros((n_pc, 2))
+            wt_opt["generator.generator_efficiency_user"] = myeff
+    
         else:
-            myeff = np.zeros((n_pc, 2))
-        wt_opt["generator.generator_efficiency_user"] = myeff
-    
-    if flags["nacelle"] and flags["generator"]:
-        wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
-        wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
-        wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
-        wt_opt["generator.S_N"] = nacelle["generator"]["S_N"]
-        wt_opt["generator.alpha_p"] = nacelle["generator"]["alpha_p"]
-        wt_opt["generator.b_r_tau_r"] = nacelle["generator"]["b_r_tau_r"]
-        wt_opt["generator.b_ro"] = nacelle["generator"]["b_ro"]
-        wt_opt["generator.b_s_tau_s"] = nacelle["generator"]["b_s_tau_s"]
-        wt_opt["generator.b_so"] = nacelle["generator"]["b_so"]
-        wt_opt["generator.cofi"] = nacelle["generator"]["cofi"]
-        wt_opt["generator.freq"] = nacelle["generator"]["freq"]
-        wt_opt["generator.h_i"] = nacelle["generator"]["h_i"]
-        wt_opt["generator.h_sy0"] = nacelle["generator"]["h_sy0"]
-        wt_opt["generator.h_w"] = nacelle["generator"]["h_w"]
-        wt_opt["generator.k_fes"] = nacelle["generator"]["k_fes"]
-        wt_opt["generator.k_fillr"] = nacelle["generator"]["k_fillr"]
-        wt_opt["generator.k_fills"] = nacelle["generator"]["k_fills"]
-        wt_opt["generator.k_s"] = nacelle["generator"]["k_s"]
-        wt_opt["generator.m"] = nacelle["generator"]["m"]
-        wt_opt["generator.mu_0"] = nacelle["generator"]["mu_0"]
-        wt_opt["generator.mu_r"] = nacelle["generator"]["mu_r"]
-        wt_opt["generator.p"] = nacelle["generator"]["p"]
-        wt_opt["generator.phi"] = nacelle["generator"]["phi"]
-        wt_opt["generator.q1"] = nacelle["generator"]["q1"]
-        wt_opt["generator.q2"] = nacelle["generator"]["q2"]
-        wt_opt["generator.ratio_mw2pp"] = nacelle["generator"]["ratio_mw2pp"]
-        wt_opt["generator.resist_Cu"] = nacelle["generator"]["resist_Cu"]
-        wt_opt["generator.sigma"] = nacelle["generator"]["sigma"]
-        wt_opt["generator.y_tau_p"] = nacelle["generator"]["y_tau_p"]
-        wt_opt["generator.y_tau_pr"] = nacelle["generator"]["y_tau_pr"]
+            wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
+            wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
+            wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
+            wt_opt["generator.S_N"] = nacelle["generator"]["S_N"]
+            wt_opt["generator.alpha_p"] = nacelle["generator"]["alpha_p"]
+            wt_opt["generator.b_r_tau_r"] = nacelle["generator"]["b_r_tau_r"]
+            wt_opt["generator.b_ro"] = nacelle["generator"]["b_ro"]
+            wt_opt["generator.b_s_tau_s"] = nacelle["generator"]["b_s_tau_s"]
+            wt_opt["generator.b_so"] = nacelle["generator"]["b_so"]
+            wt_opt["generator.cofi"] = nacelle["generator"]["cofi"]
+            wt_opt["generator.freq"] = nacelle["generator"]["freq"]
+            wt_opt["generator.h_i"] = nacelle["generator"]["h_i"]
+            wt_opt["generator.h_sy0"] = nacelle["generator"]["h_sy0"]
+            wt_opt["generator.h_w"] = nacelle["generator"]["h_w"]
+            wt_opt["generator.k_fes"] = nacelle["generator"]["k_fes"]
+            wt_opt["generator.k_fillr"] = nacelle["generator"]["k_fillr"]
+            wt_opt["generator.k_fills"] = nacelle["generator"]["k_fills"]
+            wt_opt["generator.k_s"] = nacelle["generator"]["k_s"]
+            wt_opt["generator.m"] = nacelle["generator"]["m"]
+            wt_opt["generator.mu_0"] = nacelle["generator"]["mu_0"]
+            wt_opt["generator.mu_r"] = nacelle["generator"]["mu_r"]
+            wt_opt["generator.p"] = nacelle["generator"]["p"]
+            wt_opt["generator.phi"] = nacelle["generator"]["phi"]
+            wt_opt["generator.q1"] = nacelle["generator"]["q1"]
+            wt_opt["generator.q2"] = nacelle["generator"]["q2"]
+            wt_opt["generator.ratio_mw2pp"] = nacelle["generator"]["ratio_mw2pp"]
+            wt_opt["generator.resist_Cu"] = nacelle["generator"]["resist_Cu"]
+            wt_opt["generator.sigma"] = nacelle["generator"]["sigma"]
+            wt_opt["generator.y_tau_p"] = nacelle["generator"]["y_tau_p"]
+            wt_opt["generator.y_tau_pr"] = nacelle["generator"]["y_tau_pr"]
 
-        wt_opt["generator.I_0"] = nacelle["generator"]["I_0"]
-        wt_opt["generator.d_r"] = nacelle["generator"]["d_r"]
-        wt_opt["generator.h_m"] = nacelle["generator"]["h_m"]
-        wt_opt["generator.h_0"] = nacelle["generator"]["h_0"]
-        wt_opt["generator.h_s"] = nacelle["generator"]["h_s"]
-        wt_opt["generator.len_s"] = nacelle["generator"]["len_s"]
-        wt_opt["generator.n_r"] = nacelle["generator"]["n_r"]
-        wt_opt["generator.rad_ag"] = nacelle["generator"]["rad_ag"]
-        wt_opt["generator.t_wr"] = nacelle["generator"]["t_wr"]
+            wt_opt["generator.I_0"] = nacelle["generator"]["I_0"]
+            wt_opt["generator.d_r"] = nacelle["generator"]["d_r"]
+            wt_opt["generator.h_m"] = nacelle["generator"]["h_m"]
+            wt_opt["generator.h_0"] = nacelle["generator"]["h_0"]
+            wt_opt["generator.h_s"] = nacelle["generator"]["h_s"]
+            wt_opt["generator.len_s"] = nacelle["generator"]["len_s"]
+            wt_opt["generator.n_r"] = nacelle["generator"]["n_r"]
+            wt_opt["generator.rad_ag"] = nacelle["generator"]["rad_ag"]
+            wt_opt["generator.t_wr"] = nacelle["generator"]["t_wr"]
 
-        wt_opt["generator.n_s"] = nacelle["generator"]["n_s"]
-        wt_opt["generator.b_st"] = nacelle["generator"]["b_st"]
-        wt_opt["generator.d_s"] = nacelle["generator"]["d_s"]
-        wt_opt["generator.t_ws"] = nacelle["generator"]["t_ws"]
+            wt_opt["generator.n_s"] = nacelle["generator"]["n_s"]
+            wt_opt["generator.b_st"] = nacelle["generator"]["b_st"]
+            wt_opt["generator.d_s"] = nacelle["generator"]["d_s"]
+            wt_opt["generator.t_ws"] = nacelle["generator"]["t_ws"]
 
-        wt_opt["generator.rho_Copper"] = nacelle["generator"]["rho_Copper"]
-        wt_opt["generator.rho_Fe"] = nacelle["generator"]["rho_Fe"]
-        wt_opt["generator.rho_Fes"] = nacelle["generator"]["rho_Fes"]
-        wt_opt["generator.rho_PM"] = nacelle["generator"]["rho_PM"]
+            wt_opt["generator.rho_Copper"] = nacelle["generator"]["rho_Copper"]
+            wt_opt["generator.rho_Fe"] = nacelle["generator"]["rho_Fe"]
+            wt_opt["generator.rho_Fes"] = nacelle["generator"]["rho_Fes"]
+            wt_opt["generator.rho_PM"] = nacelle["generator"]["rho_PM"]
 
-        wt_opt["generator.C_Cu"] = nacelle["generator"]["C_Cu"]
-        wt_opt["generator.C_Fe"] = nacelle["generator"]["C_Fe"]
-        wt_opt["generator.C_Fes"] = nacelle["generator"]["C_Fes"]
-        wt_opt["generator.C_PM"] = nacelle["generator"]["C_PM"]
+            wt_opt["generator.C_Cu"] = nacelle["generator"]["C_Cu"]
+            wt_opt["generator.C_Fe"] = nacelle["generator"]["C_Fe"]
+            wt_opt["generator.C_Fes"] = nacelle["generator"]["C_Fes"]
+            wt_opt["generator.C_PM"] = nacelle["generator"]["C_PM"]
 
-        if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
-            wt_opt["generator.N_c"] = nacelle["generator"]["N_c"]
-            wt_opt["generator.b"] = nacelle["generator"]["b"]
-            wt_opt["generator.c"] = nacelle["generator"]["c"]
-            wt_opt["generator.E_p"] = nacelle["generator"]["E_p"]
-            wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
-            wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
-            wt_opt["generator.h_sr"] = nacelle["generator"]["h_sr"]
-            wt_opt["generator.h_ss"] = nacelle["generator"]["h_ss"]
-            wt_opt["generator.t_r"] = nacelle["generator"]["t_r"]
-            wt_opt["generator.t_s"] = nacelle["generator"]["t_s"]
+            if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
+                wt_opt["generator.N_c"] = nacelle["generator"]["N_c"]
+                wt_opt["generator.b"] = nacelle["generator"]["b"]
+                wt_opt["generator.c"] = nacelle["generator"]["c"]
+                wt_opt["generator.E_p"] = nacelle["generator"]["E_p"]
+                wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
+                wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
+                wt_opt["generator.h_sr"] = nacelle["generator"]["h_sr"]
+                wt_opt["generator.h_ss"] = nacelle["generator"]["h_ss"]
+                wt_opt["generator.t_r"] = nacelle["generator"]["t_r"]
+                wt_opt["generator.t_s"] = nacelle["generator"]["t_s"]
 
-            wt_opt["generator.u_allow_pcent"] = nacelle["generator"]["u_allow_pcent"]
-            wt_opt["generator.y_allow_pcent"] = nacelle["generator"]["y_allow_pcent"]
-            wt_opt["generator.z_allow_deg"] = nacelle["generator"]["z_allow_deg"]
-            wt_opt["generator.B_tmax"] = nacelle["generator"]["B_tmax"]
+                wt_opt["generator.u_allow_pcent"] = nacelle["generator"]["u_allow_pcent"]
+                wt_opt["generator.y_allow_pcent"] = nacelle["generator"]["y_allow_pcent"]
+                wt_opt["generator.z_allow_deg"] = nacelle["generator"]["z_allow_deg"]
+                wt_opt["generator.B_tmax"] = nacelle["generator"]["B_tmax"]
 
-        if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
-            wt_opt["generator.tau_p"] = nacelle["generator"]["tau_p"]
-            wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
-            wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
-            wt_opt["generator.b_arm"] = nacelle["generator"]["b_arm"]
+            if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                wt_opt["generator.tau_p"] = nacelle["generator"]["tau_p"]
+                wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
+                wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
+                wt_opt["generator.b_arm"] = nacelle["generator"]["b_arm"]
 
-        elif modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
-            wt_opt["generator.B_symax"] = nacelle["generator"]["B_symax"]
-            wt_opt["generator.S_Nmax"] = nacelle["generator"]["S_Nmax"]
+            elif modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
+                wt_opt["generator.B_symax"] = nacelle["generator"]["B_symax"]
+                wt_opt["generator.S_Nmax"] = nacelle["generator"]["S_Nmax"]
 
     return wt_opt
 
