@@ -38,7 +38,8 @@ class WindTurbineOntologyPython(object):
         self.modeling_options["flags"]["generator"] = (self.modeling_options["flags"]["nacelle"] and
                                                        "generator" in self.wt_init["components"]["nacelle"] and
                                                        self.wt_init["components"]["nacelle"]["generator"]["h_s"] > 0.0)
-        self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["nacelle"]["generator"]["generator_type"].lower()
+        if self.modeling_options["flags"]["generator"]:
+            self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["nacelle"]["generator"]["generator_type"].lower()
 
         # Offshore flags
         self.modeling_options["flags"]["floating"] = self.modeling_options["flags"]["floating_platform"]

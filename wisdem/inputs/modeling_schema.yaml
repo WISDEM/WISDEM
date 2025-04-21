@@ -226,6 +226,7 @@ properties:
                         type: object
                         default: {}
                         properties:
+                            user_elastic: *usere
                             type:
                                 type: string
                                 enum: [dfig, eesg, scig, pmsg_outer, pmsg_arms, pmsg_disc, DFIG, EESG, SCIG, PMSG_Outer, PMSG_Arms, PMSG_Disc]

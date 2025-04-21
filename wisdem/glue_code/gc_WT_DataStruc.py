@@ -255,7 +255,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Generator inputs
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("generator", Generator(flags=modeling_options["flags"],
-                                                      user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"],
+                                                      user_elastic=modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"],
                                                       gentype=modeling_options["WISDEM"]["DriveSE"]["generator"]["type"],
                                                       n_pc=modeling_options["WISDEM"]["RotorSE"]["n_pc"]))
             

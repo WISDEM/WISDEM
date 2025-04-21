@@ -465,7 +465,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
-            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
+            if modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"]:
                 self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
             if modeling_options["flags"]["generator"]:
                 self.connect("generator.B_r", "drivese.generator.B_r")
