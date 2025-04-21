@@ -57,9 +57,9 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         nacelle = wt_init["components"]["nacelle"]
         wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
         
-    if "generator" in wt_init["components"]["nacelle"]:
-        user_elastic = modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"]
-        wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
+        if "generator" in wt_init["components"]["nacelle"]:
+            user_elastic = modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"]
+            wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
 
     if modeling_options["flags"]["RNA"]:
         RNA = wt_init["components"]["RNA"]
