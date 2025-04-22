@@ -781,9 +781,9 @@ class Blade(om.Group):
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options, opt_options=opt_options))
-        self.connect("opt_var.s_opt_radius", "high_level_blade_props.s_opt_radius")
         self.connect("outer_shape_bem.s", "high_level_blade_props.s")
         if vawt_flag:
+            self.connect("opt_var.s_opt_radius", "high_level_blade_props.s_opt_radius")
             self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
         self.connect("pa.chord_param", "high_level_blade_props.chord")
@@ -3362,7 +3362,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(inputs["cone"][0])
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
 
-        if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"] and np.any(inputs["rotor_radius_vawt"]>0):
+        if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["flag"] and np.any(inputs["rotor_radius_vawt"]>0):
             # update the reference axis location
             spline = PchipInterpolator
             if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["constant"]:

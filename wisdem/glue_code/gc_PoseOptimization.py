@@ -1427,21 +1427,22 @@ class PoseOptimization(object):
             layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
 
             # For OWENS radius distribution, TODO: move this to weis?
-            wt_opt["blade.opt_var.s_opt_radius"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rotor_radius_vawt"]["n_opt"])
-            if blade_opt["aero_shape"]["rotor_radius_vawt"]["constant"]:
-                # check if the reference axis is consistent with constant radius definition
-                radius_dist = wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["values"]
-                if not (np.array(radius_dist) == radius_dist[0]).all():
-                    raise ValueError("Specificy constant radius design variables but the blade reference axis does not have constant radius along the span.")
-                init_rotor_radius_vawt_opt = radius_dist[0]
-                wt_opt["blade.opt_var.rotor_radius_vawt"] = init_rotor_radius_vawt_opt
-            else:
-                rotor_radius_vawt_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["grid"],
-                    wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["values"],
-                )
-                init_rotor_radius_vawt_opt = rotor_radius_vawt_interpolator(wt_opt["blade.opt_var.s_opt_radius"])
-                wt_opt["blade.opt_var.rotor_radius_vawt"] = init_rotor_radius_vawt_opt
+            if self.modeling["flags"]["vawt"]:
+                wt_opt["blade.opt_var.s_opt_radius"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rotor_radius_vawt"]["n_opt"])
+                if blade_opt["aero_shape"]["rotor_radius_vawt"]["constant"]:
+                    # check if the reference axis is consistent with constant radius definition
+                    radius_dist = wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["values"]
+                    if not (np.array(radius_dist) == radius_dist[0]).all():
+                        raise ValueError("Specificy constant radius design variables but the blade reference axis does not have constant radius along the span.")
+                    init_rotor_radius_vawt_opt = radius_dist[0]
+                    wt_opt["blade.opt_var.rotor_radius_vawt"] = init_rotor_radius_vawt_opt
+                else:
+                    rotor_radius_vawt_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["values"],
+                    )
+                    init_rotor_radius_vawt_opt = rotor_radius_vawt_interpolator(wt_opt["blade.opt_var.s_opt_radius"])
+                    wt_opt["blade.opt_var.rotor_radius_vawt"] = init_rotor_radius_vawt_opt
 
             for i in range(self.modeling["WISDEM"]["RotorSE"]["n_layers"]):
                 wt_opt["blade.opt_var.s_opt_layer_%d"%i] = np.linspace(
