@@ -1,6 +1,6 @@
 # Generic modeling options file to run standard WISDEM case
 General:
-    verbosity: False  # When set to True, the code prints to screen many infos
+    verbosity: True  # When set to True, the code prints to screen many infos
 WISDEM:
     RotorSE:
         flag: True
