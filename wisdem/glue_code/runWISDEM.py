@@ -83,7 +83,11 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         wt_opt = myopt.set_constraints(wt_opt)
         wt_opt = myopt.set_recorders(wt_opt)
 
-    # Setup openmdao problem
+    if modeling_options["General"]["verbosity"] == False:
+        wt_opt.set_solver_print(level=-1)
+
+    # Set working directory and setup openmdao problem
+    wt_opt.options['work_dir'] = folder_output
     wt_opt.setup()
 
     # Load initial wind turbine data from wt_initial to the openmdao problem
@@ -153,7 +157,12 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     fileIO.save_data(froot_out, wt_opt)
 
     t1 = time.time()
-    print("Completed in,", t1-t0, "seconds")
+    if MPI:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
+    if rank == 0:
+        print("WISDEM run completed in,", t1-t0, "seconds")
 
     return wt_opt, modeling_options, opt_options
 
