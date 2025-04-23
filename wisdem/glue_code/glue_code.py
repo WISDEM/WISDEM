@@ -41,7 +41,7 @@ class WT_RNTA_Prop(om.Group):
         if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("rotorse", RotorSEProp(modeling_options=modeling_options, opt_options=opt_options))
 
-        if modeling_options["WISDEM"]["TowerSE"]["flag"]:
+        if modeling_options["flags"]["tower"]:
             self.add_subsystem("towerse", TowerSEProp(modeling_options=modeling_options))
 
         if modeling_options["flags"]["monopile"]:
@@ -96,7 +96,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["blade"] or modeling_options["flags"]["nacelle"]:
                 self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
-        if modeling_options["WISDEM"]["TowerSE"]["flag"]:
+        if modeling_options["flags"]["tower"]:
             self.add_subsystem("towerse", TowerSEPerf(modeling_options=modeling_options))
 
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
@@ -291,7 +291,7 @@ class WT_RNTA(om.Group):
                         "blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web", "rotorse.rc_out.layer_web"]
                     )
 
-                elif False:
+                elif ((not modeling_options["flags"]["vawt"])):
                     self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
                     self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
                     self.connect("blade.pa.chord_param", "rotorse.rc.chord")
@@ -673,90 +673,90 @@ class WT_RNTA(om.Group):
                     self.connect("drivese.rna_cm", "floatingse.rna_cg")
                     self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
-            # Individual member connections
-            n_member = modeling_options["floating"]["members"]["n_members"]
-            for k in range(n_member):
-                member_shape = modeling_options["floating"]["members"]["outer_shape"][k]
+                # Individual member connections
+                n_member = modeling_options["floating"]["members"]["n_members"]
+                for k in range(n_member):
+                    member_shape = modeling_options["floating"]["members"]["outer_shape"][k]
 
-                self.connect(f"floatingse.member{k}.nodes_xyz_all", f"floatingse.member{k}:nodes_xyz")
-                self.connect(f"floatingse.member{k}.constr_ballast_capacity", f"floatingse.member{k}:constr_ballast_capacity")
+                    self.connect(f"floatingse.member{k}.nodes_xyz_all", f"floatingse.member{k}:nodes_xyz")
+                    self.connect(f"floatingse.member{k}.constr_ballast_capacity", f"floatingse.member{k}:constr_ballast_capacity")
+                    
+                    if member_shape == "circular":
+                        self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                        self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                        self.connect(f"floatingse.member{k}.outer_diameter_full", f"floatingse.memload{k}.outer_diameter_full")
+                    elif member_shape == "rectangular":
+                        self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                        self.connect(f"floatingse.member{k}.cay_usr_grid_full", f"floatingse.memload{k}.cay_usr")
+                        self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                        self.connect(f"floatingse.member{k}.cdy_usr_grid_full", f"floatingse.memload{k}.cdy_usr")
+                        self.connect(f"floatingse.member{k}.side_length_a_full", f"floatingse.memload{k}.side_length_a_full")
+                        self.connect(f"floatingse.member{k}.side_length_b_full", f"floatingse.memload{k}.side_length_b_full")
+
+                    for var in ["z_global", "s_full", "s_all"]:
+                        self.connect(f"floatingse.member{k}.{var}", f"floatingse.memload{k}.{var}")
                 
-                if member_shape == "circular":
-                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
-                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
-                    self.connect(f"floatingse.member{k}.outer_diameter_full", f"floatingse.memload{k}.outer_diameter_full")
-                elif member_shape == "rectangular":
-                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
-                    self.connect(f"floatingse.member{k}.cay_usr_grid_full", f"floatingse.memload{k}.cay_usr")
-                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
-                    self.connect(f"floatingse.member{k}.cdy_usr_grid_full", f"floatingse.memload{k}.cdy_usr")
-                    self.connect(f"floatingse.member{k}.side_length_a_full", f"floatingse.memload{k}.side_length_a_full")
-                    self.connect(f"floatingse.member{k}.side_length_b_full", f"floatingse.memload{k}.side_length_b_full")
+                for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
+                    idx = modeling_options["floating"]["members"]["name2idx"][kname]
+                    if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
+                        self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                        self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
+                        self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
+                    elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
+                        self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
+                        self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
+                        self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
+                        self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"floatingse.member{k}.cay_usr_grid")
+                        self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
+                        self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"floatingse.member{k}.cdy_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
+                    self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
+                    self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
 
-                for var in ["z_global", "s_full", "s_all"]:
-                    self.connect(f"floatingse.member{k}.{var}", f"floatingse.memload{k}.{var}")
-            
-            for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
-                idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
-                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
-                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
-                elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
-                    self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
-                    self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
-                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"floatingse.member{k}.cay_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"floatingse.member{k}.cdy_usr_grid")
-                self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
-                self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
-                self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
+                    for var in [
+                        "layer_materials",
+                        "bulkhead_grid",
+                        "bulkhead_thickness",
+                        "ballast_grid",
+                        "ballast_volume",
+                        "ballast_materials",
+                        "grid_axial_joints",
+                        "ring_stiffener_web_height",
+                        "ring_stiffener_web_thickness",
+                        "ring_stiffener_flange_width",
+                        "ring_stiffener_flange_thickness",
+                        "ring_stiffener_spacing",
+                        "axial_stiffener_web_height",
+                        "axial_stiffener_web_thickness",
+                        "axial_stiffener_flange_width",
+                        "axial_stiffener_flange_thickness",
+                        "axial_stiffener_spacing",
+                    ]:
+                        self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
+                    for var in ["joint1", "joint2"]:
+                        self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
+
+                    for var in ["s_ghost1", "s_ghost2"]:
+                        self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}.{var}")
+
+                # Mooring connections
+                self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])
                 for var in [
-                    "layer_materials",
-                    "bulkhead_grid",
-                    "bulkhead_thickness",
-                    "ballast_grid",
-                    "ballast_volume",
-                    "ballast_materials",
-                    "grid_axial_joints",
-                    "ring_stiffener_web_height",
-                    "ring_stiffener_web_thickness",
-                    "ring_stiffener_flange_width",
-                    "ring_stiffener_flange_thickness",
-                    "ring_stiffener_spacing",
-                    "axial_stiffener_web_height",
-                    "axial_stiffener_web_thickness",
-                    "axial_stiffener_flange_width",
-                    "axial_stiffener_flange_thickness",
-                    "axial_stiffener_spacing",
+                    "fairlead",
+                    "fairlead_radius",
+                    "anchor_radius",
+                    "anchor_mass",
+                    "anchor_cost",
+                    "anchor_max_vertical_load",
+                    "anchor_max_lateral_load",
+                    "line_diameter",
+                    "line_mass_density_coeff",
+                    "line_stiffness_coeff",
+                    "line_breaking_load_coeff",
+                    "line_cost_rate_coeff",
                 ]:
-                    self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
-
-                for var in ["joint1", "joint2"]:
-                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
-
-                for var in ["s_ghost1", "s_ghost2"]:
-                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}.{var}")
-
-            # Mooring connections
-            self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])
-            for var in [
-                "fairlead",
-                "fairlead_radius",
-                "anchor_radius",
-                "anchor_mass",
-                "anchor_cost",
-                "anchor_max_vertical_load",
-                "anchor_max_lateral_load",
-                "line_diameter",
-                "line_mass_density_coeff",
-                "line_stiffness_coeff",
-                "line_breaking_load_coeff",
-                "line_cost_rate_coeff",
-            ]:
-                self.connect(f"mooring.{var}", f"floatingse.{var}", src_indices=[0])
+                    self.connect(f"mooring.{var}", f"floatingse.{var}", src_indices=[0])
 
             # Connections to turbine constraints
             if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
@@ -781,7 +781,8 @@ class WT_RNTA(om.Group):
             self.connect("configuration.rated_power", "tcc.machine_rating")
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.blade_mass", "tcc.blade_mass")
-                self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
+                if not modeling_options["flags"]["vawt"]:
+                    self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
 
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.hub_mass", "tcc.hub_mass")
@@ -986,19 +987,21 @@ class WindPark(om.Group):
                 self.connect("rotorse.rp.powercurve.rated_V", "orbit.turbine_rated_windspeed")
                 self.connect("bos.plant_turbine_spacing", "orbit.plant_turbine_spacing")
                 self.connect("bos.plant_row_spacing", "orbit.plant_row_spacing")
-                self.connect("bos.commissioning_pct", "orbit.commissioning_pct")
-                self.connect("bos.decommissioning_pct", "orbit.decommissioning_pct")
+                self.connect("bos.commissioning_cost_kW", "orbit.commissioning_cost_kW")
+                self.connect("bos.decommissioning_cost_kW", "orbit.decommissioning_cost_kW")
                 self.connect("bos.distance_to_substation", "orbit.plant_substation_distance")
                 self.connect("bos.distance_to_interconnection", "orbit.interconnection_distance")
                 self.connect("bos.site_distance", "orbit.site_distance")
                 self.connect("bos.distance_to_landfall", "orbit.site_distance_to_landfall")
                 self.connect("bos.port_cost_per_month", "orbit.port_cost_per_month")
+                self.connect("bos.construction_insurance", "orbit.construction_insurance")
+                self.connect("bos.construction_financing", "orbit.construction_financing")
+                self.connect("bos.contingency", "orbit.contingency")
                 self.connect("bos.site_auction_price", "orbit.site_auction_price")
-                self.connect("bos.site_assessment_plan_cost", "orbit.site_assessment_plan_cost")
                 self.connect("bos.site_assessment_cost", "orbit.site_assessment_cost")
-                self.connect("bos.construction_operations_plan_cost", "orbit.construction_operations_plan_cost")
+                self.connect("bos.construction_plan_cost", "orbit.construction_plan_cost")
+                self.connect("bos.installation_plan_cost", "orbit.installation_plan_cost")
                 self.connect("bos.boem_review_cost", "orbit.boem_review_cost")
-                self.connect("bos.design_install_plan_cost", "orbit.design_install_plan_cost")
             else:
                 # Inputs into LandBOSSE
                 self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
@@ -1020,8 +1023,8 @@ class WindPark(om.Group):
                 self.connect("tower_grid.foundation_height", "landbosse.foundation_height")
                 self.connect("bos.plant_turbine_spacing", "landbosse.turbine_spacing_rotor_diameters")
                 self.connect("bos.plant_row_spacing", "landbosse.row_spacing_rotor_diameters")
-                self.connect("bos.commissioning_pct", "landbosse.commissioning_pct")
-                self.connect("bos.decommissioning_pct", "landbosse.decommissioning_pct")
+                self.connect("bos.commissioning_cost_kW", "landbosse.commissioning_cost_kW")
+                self.connect("bos.decommissioning_cost_kW", "landbosse.decommissioning_cost_kW")
                 self.connect("bos.distance_to_substation", "landbosse.trench_len_to_substation_km")
                 self.connect("bos.distance_to_interconnection", "landbosse.distance_to_interconnect_mi")
                 self.connect("bos.interconnect_voltage", "landbosse.interconnect_voltage_kV")
@@ -1035,7 +1038,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["offshore"]:
                     self.connect("orbit.total_capex_kW", "financese.bos_per_kW")
                 else:
-                    self.connect("landbosse.bos_capex_kW", "financese.bos_per_kW")
+                    self.connect("landbosse.total_capex_kW", "financese.bos_per_kW")
             else:
                 self.connect("costs.bos_per_kW", "financese.bos_per_kW")
 
