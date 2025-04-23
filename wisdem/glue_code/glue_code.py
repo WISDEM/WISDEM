@@ -128,7 +128,7 @@ class WT_RNTA(om.Group):
                 self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
                 self.connect("blade.outer_shape_bem.s", "rotorse.s")
                 self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
-                self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
+                self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
                 self.connect("hub.radius", "rotorse.Rhub")
                 self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
                 self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -152,10 +152,7 @@ class WT_RNTA(om.Group):
                     self.connect("control.ps_percent", "rotorse.rp.powercurve.ps_percent")
                     self.connect("control.fix_pitch_regI12", "rotorse.rp.powercurve.fix_pitch_regI12")
                 self.connect("control.rated_TSR", "rotorse.tsr")
-                if modeling_options["flags"]["marine_hydro"]:
-                    self.connect("env.rho_water", "rotorse.rho_air")
-                else:
-                    self.connect("env.rho_air", "rotorse.rho_air")
+                self.connect("env.rho_air", "rotorse.rho_air")
                 self.connect("env.mu_air", "rotorse.mu_air")
                 self.connect("env.shear_exp", "rotorse.shearExp")
                 self.connect(
@@ -194,12 +191,6 @@ class WT_RNTA(om.Group):
                 self.connect("materials.nu", "rotorse.re.precomp.nu")
                 self.connect("materials.rho", "rotorse.re.precomp.rho")
 
-                # Conncetions to rail transport module
-                if (
-                    modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-                    or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-                ):
-                    self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
                 # Connections from blade struct parametrization to rotor load anlysis
                 spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
                 self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
@@ -269,185 +260,62 @@ class WT_RNTA(om.Group):
                     self.connect("blade.outer_shape_bem.s", "rotorse.split.s")
                     self.connect("blade.pa.chord_param", "rotorse.split.chord")
                     if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                        self.connect("blade.run_inn_af.aoa_inn", "rotorse.ccblade.aoa_op")
-                    self.connect("high_level_tower_props.hub_height", "rotorse.hub_height")
-                    self.connect("hub.cone", "rotorse.precone")
-                    self.connect("nacelle.uptilt", "rotorse.tilt")
+                        self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.split.coord_xy_interp")
+                    else:
+                        self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.split.coord_xy_interp")
+                    self.connect("blade.ps.layer_thickness_param", "rotorse.split.layer_thickness")
+                    self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.split.layer_start_nd")
+                    self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.split.layer_end_nd")
+                    self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.split.web_start_nd")
+                    self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.split.web_end_nd")
+                    self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.split.joint_position")
 
-                    self.connect("blade.high_level_blade_props.prebend", "rotorse.precurve")
-                    self.connect("blade.high_level_blade_props.prebendTip", "rotorse.precurveTip")
-                    self.connect("blade.high_level_blade_props.presweep", "rotorse.presweep")
-                    self.connect("blade.high_level_blade_props.presweepTip", "rotorse.presweepTip")
-
-                    if modeling_options["flags"]["control"]:
-                        self.connect("control.rated_pitch", "rotorse.pitch")
-                        self.connect("control.ps_percent", "rotorse.rp.powercurve.ps_percent")
-                        self.connect("control.fix_pitch_regI12", "rotorse.rp.powercurve.fix_pitch_regI12")
-                    self.connect("control.rated_TSR", "rotorse.tsr")
-                    self.connect("env.rho_air", "rotorse.rho_air")
-                    self.connect("env.mu_air", "rotorse.mu_air")
-                    self.connect("env.shear_exp", "rotorse.shearExp")
+                    # Common inputs to blade cost model
+                    self.connect("materials.name", ["rotorse.rc_in.mat_name", "rotorse.rc_out.mat_name"])
+                    self.connect("materials.orth", ["rotorse.rc_in.orth", "rotorse.rc_out.orth"])
+                    self.connect("materials.rho", ["rotorse.rc_in.rho", "rotorse.rc_out.rho"])
+                    self.connect("materials.component_id", ["rotorse.rc_in.component_id", "rotorse.rc_out.component_id"])
+                    self.connect("materials.unit_cost", ["rotorse.rc_in.unit_cost", "rotorse.rc_out.unit_cost"])
+                    self.connect("materials.waste", ["rotorse.rc_in.waste", "rotorse.rc_out.waste"])
+                    self.connect("materials.rho_fiber", ["rotorse.rc_in.rho_fiber", "rotorse.rc_out.rho_fiber"])
+                    self.connect("materials.ply_t", ["rotorse.rc_in.ply_t", "rotorse.rc_out.ply_t"])
+                    self.connect("materials.fwf", ["rotorse.rc_in.fwf", "rotorse.rc_out.fwf"])
+                    self.connect("materials.fvf", ["rotorse.rc_in.fvf", "rotorse.rc_out.fvf"])
+                    self.connect("materials.roll_mass", ["rotorse.rc_in.roll_mass", "rotorse.rc_out.roll_mass"])
                     self.connect(
-                        "configuration.n_blades",
-                        ["rotorse.nBlades", "rotorse.re.precomp.n_blades", "rotorse.rs.constr.blade_number"],
+                        "blade.internal_structure_2d_fem.definition_layer",
+                        ["rotorse.rc_in.definition_layer", "rotorse.rc_out.definition_layer"],
                     )
-                    self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
-                    self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
+                    self.connect(
+                        "blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web", "rotorse.rc_out.layer_web"]
+                    )
 
-                    # Connections to rotor elastic and frequency analysis
-                    self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
-                    self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
+                elif ((not modeling_options["flags"]["vawt"])):
+                    self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
+                    self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
+                    self.connect("blade.pa.chord_param", "rotorse.rc.chord")
                     if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                        self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
+                        self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.rc.coord_xy_interp")
                     else:
-                        self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
-                    self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.re.precomp.layer_start_nd")
-                    self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.re.precomp.layer_end_nd")
-                    self.connect("blade.internal_structure_2d_fem.layer_web", "rotorse.re.precomp.layer_web")
-                    self.connect("blade.internal_structure_2d_fem.definition_layer", "rotorse.re.precomp.definition_layer")
-                    self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.re.precomp.web_start_nd")
-                    self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.re.precomp.web_end_nd")
-                    self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
-                    if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                        self.connect("blade.internal_structure_2d_fem.joint_bolt", "rotorse.rs.bjs.joint_bolt")
-                        # Let wisdem estimate the joint mass, although 
-                        # this generates an implicit loop since the bjs modules requires loads among the inputs
-                        self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass") 
-                    else:
-                        # joint mass as user input from yaml
-                        self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass") 
-                    self.connect("materials.name", "rotorse.re.precomp.mat_name")
-                    self.connect("materials.orth", "rotorse.re.precomp.orth")
-                    self.connect("materials.E", "rotorse.re.precomp.E")
-                    self.connect("materials.G", "rotorse.re.precomp.G")
-                    self.connect("materials.nu", "rotorse.re.precomp.nu")
-                    self.connect("materials.rho", "rotorse.re.precomp.rho")
-
-                    # Connections from blade struct parametrization to rotor load anlysis
-                    spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
-                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
-                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
-                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[2], "rotorse.rs.constr.s_opt_te_ss")
-                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[3], "rotorse.rs.constr.s_opt_te_ps")
-
-                    # Connections to RotorPower
-                    self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
-                    self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
-                    self.connect("control.V_in", "rotorse.rp.v_min")
-                    self.connect("control.V_out", "rotorse.rp.v_max")
-                    self.connect("configuration.rated_power", "rotorse.rp.rated_power")
-                    self.connect("control.minOmega", "rotorse.rp.omega_min")
-                    self.connect("control.maxOmega", "rotorse.rp.omega_max")
-                    self.connect("control.max_TS", "rotorse.rp.control_maxTS")
-                    self.connect("configuration.gearbox_type", "rotorse.rp.drivetrainType")
-                    self.connect("nacelle.gearbox_efficiency", "rotorse.rp.powercurve.gearbox_efficiency")
-                    if modeling_options["flags"]["nacelle"]:
-                        self.connect("drivese.lss_rpm", "rotorse.rp.powercurve.lss_rpm")
-                        self.connect("drivese.generator_efficiency", "rotorse.rp.powercurve.generator_efficiency")
-                    self.connect("env.weibull_k", "rotorse.rp.cdf.k")
-                    self.connect("configuration.turb_class", "rotorse.rp.gust.turbulence_class")
-
-                    # Connections to RotorStructure
-                    self.connect("blade.internal_structure_2d_fem.d_f", "rotorse.rs.brs.d_f")
-                    self.connect("blade.internal_structure_2d_fem.sigma_max", "rotorse.rs.brs.sigma_max")
-                    self.connect("blade.pa.chord_param", "rotorse.rs.brs.rootD", src_indices=[0])
-                    self.connect("blade.ps.layer_thickness_param", "rotorse.rs.brs.layer_thickness")
-                    self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rs.brs.layer_start_nd")
-                    self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rs.brs.layer_end_nd")
-                    if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                        self.connect("materials.name", "rotorse.rs.bjs.name_mat")
-                        self.connect("materials.rho", "rotorse.rs.bjs.rho_mat")
-                        self.connect("materials.Xt", "rotorse.rs.bjs.Xt_mat")
-                        self.connect("materials.sigma_y", "rotorse.rs.bjs.Xy_mat")
-                        self.connect("materials.E", "rotorse.rs.bjs.E_mat")
-                        self.connect("materials.S", "rotorse.rs.bjs.S_mat")
-                        self.connect("blade.pa.chord_param", "rotorse.rs.bjs.chord")
-                        self.connect("blade.high_level_blade_props.r_blade", "rotorse.rs.bjs.blade_length")
-                        self.connect("blade.ps.layer_thickness_param", "rotorse.rs.bjs.layer_thickness")
-                        self.connect("blade.internal_structure_2d_fem.layer_width", "rotorse.rs.bjs.layer_width")
-                        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rs.bjs.layer_start_nd")
-                        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rs.bjs.layer_end_nd")
-                        self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rs.bjs.coord_xy_interp")
-                        self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.rs.bjs.rthick")
-                        self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.rs.bjs.joint_position")
-                        self.connect(
-                            "blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rotorse.rs.bjs.joint_nonmaterial_cost"
-                        )
-                        self.connect(
-                            "blade.internal_structure_2d_fem.reinforcement_layer_ss", "rotorse.rs.bjs.reinforcement_layer_ss"
-                        )
-                        self.connect(
-                            "blade.internal_structure_2d_fem.reinforcement_layer_ps", "rotorse.rs.bjs.reinforcement_layer_ps"
-                        )
-                        # self.connect("blade.outer_shape_bem.thickness", "rotorse.rs.bjs.blade_thickness")
-                        self.connect("blade.internal_structure_2d_fem.layer_offset_y_pa", "rotorse.rs.bjs.layer_offset_y_pa")
-                        self.connect("blade.compute_coord_xy_dim.coord_xy_dim", "rotorse.rs.bjs.coord_xy_dim")
-                        self.connect("blade.internal_structure_2d_fem.layer_side", "rotorse.rs.bjs.layer_side")
-                        self.connect("blade.pa.twist_param", "rotorse.rs.bjs.twist")
-                        self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.rs.bjs.pitch_axis")
-                        self.connect("materials.unit_cost", "rotorse.rs.bjs.unit_cost")
-                        # Connections to RotorCost
-                        # Inputs to be split between inner and outer blade portions
-                        self.connect("blade.high_level_blade_props.blade_length", "rotorse.split.blade_length")
-                        self.connect("blade.outer_shape_bem.s", "rotorse.split.s")
-                        self.connect("blade.pa.chord_param", "rotorse.split.chord")
-                        if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                            self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.split.coord_xy_interp")
-                        else:
-                            self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.split.coord_xy_interp")
-                        self.connect("blade.ps.layer_thickness_param", "rotorse.split.layer_thickness")
-                        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.split.layer_start_nd")
-                        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.split.layer_end_nd")
-                        self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.split.web_start_nd")
-                        self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.split.web_end_nd")
-                        self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.split.joint_position")
-
-                        # Common inputs to blade cost model
-                        self.connect("materials.name", ["rotorse.rc_in.mat_name", "rotorse.rc_out.mat_name"])
-                        self.connect("materials.orth", ["rotorse.rc_in.orth", "rotorse.rc_out.orth"])
-                        self.connect("materials.rho", ["rotorse.rc_in.rho", "rotorse.rc_out.rho"])
-                        self.connect("materials.component_id", ["rotorse.rc_in.component_id", "rotorse.rc_out.component_id"])
-                        self.connect("materials.unit_cost", ["rotorse.rc_in.unit_cost", "rotorse.rc_out.unit_cost"])
-                        self.connect("materials.waste", ["rotorse.rc_in.waste", "rotorse.rc_out.waste"])
-                        self.connect("materials.rho_fiber", ["rotorse.rc_in.rho_fiber", "rotorse.rc_out.rho_fiber"])
-                        self.connect("materials.ply_t", ["rotorse.rc_in.ply_t", "rotorse.rc_out.ply_t"])
-                        self.connect("materials.fwf", ["rotorse.rc_in.fwf", "rotorse.rc_out.fwf"])
-                        self.connect("materials.fvf", ["rotorse.rc_in.fvf", "rotorse.rc_out.fvf"])
-                        self.connect("materials.roll_mass", ["rotorse.rc_in.roll_mass", "rotorse.rc_out.roll_mass"])
-                        self.connect(
-                            "blade.internal_structure_2d_fem.definition_layer",
-                            ["rotorse.rc_in.definition_layer", "rotorse.rc_out.definition_layer"],
-                        )
-                        self.connect(
-                            "blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web", "rotorse.rc_out.layer_web"]
-                        )
-
-                    elif ((not modeling_options["flags"]["vawt"])):
-                        self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
-                        self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
-                        self.connect("blade.pa.chord_param", "rotorse.rc.chord")
-                        if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                            self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.rc.coord_xy_interp")
-                        else:
-                            self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
-                        self.connect("blade.ps.layer_thickness_param", "rotorse.rc.layer_thickness")
-                        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rc.layer_start_nd")
-                        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rc.layer_end_nd")
-                        self.connect("blade.internal_structure_2d_fem.layer_web", "rotorse.rc.layer_web")
-                        self.connect("blade.internal_structure_2d_fem.definition_layer", "rotorse.rc.definition_layer")
-                        self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.rc.web_start_nd")
-                        self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.rc.web_end_nd")
-                        self.connect("materials.name", "rotorse.rc.mat_name")
-                        self.connect("materials.orth", "rotorse.rc.orth")
-                        self.connect("materials.rho", "rotorse.rc.rho")
-                        self.connect("materials.component_id", "rotorse.rc.component_id")
-                        self.connect("materials.unit_cost", "rotorse.rc.unit_cost")
-                        self.connect("materials.waste", "rotorse.rc.waste")
-                        self.connect("materials.rho_fiber", "rotorse.rc.rho_fiber")
-                        self.connect("materials.ply_t", "rotorse.rc.ply_t")
-                        self.connect("materials.fwf", "rotorse.rc.fwf")
-                        self.connect("materials.fvf", "rotorse.rc.fvf")
-                        self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
+                        self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
+                    self.connect("blade.ps.layer_thickness_param", "rotorse.rc.layer_thickness")
+                    self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rc.layer_start_nd")
+                    self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rc.layer_end_nd")
+                    self.connect("blade.internal_structure_2d_fem.layer_web", "rotorse.rc.layer_web")
+                    self.connect("blade.internal_structure_2d_fem.definition_layer", "rotorse.rc.definition_layer")
+                    self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.rc.web_start_nd")
+                    self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.rc.web_end_nd")
+                    self.connect("materials.name", "rotorse.rc.mat_name")
+                    self.connect("materials.orth", "rotorse.rc.orth")
+                    self.connect("materials.rho", "rotorse.rc.rho")
+                    self.connect("materials.component_id", "rotorse.rc.component_id")
+                    self.connect("materials.unit_cost", "rotorse.rc.unit_cost")
+                    self.connect("materials.waste", "rotorse.rc.waste")
+                    self.connect("materials.rho_fiber", "rotorse.rc.rho_fiber")
+                    self.connect("materials.ply_t", "rotorse.rc.ply_t")
+                    self.connect("materials.fwf", "rotorse.rc.fwf")
+                    self.connect("materials.fvf", "rotorse.rc.fvf")
+                    self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
 
 
                 # Connections to DriveSE
