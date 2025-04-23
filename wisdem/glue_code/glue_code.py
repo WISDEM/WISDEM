@@ -734,6 +734,7 @@ class WT_RNTA(om.Group):
                     ]:
                         self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
+                    self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}:mass_user")
                     for var in ["joint1", "joint2"]:
                         self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
 
