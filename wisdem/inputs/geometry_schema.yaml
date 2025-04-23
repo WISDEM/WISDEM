@@ -33,6 +33,7 @@ properties:
         type: object
         default: {}
         optional:
+            - turbine_type
             - turbine_class
             - turbulence_class
             - drivetrain
@@ -44,6 +45,11 @@ properties:
             - lifetime
             - marine_hydro
         properties:
+            turbine_type:
+                type: string
+                default: Horizontal
+                description: Wind turbine type, including horizontrol and vertical axial turbines
+                enum: [Horizontal, horizontal, Vertical, vertical]
             turbine_class:
                 type: string
                 default: I
@@ -112,6 +118,7 @@ properties:
             - floating_platform
             - mooring
             - RNA
+            - struts
         properties:
             blade:
                 type: object
@@ -124,6 +131,8 @@ properties:
                             - twist
                             - pitch_axis
                             - reference_axis
+                        optional:
+                            - blade_mountpoint
                         properties:
                             airfoil_position:
                                 type: object
@@ -207,6 +216,21 @@ properties:
                                         $ref: "#/definitions/distributed_data/angle"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
+                            blade_mountpoint:
+                                type: number
+                                default: 0.5
+                                description: Blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+                            blade_radius:
+                                type: number
+                                required:
+                                    - grid
+                                    - values
+                                description: Radius distribution along the blade height direction.
+                            blade_height:
+                                type: number
+                                default: 0
+                                description: Blade height for verical axial turbines
+                            
                             # coordinates:
                                     # description: Coordinates expressed in the blade root coordinate system.
                                     # $ref: "#/definitions/distributed_data/coordinates"
@@ -1356,6 +1380,11 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
+                    tower_height:
+                        type: number
+                        default: 0
+                        description: Tower extension height below blades for vertical axis turbines
+                        
             monopile:
                 type: object
                 required:
@@ -1937,11 +1966,17 @@ properties:
                                                 description: Non-dimensional value along member axis
                                 Ca: &ca
                                     description: User-defined added mass coefficient if axi-symmetric or user-defined added mass coefficient in x-direction
-                                    type: array
-                                    default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
-                                    items:
-                                        type: number
-                                        minimum: -1.0
+                                    oneOf:
+                                        - type: number
+                                          default: -1.0
+                                          minimum: 0
+                                        - type: array
+                                          default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
+                                          items:
+                                            type: number
+                                            minimum: -1.0
+                                    default: [-1.0]
+
                                 Cay:
                                     <<: *ca
                                     description: User-defined added mass coefficient in y-direction
@@ -1950,12 +1985,8 @@ properties:
                                     type: number
                                     default: 0.0
                                 Cd: &cd
+                                    <<: *ca
                                     description: User-defined drag coefficient if axi-symmetric or user-defined drag coefficient in x-direction
-                                    type: array
-                                    default: [-1.0]
-                                    items:
-                                        type: number
-                                        minimum: -1.0
                                 Cdy:
                                     <<: *cd
                                     description: User-defined drag coefficient in y-direction
@@ -2276,6 +2307,234 @@ properties:
                                     unit: Newton
                                     description: Maximum vertical load (perpendicular to the sea floor) that the anchor can support
                                     minimum: 0.0
+
+            struts:
+                type: object
+                properties:
+                    mountfraction_blade:
+                        type: array
+                        default: [0.11, 0.89]
+                    mountfraction_tower:
+                        type: array
+                        default: [0.11, 0.89]                        
+                    outer_shape_bem:
+                        type: object
+                        required:
+                            - airfoil_position
+                            - chord
+                            - twist
+                            - pitch_axis
+                            - reference_axis
+                        properties:
+                            airfoil_position:
+                                type: object
+                                required:
+                                    - grid
+                                    - labels
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    labels:
+                                        $ref: "#/definitions/distributed_data/strings"
+                            chord:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/length"
+                            twist:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/angle"
+                            pitch_axis:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                            reference_axis:
+                                $ref: "#/definitions/distributed_data/axis_coordinates"
+                    internal_structure_2d_fem: 
+                        type: object
+                        default: {}
+                        required:
+                            - reference_axis
+                            - webs
+                            - layers
+                        properties:
+                            root:
+                                type: object
+                                default: {}
+                                properties:
+                                    d_f:
+                                        type: number
+                                        default: 0.03
+                                        minimum: 0.01
+                                        maximum: 0.2
+                                        unit: m
+                                        description: Diameter of the fastener, default is M30, so 0.03 meters
+                                    sigma_max:
+                                        type: number
+                                        default: 675.e+6
+                                        minimum: 1.e+5
+                                        maximum: 1.e+10
+                                        unit: Pa
+                                        description: Max stress on bolt
+                            reference_axis: # TODO-YL: Do we need this? They are all zeroes in current owens yaml
+                                $ref: "#/definitions/distributed_data/axis_coordinates"
+                            webs:
+                                type: array
+                                description: ...
+                                items:
+                                    type: object
+                                    required:
+                                        - name
+                                    properties:
+                                        name:
+                                            type: string
+                                            description: structural component identifier
+                                        start_nd_arc:
+                                            $ref: "#/definitions/distributed_data/nd_arc_position"
+                                        end_nd_arc:
+                                            $ref: "#/definitions/distributed_data/nd_arc_position"
+                                        # rotation: # Not used in owens yaml
+                                        #     $ref: "#/definitions/distributed_data/rotation"
+                                        # offset_y_pa:
+                                        #     $ref: "#/definitions/distributed_data/offset"
+                            layers:
+                                type: array
+                                description: ...
+                                items:
+                                    type: object
+                                    required:
+                                        - name
+                                        - material
+                                        - thickness
+                                    properties:
+                                        name:
+                                            type: string
+                                            description: structural component identifier
+                                        material:
+                                            type: string
+                                            description: material identifier
+                                        web:
+                                            type: string
+                                            description: web to which the layer is associated to, only to be defined for web layers
+                                        thickness:
+                                            type: object
+                                            description: thickness of the laminate
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        n_plies:
+                                            type: object
+                                            description: number of plies of the laminate
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/nd"
+                                        fiber_orientation:
+                                            type: object
+                                            description: orientation of the fibers
+                                            default: {'grid':[0.0, 1.0], 'values':[0.0, 0.0]}
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/angle"
+                                        # width:
+                                        #     type: object
+                                        #     description: dimensional width of the component along the arc
+                                        #     required:
+                                        #         - grid
+                                        #         - values
+                                        #     properties:
+                                        #         grid:
+                                        #             $ref: "#/definitions/distributed_data/grid_nd"
+                                        #         values:
+                                        #             $ref: "#/definitions/distributed_data/length"
+                                        # midpoint_nd_arc:
+                                        #     $ref: "#/definitions/distributed_data/nd_arc_position"
+                                        # start_nd_arc:
+                                        #     $ref: "#/definitions/distributed_data/nd_arc_position"
+                                        # end_nd_arc:
+                                        #     $ref: "#/definitions/distributed_data/nd_arc_position"
+                                        # rotation:
+                                        #     $ref: "#/definitions/distributed_data/rotation"
+                                        # offset_y_pa:
+                                        #     $ref: "#/definitions/distributed_data/offset"
+                            joint:
+                                type: object
+                                default: {}
+                                description: This is a spanwise joint along the struct, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
+                                properties:
+                                    position:
+                                        type: number
+                                        description: Spanwise position of the segmentation joint.
+                                        unit: none
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.0
+                                    mass:
+                                        type: number
+                                        description: Mass of the joint.
+                                        unit: kg
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
+                                    cost:
+                                        type: number
+                                        description: Cost of the joint.
+                                        unit: USD
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
+                                    bolt:
+                                        type: string
+                                        default: M30
+                                        enum: [M18, M24, M30, M36, M42, M48, M52]
+                                        description: Bolt size for the blade bolted joint
+                                    nonmaterial_cost:
+                                        type: number
+                                        description: Cost of the joint not from materials.
+                                        default: 0.0
+                                        minimum: 0.0
+                                        unit: USD
+                                        maximum: 1.e+6
+                                    reinforcement_layer_ss:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the suction side
+                                        default: joint_reinf_ss
+                                    reinforcement_layer_ps:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the pressure side
+                                        default: joint_reinf_ps
     airfoils:
         type: array
         description: Database of airfoils

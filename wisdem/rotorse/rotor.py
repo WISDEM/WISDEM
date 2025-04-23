@@ -34,8 +34,6 @@ class RotorSEProp(om.Group):
             "GJ",
             "rhoA",
             "rhoJ",
-            "x_ec",
-            "y_ec",
             "xu_spar",
             "xl_spar",
             "yu_spar",
@@ -91,7 +89,8 @@ class RotorSEProp(om.Group):
             promotes=promoteGeom + re_promote_add,
         )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+
+        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and modeling_options:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.add_subsystem(
                 "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
@@ -121,8 +120,6 @@ class RotorSEPerf(om.Group):
             "GJ",
             "rhoA",
             "rhoJ",
-            "x_ec",
-            "y_ec",
             "xu_spar",
             "xl_spar",
             "yu_spar",

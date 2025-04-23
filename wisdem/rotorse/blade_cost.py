@@ -3721,6 +3721,7 @@ class BladeCost(om.ExplicitComponent):
         bom.blade_specs["LE_length"] = blade_length
         bom.blade_specs["length_webs"] = web_length
         bom.blade_specs["blade_length"] = blade_length
+        pultruded_spar_caps = False
         bom.blade_specs["pultruded_spar_caps"] = pultruded_spar_caps
         consumables = bom.compute_consumables()
         name_consumables = consumables.keys()
@@ -3914,6 +3915,7 @@ class StandaloneBladeCost(om.Group):
             Blade(
                 rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                 opt_options=opt_options,
+                vawt_option=False, # VAWT does not have detailed cost model yet
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
@@ -3922,7 +3924,7 @@ class StandaloneBladeCost(om.Group):
 
         self.add_subsystem(
             "high_level_blade_props",
-            ComputeHighLevelBladeProperties(rotorse_options=modeling_options["WISDEM"]["RotorSE"]),
+            ComputeHighLevelBladeProperties(rotorse_options=modeling_options["WISDEM"]["RotorSE"], opt_options=opt_options),
         )
         self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 

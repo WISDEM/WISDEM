@@ -211,6 +211,26 @@ properties:
                                         default: 1.0
                                         minimum: -1.e30
                                         maximum: 1.e30
+                            rotor_radius_vawt:
+                                type: object
+                                default: {}
+                                description: Blade radius as a design variable by scaling (multiplying) the initial value at spline control points along the span, for VAWT only!
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 5
+                                        minimum: 2
+                                        description: Number of equally-spaced control points of the spline parametrizing the radius distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    constant: 
+                                        type: boolean
+                                        description: Should the radius be constant, if True, n_opt does not matter
+                                        default: False
+                                    index_start: *index_start
+                                    index_end: *index_end
+      
                     structure:
                         type: array
                         description: Design variables associated with the internal blade structure
@@ -998,7 +1018,13 @@ properties:
                                 unit: meter
                     chord_slope:
                         type: object
-                        description: Constraint to enforce monothonically decreasing chord after max chord
+                        description: Constraint to enforce monothonically increasing chord to max chord, and then decreasing afterwards
+                        default: {}
+                        properties:
+                            flag: *flag
+                    twist_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing twist to min twist, and then increasing afterwards
                         default: {}
                         properties:
                             flag: *flag
@@ -1485,7 +1511,34 @@ properties:
                     roll_period: *period
                     pitch_period: *period
                     yaw_period: *period
-                    
+            owens:
+                type: object
+                default: {}
+                properties:
+                    fatigue: 
+                        type: object
+                        default: {}
+                        description: Aggregated fatigue of blade and tower
+                        properties:
+                            flag: *flag
+                            upper_bound:
+                                type: number
+                                default: 1
+                    power: 
+                        type: object
+                        default: {}
+                        description: Positive power constraint
+                        properties:
+                            flag: *flag
+                    SF:
+                        type: object
+                        default: {}
+                        description: Aggregated minimun safety factor of blade and tower
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 1
             user:
                 type: array
                 description: User-defined constraints based on full variable name.  Must enter a lower_bound and/or an upper bound for each constraint
@@ -1595,12 +1648,30 @@ properties:
                         description: Max seconds of major iteration runtime for SNOPT
                         default: 0
                         minimum: 0
+                    major_step_limit:
+                        type: integer
+                        description: Max change during a line search in SNOPT
+                        default: 2.0
+                        minimum: 0
+                    function_precision:
+                        type: number
+                        description: A measure of the relative accuracy with which the nonlinear functions can be computed for SNOPT. Usually set based on how many significant digits the function is known to be accurately computed to.
+                        default: 3.7e-11
+                        minimum: 0
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
                         default: 100000
                         minimum: 0
                         maximum: 100000000
+                    hist_file:
+                        type: string
+                        description: File name (saved to the output folder) for saving pyopt_sparse optimization history. Default is None for no output.
+                        default: 'None'
+                    hotstart_file:
+                        type: string
+                        description: File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
+                        default: 'None'
                     solver:
                         type: string
                         description: Optimization driver.

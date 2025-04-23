@@ -6,10 +6,9 @@ from scipy.interpolate import PchipInterpolator
 
 from wisdem.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
-from wisdem.rotorse.rail_transport import RailTransport
 import logging
 logger = logging.getLogger("wisdem/weis")
-
+from wisdem.precomp.precomp_to_beamdyn import pc2bd_K, pc2bd_I
 
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
@@ -155,40 +154,33 @@ class RunPreComp(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_output(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIxx", val=np.zeros(n_span), units="N*m", desc="Coupled axial-lag stiffness with respect to the XE-YE frame")
+        self.add_output("EA_EIyy", val=np.zeros(n_span), units="N*m", desc="Coupled axial-flap stiffness with respect to the XE-YE frame")
+        self.add_output("EIxx_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled lag-torsion stiffness with respect to the XE-YE frame")
+        self.add_output("EIyy_GJ", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-torsion stiffness with respect to the XE-YE frame ")
+        self.add_output("EA_GJ", val=np.zeros(n_span), units="N*m", desc="Coupled axial-torsion stiffness")
         self.add_output(
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
-        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
+        self.add_output("rhoA", val=np.zeros(n_span), units="kg/m", desc="Section mass per unit length")
         self.add_output("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
         self.add_output(
             "Tw_iner",
             val=np.zeros(n_span),
             units="deg",
             desc="Orientation of the section principal inertia axes with respect the blade reference plane",
-        )
-        self.add_output(
-            "x_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)",
-        )
-        self.add_output(
-            "y_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="y-distance to elastic center from point about which above structural properties are computed",
         )
         self.add_output(
             "x_tc",
@@ -762,8 +754,11 @@ class RunPreComp(ExplicitComponent):
             GJ,
             EA,
             EIxy,
-            x_ec,
-            y_ec,
+            EA_EIxx,
+            EA_EIyy,
+            EIxx_GJ,
+            EIyy_GJ,
+            EA_GJ,
             rhoA,
             _,
             rhoJ,
@@ -819,8 +814,11 @@ class RunPreComp(ExplicitComponent):
         outputs["GJ"] = GJ
         outputs["EA"] = EA
         outputs["EIxy"] = EIxy
-        outputs["x_ec"] = x_ec
-        outputs["y_ec"] = y_ec
+        outputs["EA_EIxx"] = EA_EIxx
+        outputs["EA_EIyy"] = EA_EIyy
+        outputs["EIxx_GJ"] = EIxx_GJ
+        outputs["EIyy_GJ"] = EIyy_GJ
+        outputs["EA_GJ"] = EA_GJ
         outputs["rhoA"] = rhoA_joint
         outputs["A"] = area
         outputs["rhoJ"] = rhoJ
@@ -866,6 +864,208 @@ class RunPreComp(ExplicitComponent):
         outputs["mass_all_blades"] = mass_all_blades
         outputs["I_all_blades"] = I_all_blades
 
+class generate_KI(ExplicitComponent):
+
+    def initialize(self):
+        self.options.declare('modeling_options')
+
+    def setup(self):
+        
+        modopt = self.options['modeling_options']
+        rotorse_options  = modopt['WISDEM']['RotorSE']
+        self.n_span = n_span = rotorse_options['n_span']
+
+        self.add_input(
+            "EA", 
+            val=np.zeros(n_span), 
+            units="N", 
+            desc="Axial stiffness at the elastic center, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EIxx",
+            val=np.zeros(n_span),
+            units="N*m**2",
+            desc="Section lag (edgewise) bending stiffness about the XE axis, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input("EIyy",
+            val=np.zeros(n_span),
+            units="N*m**2",
+            desc="Section flap bending stiffness about the YE axis, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EIxy", 
+            val=np.zeros(n_span), 
+            units="N*m**2", 
+            desc="Coupled flap-lag stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EA_EIxx", 
+            val=np.zeros(n_span), 
+            units="N*m", 
+            desc="Coupled axial-lag stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EA_EIyy", 
+            val=np.zeros(n_span), 
+            units="N*m", 
+            desc="Coupled axial-flap stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EIxx_GJ", 
+            val=np.zeros(n_span), 
+            units="N*m**2", 
+            desc="Coupled lag-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EIyy_GJ", 
+            val=np.zeros(n_span), 
+            units="N*m**2", 
+            desc="Coupled flap-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "EA_GJ", 
+            val=np.zeros(n_span), 
+            units="N*m", 
+            desc="Coupled axial-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "GJ",
+            val=np.zeros(n_span),
+            units="N*m**2",
+            desc="Section torsion stiffness at the elastic center, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "rhoA", 
+            val=np.zeros(n_span), 
+            units="kg/m", 
+            desc="Section mass per unit length, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "rhoJ", 
+            val=np.zeros(n_span), 
+            units="kg*m", 
+            desc="polar mass moment of inertia per unit length, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "Tw_iner",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="Orientation of the section principal inertia axes with respect the blade reference plane, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "x_tc",
+            val=np.zeros(n_span),
+            units="m",
+            desc="X-coordinate of the tension-center offset with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "y_tc",
+            val=np.zeros(n_span),
+            units="m",
+            desc="Chordwise offset of the section tension-center with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "x_cg",
+            val=np.zeros(n_span),
+            units="m",
+            desc="X-coordinate of the center-of-mass offset with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "y_cg",
+            val=np.zeros(n_span),
+            units="m",
+            desc="Chordwise offset of the section center of mass with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "flap_iner",
+            val=np.zeros(n_span),
+            units="kg/m",
+            desc="Section flap inertia about the Y_G axis per unit length, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "edge_iner",
+            val=np.zeros(n_span),
+            units="kg/m",
+            desc="Section lag inertia about the X_G axis per unit length, using the convention of WISDEM solver PreComp.",
+        )
+        self.add_input(
+            "theta",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="Aerodynamic twist angle at each section (positive decreases angle of attack)",
+        )
+
+        # Outputs are 6x6 K and I matrices at the center of the windIO reference axes
+        self.add_output(
+            "K",
+            val=np.zeros((n_span,6,6)), 
+            desc="Stiffness matrix at the center of the windIO reference axes."
+        )
+        self.add_output(
+            "I",
+            val=np.zeros((n_span,6,6)), 
+            desc="Inertia matrix at the center of the windIO reference axes."
+        )
+
+    def compute(self, inputs, outputs):
+
+        # Initialize empty 6x6 K and I matrices
+        K = np.zeros((self.n_span,6,6))
+        I = np.zeros((self.n_span,6,6))
+        EA = inputs["EA"]
+        EIxx = inputs["EIxx"]
+        EIyy = inputs["EIyy"]
+        EIxy = inputs["EIxy"]
+        GJ = inputs["GJ"]
+        EA_EIxx = inputs["EA_EIxx"]
+        EA_EIyy = inputs["EA_EIyy"]
+        EIxx_GJ = inputs["EIxx_GJ"]
+        EIyy_GJ = inputs["EIyy_GJ"]
+        EA_GJ = inputs["EA_GJ"]
+        rhoA = inputs["rhoA"]
+        rhoJ = inputs["rhoJ"]
+        Tw_iner = np.deg2rad(inputs["Tw_iner"])
+        x_cg = inputs["x_cg"]
+        y_cg = inputs["y_cg"]
+        x_tc = inputs["x_tc"]
+        y_tc = inputs["y_tc"]
+        edge_iner = inputs["edge_iner"]
+        flap_iner = inputs["flap_iner"]
+        aero_twist =  np.deg2rad(inputs["theta"])
+
+        for i in range(self.n_span):
+            # Build stiffness matrix at the reference axis
+            K[i,:,:] = pc2bd_K(
+                EA[i],
+                EIxx[i],
+                EIyy[i],
+                EIxy[i],
+                EA_EIxx[i],
+                EA_EIyy[i],
+                EIxx_GJ[i],
+                EIyy_GJ[i],
+                EA_GJ[i],
+                GJ[i],
+                rhoJ[i],
+                edge_iner[i],
+                flap_iner[i],
+                x_tc[i],
+                y_tc[i],
+                )
+            # Build inertia matrix at the reference axis
+            I[i,:,:] = pc2bd_I(
+                rhoA[i],
+                edge_iner[i],
+                flap_iner[i],
+                rhoJ[i],
+                x_cg[i],
+                y_cg[i],
+                Tw_iner[i],
+                aero_twist[i],
+                )
+        
+        outputs["K"] = K
+        outputs["I"] = I
 
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
@@ -879,20 +1079,26 @@ class RotorElasticity(Group):
 
         # Get elastic properties by running precomp
         promote_list = [
-            "chord",
-            "theta",
-            "A",
             "EA",
             "EIxx",
             "EIyy",
             "EIxy",
-            "GJ",
+            "GJ",       
+            "EA_EIxx",
+            "EA_EIyy",
+            "EIxx_GJ",
+            "EIyy_GJ",
+            "EA_GJ",
             "rhoA",
             "rhoJ",
-            "x_sc",
-            "y_sc",
-            "pitch_axis",
-            "coord_xy_interp",
+            "Tw_iner",
+            "x_tc",
+            "y_tc",
+            "x_cg",
+            "y_cg",
+            "edge_iner",
+            "flap_iner",
+            "theta",
         ]
         self.add_subsystem(
             "precomp",
@@ -900,15 +1106,12 @@ class RotorElasticity(Group):
             promotes=promote_list
             + [
                 "r",
-                "Tw_iner",
+                "chord",
+                "A",
                 "precurve",
                 "presweep",
-                "x_ec",
-                "y_ec",
-                "x_tc",
-                "y_tc",
-                "x_cg",
-                "y_cg",
+                "pitch_axis",
+                "coord_xy_interp",
                 "sc_ss_mats",
                 "sc_ps_mats",
                 "te_ss_mats",
@@ -928,9 +1131,9 @@ class RotorElasticity(Group):
                 "I_all_blades",
             ],
         )
-        # Check rail transportabiliy
-        if (
-            modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
-            or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
-        ):
-            self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)
+
+        self.add_subsystem(
+            "generate_KI",
+            generate_KI(modeling_options=modeling_options),
+            promotes=promote_list,
+        )

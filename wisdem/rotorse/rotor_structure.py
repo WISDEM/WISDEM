@@ -210,35 +210,23 @@ class RunFrame3DD(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_input(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-axis of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
         self.add_input(
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
         self.add_input("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
         self.add_input("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
-        self.add_input(
-            "x_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)",
-        )
-        self.add_input(
-            "y_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="y-distance to elastic center from point about which above structural properties are computed",
-        )
 
         # outputs
         n_freq2 = int(n_freq / 2)
@@ -352,8 +340,6 @@ class RunFrame3DD(ExplicitComponent):
         y_az = inputs["y_az"]
         z_az = inputs["z_az"]
         theta = inputs["theta"]
-        x_ec = inputs["x_ec"]
-        y_ec = inputs["y_ec"]
         A = inputs["A"]
         rhoA = inputs["rhoA"]
         rhoJ = inputs["rhoJ"]
@@ -372,13 +358,7 @@ class RunFrame3DD(ExplicitComponent):
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
         EIxx_cs, EIyy_cs = EIyy.copy(), EIxx.copy()
-        x_ec_cs, y_ec_cs = y_ec.copy(), x_ec.copy()
         EIxy_cs = EIxy.copy()
-
-        # translate to elastic center
-        EIxx_cs -= y_ec_cs**2 * EA
-        EIyy_cs -= x_ec_cs**2 * EA
-        EIxy_cs -= x_ec_cs * y_ec_cs * EA
 
         # get rotation angle
         alpha = 0.5 * np.arctan2(2 * EIxy_cs, (EIyy_cs - EIxx_cs))
@@ -1146,8 +1126,8 @@ class BladeJointSizing(ExplicitComponent):
         self.nd_span = rotorse_options["nd_span"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        # self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        # self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         self.layer_name = rotorse_options["layer_name"]
         self.layer_mat = rotorse_options["layer_mat"]
 
@@ -1900,8 +1880,6 @@ class RotorStructure(Group):
             "GJ",
             "rhoA",
             "rhoJ",
-            "x_ec",
-            "y_ec",
         ]
         self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
         promoteListStrains = [

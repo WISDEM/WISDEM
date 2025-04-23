@@ -3,13 +3,26 @@ Publications
 
 A list of relevant publications related to WISDEM is provided here. The publications are ranked in chronological order.
 
+- 2024
+  
+   #. Frontin, Cory, Ganesh Vijayakumar, and Pietro Bortolotti. "Aerodynamic and production comparison of wind farms with downwind versus conventional upwind turbines." In Journal of Physics: Conference Series, vol. 2767, no. 9, p. 092008. IOP Publishing, 2024. DOI: `10.1088/1742-6596/2767/9/092008 <https://doi.org/10.1088/1742-6596/2767/9/092008>`_
+   #. Thomas, Jared J., Cameron Irmas, Genevieve Starke, Zachary Tully, Elenya Grant, Nicholas Riccobono, Kazunori Nagasawa, and Christopher J. Bay. "Wind turbine design optimization for hydrogen production." In IET Conference Proceedings CP877, vol. 2024, no. 2, pp. 177-184. Stevenage, UK: The Institution of Engineering and Technology, 2024. DOI: `10.1049/icp.2024.1835 <https://doi.org/10.1049/icp.2024.1835>`_
+   #. Zahle, Frederik, Thanasis Barlas, Kenneth Lonbaek, Pietro Bortolotti, Daniel Zalkind, Lu Wang, Casper Labuschagne, Latha Sethuraman, and Garrett Barter. Definition of the IEA Wind 22-Megawatt Offshore Reference Wind Turbine. No. NREL/TP-5000-88593. National Renewable Energy Laboratory (NREL), Golden, CO (United States), 2024. DOI: `10.11581/DTU.00000317 <https://doi.org/10.11581/DTU.00000317>`_
+
+- 2023
+  
+   #. Barter, Garrett E., Latha Sethuraman, Pietro Bortolotti, Jonathan Keller, and David A. Torrey. "Beyond 15 MW: A cost of energy perspective on the next generation of drivetrain technologies for offshore wind turbines." Applied Energy 344 (2023): 121272. DOI: `10.1016/j.apenergy.2023.121272 <https://doi.org/10.1016/j.apenergy.2023.121272>`_
+   #. Sethuraman, Latha, Garrett Barter, Pietro Bortolotti, Jonathan Keller, and David A. Torrey. "Optimization and comparison of modern offshore wind turbine generators using GeneratorSE 2.0." In 2023 IEEE International Electric Machines & Drives Conference (IEMDC), pp. 1-7. IEEE, 2023. DOI: `10.1109/IEMDC55163.2023.10239029 <https://doi.org/10.1109/IEMDC55163.2023.10239029>`_
+  
 - 2022
+  
    #. Jasa, John, Bortolotti, Pietro, Zalkind, Daniel, Barter, Garrett. "Effectively using multifidelity optimization for wind turbine design" Wind Energ. Sci., 7, 991–1006, 2022 DOI: `10.5194/wes-7-991-2022 <https://doi.org/10.5194/wes-7-991-2022>`_
    #. Jasa, John, Glaws, Andrew, Bortolotti, Pietro, Vijayakumar, Ganesh, and Barter, Garrett. 2022 "Wind turbine blade design with airfoil shape control using invertible neural networks" J. Phys.: Conf. Ser. 2265 042052 DOI: `10.1088/1742-6596/2265/4/042052 <https://doi.org/10.1088/1742-6596/2265/4/042052>`_
    #. Anderson, Benjamin, Bortolotti, Pietro, and Johnson, Nick. 2022. "Development of an open-source segmented blade design tool". DOI: `10.1088/1742-6596/2265/3/032023 <https://doi.org/10.1088/1742-6596/2265/3/032023>`_
    #. Bortolotti, Pietro, Bay, Christopher, Barter, Garrett, Gaertner, Evan, Dykes, Katherine, McWilliam, Michael, Friis-Moller, Mikkel, Molgaard Pedersen, Mads, and Zahle, Frederik. 2022. "System Modeling Frameworks for Wind Turbines and Plants: Review and Requirements Specifications". United States. DOI: `10.2172/1868328 <https://doi.org/10.2172/1868328>`_
 
 - 2021
+  
    #. Bortolotti, Pietro, Johnson, Nick, Abbas, Nikhar J, Anderson, Evan, Camarena, Ernesto, Paquette, Josh. "Land-based wind turbines with flexible rail transportable blades–Part I: Conceptual design and aeroservoelastic performance" Wind Energ. Sci., 6, 1277–1290, 2021
    DOI: `10.5194/wes-6-1277-2021 <https://doi.org/10.5194/wes-6-1277-2021>`_
    #. Bortolotti, Pietro, Ivanov, Hristo, Johnson, Nick, Barter, Garrett, Veers, Paul, Namura, Nobuo. "Challenges, opportunities, and a research roadmap for downwind wind turbines" Wind Energy 2022;25:354–367. DOI: `10.1002/we.2676 <https://doi.org/10.1002/we.2676>`_

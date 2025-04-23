@@ -460,9 +460,12 @@ class TowerModal(om.ExplicitComponent):
         cg_add = np.c_[inputs["platform_total_center_of_mass"], inputs["rna_cg"]]
         add_gravity = False
         mID = np.array([1, n - 1], dtype=np.int_)
-        m_fact = inputs["platform_added_mass"].max() / inputs["platform_mass"]
-        m_add = np.r_[(1 + m_fact) * inputs["platform_mass"], inputs["rna_mass"]].flatten()
-        I_add = np.c_[(1 + m_fact) * inputs["platform_I_total"], inputs["rna_I"]]
+        # Scale the physical mass with the added mass
+        m_fact1 = (inputs["platform_added_mass"][:3] / inputs["platform_mass"][0]).max()
+        m_add = np.r_[(1 + m_fact1) * inputs["platform_mass"], inputs["rna_mass"]].flatten()
+        # Scale the physical moment of inertia with the added mass
+        m_fact2 = (inputs["platform_added_mass"][3:] / inputs["platform_I_total"][:3]).max()
+        I_add = np.c_[(1 + m_fact2) * inputs["platform_I_total"], inputs["rna_I"]]
         myframe.changeExtraNodeMass(
             mID,
             m_add,

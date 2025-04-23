@@ -24,7 +24,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
         environment = wt_init["environment"]
-        blade_flag = modeling_options["flags"]["blade"]
+        blade_flag = modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"])
         wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
         environment = {}
@@ -73,6 +73,12 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         wt_opt = assign_tower_values(wt_opt, modeling_options, tower)
     else:
         tower = {}
+
+    if modeling_options["flags"]["struts"]:
+        struts = wt_init["components"]["struts"]
+        wt_opt = assign_struts_values(wt_opt, modeling_options, struts)
+    else:
+        struts = {}
 
     if modeling_options["flags"]["monopile"]:
         monopile = wt_init["components"]["monopile"]
@@ -536,13 +542,13 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
 
         # Fatigue params
-        if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+        if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
             wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
 
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+        elif layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
             k = wt_opt["materials.name"].index(layer_mat[i])
             wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
             wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
@@ -985,6 +991,63 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     return wt_opt
 
 
+def assign_struts_values(wt_opt, modeling_options, struts):
+    strut_options = modeling_options["OWENS"]["struts"]
+    n_span_strut = strut_options["n_af_span"]
+    n_layers_strut = strut_options["n_layers"]
+    n_webs_strut = strut_options["n_webs"]
+
+    wt_opt["struts.nd_span"] = struts["outer_shape_bem"]["airfoil_position"]["grid"]
+    wt_opt["struts.chord"] = struts["outer_shape_bem"]["chord"]["values"]
+    wt_opt["struts.twist"] = struts["outer_shape_bem"]["twist"]["values"]
+    wt_opt["struts.pitch_axis"] = struts["outer_shape_bem"]["pitch_axis"]["values"]
+    wt_opt["struts.reference_axis"][:,0] = struts["outer_shape_bem"]["reference_axis"]["x"]["values"]
+    wt_opt["struts.reference_axis"][:,1] = struts["outer_shape_bem"]["reference_axis"]["y"]["values"]
+    wt_opt["struts.reference_axis"][:,2] = struts["outer_shape_bem"]["reference_axis"]["z"]["values"]
+    # YL: internal_structure_2d_fem also has reference axis field but owens does not seem to use it
+
+
+    # Assign layer values
+    layer_name = n_layers_strut * [""]
+    layer_mat = n_layers_strut * [""]
+    thickness = np.zeros((n_layers_strut, n_span_strut))
+    fiber_orientation = np.zeros((n_layers_strut, n_span_strut))
+    layer_start_nd_arc = np.zeros((n_layers_strut, n_span_strut))
+    layer_end_nd_arc = np.zeros((n_layers_strut, n_span_strut))
+    
+
+    for i in range(n_layers_strut):
+        layer_name[i] = struts["internal_structure_2d_fem"]["layers"][i]["name"]
+        layer_mat[i] = struts["internal_structure_2d_fem"]["layers"][i]["material"]
+        thickness[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"]
+        fiber_orientation[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"]["values"]
+        layer_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"]["values"]
+        layer_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"]["values"]
+    
+    wt_opt["struts.layer_material"] = layer_mat
+    wt_opt["struts.layer_name"] = layer_name
+    wt_opt["struts.layer_thickness"] = thickness
+    wt_opt["struts.layer_fiber_orientation"] = fiber_orientation
+    wt_opt["struts.layer_start_nd_arc"] = layer_start_nd_arc
+    wt_opt["struts.layer_end_nd_arc"] = layer_end_nd_arc
+
+    # Assign web values
+    web_name = n_webs_strut * [""]
+    web_start_nd_arc = np.zeros((n_webs_strut, n_span_strut))
+    web_end_nd_arc = np.zeros((n_webs_strut, n_span_strut))
+
+    for i in range(n_webs_strut):
+        web_name[i] = struts["internal_structure_2d_fem"]["webs"][i]["name"]
+        web_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"]["values"]
+        web_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"]["values"]
+
+    wt_opt["struts.web_name"] = web_name
+    wt_opt["struts.web_start_nd_arc"] = web_start_nd_arc
+    wt_opt["struts.web_end_nd_arc"] = web_end_nd_arc
+
+    return wt_opt
+
+
 def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
     n_height = modeling_options["WISDEM"]["FixedBottomSE"]["n_height"]  # Number of points along monopile height
@@ -1107,9 +1170,14 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         usr_defined_flag = {}
         for coeff in usr_defined_coeffs:
             usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
-            coeff_length = len(floating["members"][i][coeff])
-            if usr_defined_flag[coeff]:
-                assert grid_length == coeff_length, f"Users define {coeff} of {floating['members'][i]['name']}, but the length is different from grid length ({grid_length}). Please correct."
+            if isinstance(floating["members"][i][coeff], list):
+                coeff_length = len(floating["members"][i][coeff])
+                if usr_defined_flag[coeff]:
+                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+            else: 
+                # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
+                floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
+
 
         diameter_assigned = False
         for j, kgrp in enumerate(float_opt["members"]["groups"]):
@@ -1707,9 +1775,9 @@ def assign_material_values(wt_opt, modeling_options, materials):
         if "Xy" in materials[i]:
             sigma_y[i] = materials[i]["Xy"]
         if "m" in materials[i]:
-            m[i] = materials[i]["m"]
+            m[i] = materials[i]["m"] # This does not work with array m
         if "A" in materials[i]:
-            A[i] = materials[i]["A"]
+            A[i] = materials[i]["A"] # This does not work with array A
         if A[i] == 0.0:
             A[i] = np.r_[Xt[i, :], Xc[i, :]].max()
 

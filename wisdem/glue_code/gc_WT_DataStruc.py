@@ -177,7 +177,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             "rotor_diameter_user",
             val=0.0,
             units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+            desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         conf_ivc.add_output(
             "hub_height_user",
@@ -216,6 +216,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 Blade(
                     rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                     opt_options=opt_options,
+                    vawt_option=modeling_options["flags"]["vawt"],
                 ),
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
@@ -228,6 +229,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("airfoils.cm", "blade.interp_airfoils.cm")
 
             self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
+            self.connect("hub.cone", "blade.high_level_blade_props.cone")
             self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
             self.connect("configuration.n_blades", "blade.high_level_blade_props.n_blades")
 
@@ -572,6 +574,30 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
+        # VAWT strut inputs
+        if modeling_options["flags"]["struts"]:
+            struts = self.add_subsystem("struts", om.IndepVarComp())
+            strut_options = modeling_options["OWENS"]["struts"]
+            n_span_strut = strut_options["n_af_span"]
+            n_webs_strut = strut_options["n_webs"]
+            n_layers_strut = strut_options["n_layers"]
+            struts.add_output("nd_span", val=np.linspace(0, 1, n_span_strut))
+            struts.add_discrete_output("airfoil_labels", val=n_span_strut*[""])
+            struts.add_output("twist", val=np.zeros(n_span_strut))
+            struts.add_output("chord", val=np.zeros(n_span_strut))
+            struts.add_output("pitch_axis", val=np.zeros(n_span_strut))
+            struts.add_output("reference_axis", val=np.zeros([n_span_strut,3]))
+            struts.add_output("layer_start_nd_arc", val=np.zeros([n_layers_strut, n_span_strut]))
+            struts.add_output("layer_end_nd_arc", val=np.zeros([n_layers_strut, n_span_strut]))
+            struts.add_output("layer_thickness", val=np.zeros([n_layers_strut, n_span_strut]))
+            struts.add_output("layer_fiber_orientation", val=np.zeros([n_layers_strut, n_span_strut]))
+            struts.add_discrete_output("layer_material", val=n_layers_strut*[""])
+            struts.add_discrete_output("layer_name", val=n_layers_strut*[""])
+            struts.add_discrete_output("web_name", val=n_webs_strut*[""])
+            struts.add_output("web_start_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
+            struts.add_output("web_end_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
+
+
         # Balance of station inputs
         if modeling_options["flags"]["bos"]:
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
@@ -650,7 +676,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("blade.interp_airfoils.cl_interp", "af_3d.cl")
                 self.connect("blade.interp_airfoils.cd_interp", "af_3d.cd")
             self.connect("blade.interp_airfoils.cm_interp", "af_3d.cm")
-            self.connect("blade.high_level_blade_props.rotor_radius", "af_3d.rotor_radius")
+            self.connect("blade.high_level_blade_props.rotor_diameter", "af_3d.rotor_diameter")
             self.connect("blade.high_level_blade_props.r_blade", "af_3d.r_blade")
             self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
@@ -671,11 +697,13 @@ class Blade(om.Group):
     def initialize(self):
         self.options.declare("rotorse_options")
         self.options.declare("opt_options")
+        self.options.declare("vawt_option")
 
     def setup(self):
         # Options
         rotorse_options = self.options["rotorse_options"]
         opt_options = self.options["opt_options"]
+        vawt_flag = self.options["vawt_option"]
 
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
@@ -706,6 +734,23 @@ class Blade(om.Group):
                 units="m",
                 val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
             )
+        # inputs and outputs for vawt only
+        if vawt_flag:
+            opt_var.add_output(
+                "s_opt_radius", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"])
+            )
+            if opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["constant"]:
+                opt_var.add_output(
+                    "rotor_radius_vawt",
+                    units="m",
+                    val=1.0,
+                )
+            else:
+                opt_var.add_output(
+                    "rotor_radius_vawt",
+                    units="m",
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"]),
+                )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -735,14 +780,18 @@ class Blade(om.Group):
         self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
-        self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
+        self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options, opt_options=opt_options))
+        self.connect("outer_shape_bem.s", "high_level_blade_props.s")
+        if vawt_flag:
+            self.connect("opt_var.s_opt_radius", "high_level_blade_props.s_opt_radius")
+            self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
         self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
         self.connect("high_level_blade_props.r_blade", "compute_reynolds.r_blade")
-        self.connect("high_level_blade_props.rotor_radius", "compute_reynolds.rotor_radius")
+        self.connect("high_level_blade_props.rotor_diameter", "compute_reynolds.rotor_diameter")
         
         if rotorse_options["inn_af"]:
             self.add_subsystem(
@@ -806,7 +855,7 @@ class Blade(om.Group):
 
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
-        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original") # YL: ps does not use layer thickness original maybe we can remove this?
 
         # Fatigue specific parameters
         fat_var = om.IndepVarComp()
@@ -1163,8 +1212,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Spanwise interpolation of the profile coordinates with a pchip
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
-        profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
-        coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        if len(r_thick_unique)>1: # Only interpolate when you have at least two different airfoils
+            profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
+            coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
         for i in range(self.n_span):
             # Correction to move the leading edge (min x point) to (0,0)
@@ -1181,17 +1231,23 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         chord = inputs["chord"]
 
         # Spanwise interpolation of the airfoil polars with a pchip
-        cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
-        cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])
-        cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
-        cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        if len(r_thick_unique)>1: # Only interpolate when you have at least two different airfoils
+            cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
+            cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+            cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])
+            cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+            cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
+            cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
-        outputs["coord_xy_interp"] = coord_xy_interp
-        outputs["cl_interp"] = cl_interp
-        outputs["cd_interp"] = cd_interp
-        outputs["cm_interp"] = cm_interp
+            outputs["coord_xy_interp"] = coord_xy_interp
+            outputs["cl_interp"] = cl_interp
+            outputs["cd_interp"] = cd_interp
+            outputs["cm_interp"] = cm_interp
+        else:
+            outputs["coord_xy_interp"] = coord_xy_used[indices, :, :]
+            outputs["cl_interp"] = cl_used[indices, :, :, :]
+            outputs["cd_interp"] = cd_used[indices, :, :, :]
+            outputs["cm_interp"] = cm_used[indices, :, :, :]
 
 
 class Compute_Coord_XY_Dim(om.ExplicitComponent):
@@ -1370,7 +1426,7 @@ class INN_Airfoils(om.ExplicitComponent):
             "rotor_diameter",
             val=0.0,
             units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+            desc="Diameter of the rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input(
             "z",
@@ -3209,11 +3265,27 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
     # Openmdao component that computes rotor quantities, such as the rotor coordinate of the blade stations
     def initialize(self):
         self.options.declare("rotorse_options")
+        self.options.declare("opt_options")
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
+        # YL: Added opt options now bc need to scale the ref axis according to rotor_radius_vawt
+        self.opt_options = self.options["opt_options"]
 
         n_span = rotorse_options["n_span"]
+        self.n_opt_radius = n_opt_radius = self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"]
+
+        self.add_input(
+            "s",
+            val=np.zeros(n_span),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
+        )
+
+        self.add_input(
+            "s_opt_radius",
+            val=np.zeros(n_opt_radius),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade radius - for VAWT)",
+        )
 
         self.add_input(
             "blade_ref_axis_user",
@@ -3225,7 +3297,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             "rotor_diameter_user",
             val=0.0,
             units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+            desc="Diameter of the rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input(
             "hub_radius",
@@ -3234,15 +3306,38 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
         self.add_input(
+            "cone",
+            val=0.0,
+            units="rad",
+            desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.",
+        )
+        self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
+
+        rotor_radius_vawt_opt = self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]
+        if rotor_radius_vawt_opt:
+            if rotor_radius_vawt_opt["constant"]:
+                self.add_input(
+                    "rotor_radius_vawt",
+                    val=1.0,
+                    units="m",
+                    desc="Constant radius distribution being optimized at the n_opt locations"
+                )
+            else:
+                self.add_input(
+                    "rotor_radius_vawt",
+                    val=np.ones(n_opt_radius),
+                    units="m",
+                    desc="1D array of the radius distribution being optimized at the n_opt locations"
+                )
 
         self.add_output(
             "rotor_diameter",
             val=0.0,
             units="m",
-            desc="Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.",
+            desc="Scalar of the rotor diameter, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_output(
             "r_blade",
@@ -3251,10 +3346,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
         )
         self.add_output(
-            "rotor_radius",
+            "Rtip",
             val=0.0,
             units="m",
-            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+            desc="Distance between rotor center and blade tip along z axis of the blade root c.s.",
         )
         self.add_output(
             "blade_ref_axis",
@@ -3284,20 +3379,32 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["blade_ref_axis"][:, 2] = (
                 inputs["blade_ref_axis_user"][:, 2]
                 * inputs["rotor_diameter_user"]
-                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0)
+                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(inputs["cone"][0]))
             )
         # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
         else:
-            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
+            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(inputs["cone"][0])
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
+
+        if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["flag"] and np.any(inputs["rotor_radius_vawt"]>0):
+            # update the reference axis location
+            spline = PchipInterpolator
+            if self.opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["constant"]:
+                outputs["blade_ref_axis"][:, 0] = inputs["rotor_radius_vawt"]
+                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
+            else:
+                x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt"])
+                outputs["blade_ref_axis"][:, 0] = x_spline(inputs["s"])
+                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
+
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
-        outputs["rotor_radius"] = outputs["r_blade"][-1]
+        outputs["Rtip"] = outputs["r_blade"][-1]
         outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
         outputs["prebend"] = outputs["blade_ref_axis"][:, 0]
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
-        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_radius"]**2.)
+        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
         outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
@@ -3326,7 +3433,7 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
             "rotor_diameter",
             val=0.0,
             units="m",
-            desc="Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.",
+            desc="Scalar of the rotor diameter, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
 
         self.add_output(
@@ -3422,10 +3529,10 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
         )
         self.add_input(
-            "rotor_radius",
+            "rotor_diameter",
             val=0.0,
             units="m",
-            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+            desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input(
             "r_thick",
@@ -3471,7 +3578,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                             cm=inputs["cm"][i, :, j, k],
                         )
                         polar3d = inn_polar.correction3D(
-                            inputs["r_blade"][i] / inputs["rotor_radius"],
+                            inputs["r_blade"][i] / (inputs["rotor_diameter"][0] / 2),
                             inputs["chord"][i] / inputs["r_blade"][i],
                             inputs["rated_TSR"],
                         )

@@ -169,10 +169,6 @@ properties:
                         minimum: 0.
                         maximum: 1.
                         description: Minimum airfoil thickness supported by the INN for airfoil design
-                    rail_transport:
-                        type: boolean
-                        default: False
-                        description: Flag switching on and off the rail transport module of RotorSE
                     frame3dd: &frame3dd # adding first frame3dd option here
                         type: object
                         description: Set of Frame3DD options used for structural analysis
@@ -401,7 +397,7 @@ properties:
             Loading:
                 type: object
                 # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
-                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
+                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only analysis
                 properties:
                     mass:
                         type: number
@@ -430,7 +426,7 @@ properties:
                         description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
                     loads:
                         type: array
-                        default: {}
+                        default: []
                         description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
                         items:
                             type: object
@@ -460,3 +456,22 @@ properties:
                                     description: Applied wind reference velocity, if necessary
                                     default: 0.0
                                     unit: meter
+
+
+            OWENS:
+                type: object
+                default: {}
+                properties:
+                    flag: *flag
+                    n_aoa:
+                        type: integer
+                        default: 200
+                        description: Number of angles of attack in a common grid to define polars
+                    n_xy:
+                        type: integer
+                        default: 200
+                        description: Number of coordinate point used to define airfoils #GB: This should depend on the airfoil. We are not resampling if the airfoils come inwith different numbers of points.  PreComp doesn't care if different airfoils have different numbers of points, right?
+                    n_span:
+                        type: integer
+                        default: 30
+                        description: Number of spanwise stations in a common grid used to define strut properties
