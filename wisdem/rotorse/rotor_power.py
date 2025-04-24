@@ -507,10 +507,11 @@ class ComputePowerCurve(ExplicitComponent):
             else:
                 # Just search over speed
                 pitch_rated = min_pitch
+                i_Uhub = np.max([0, i - 2])
                 try:
                     U_rated = brentq(
                         lambda x: const_Urated([0.0, x]),
-                        Uhub[i - 2],
+                        Uhub[i_Uhub],
                         Uhub[i + 2],
                         xtol=1e-1 * TOL,
                         rtol=1e-2 * TOL,
@@ -520,7 +521,7 @@ class ComputePowerCurve(ExplicitComponent):
                 except ValueError:
                     U_rated = minimize_scalar(
                         lambda x: np.abs(const_Urated([0.0, x])),
-                        bounds=[Uhub[i - 2], Uhub[i + 2]],
+                        bounds=[Uhub[i_Uhub], Uhub[i + 2]],
                         method="bounded",
                         options={"disp": False, "xatol": TOL, "maxiter": 40},
                     )["x"]
@@ -563,7 +564,8 @@ class ComputePowerCurve(ExplicitComponent):
 
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
-                bnds = [[min_pitch, 15.0], [Uhub[i - 2] + TOL, Uhub[-1] - TOL]]
+                i_Uhub = np.max([0, i - 2])
+                bnds = [[min_pitch, 15.0], [Uhub[i_Uhub] + TOL, Uhub[-1] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated_Tpeak
