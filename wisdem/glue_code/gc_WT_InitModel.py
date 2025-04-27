@@ -838,13 +838,12 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
 
 
 def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
-    if flags["nacelle"] or flags["blade"]:
-        # Common direct and geared
-        wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
-        wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
-        wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
-        wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
-        wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
+    # Common direct and geared
+    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
+    wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
+    wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
+    wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
+    wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
         
     if flags["nacelle"]:
         wt_opt["nacelle.distance_hub_mb"] = nacelle["drivetrain"]["distance_hub_mb"]
@@ -942,6 +941,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
         MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["elastic_properties_mb"]["system_inertia_tt"])
         MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["elastic_properties_mb"]["system_inertia"])
+        wt_opt["drivese.rna_mass"] = wt_opt["drivese.above_yaw_mass"] + wt_opt["drivese.yaw_mass"]
+        wt_opt["drivese.rna_cm"]   = wt_opt["drivese.above_yaw_cm"]
+        wt_opt["drivese.rna_I_TT"] = wt_opt["drivese.above_yaw_I_TT"]
 
     return wt_opt
 

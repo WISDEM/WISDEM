@@ -272,6 +272,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             drivese_ivc.add_output("above_yaw_I", np.zeros(6), units="kg*m**2")
             drivese_ivc.add_output("above_yaw_I_TT", np.zeros(6), units="kg*m**2")
             drivese_ivc.add_output('yaw_mass', val=0.0, units='kg')
+            drivese_ivc.add_output("rna_mass", 0.0, units="kg")
+            drivese_ivc.add_output("rna_cm", np.zeros(3), units="m")
+            drivese_ivc.add_output("rna_I_TT", np.zeros(6), units="kg*m**2")
             drivese_ivc.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
             self.add_subsystem("drivese", drivese_ivc)
              
@@ -431,7 +434,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
             self.connect("high_level_tower_props.tower_ref_axis", "tower_grid.ref_axis")
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
             self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
 
 
