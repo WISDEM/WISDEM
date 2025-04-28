@@ -1172,11 +1172,10 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["nacelle"]["drivetrain"]["hss_material"] = wt_opt["nacelle.hss_material"]
 
         # Update generator
-        if self.modeling_options["flags"]["nacelle"]:
+        if self.modeling_options["flags"]["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]:
             self.wt_init["components"]["nacelle"]["generator"]["generator_length"] = float(wt_opt["generator.L_generator"][0])
-            if self.modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
-                self.wt_init["components"]["nacelle"]["generator"]["generator_mass_user"] = float(wt_opt["generator.generator_mass_user"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["generator_radius_user"] = float(wt_opt["generator.generator_radius_user"][0])
+            self.wt_init["components"]["nacelle"]["generator"]["generator_mass_user"] = float(wt_opt["generator.generator_mass_user"][0])
+            self.wt_init["components"]["nacelle"]["generator"]["generator_radius_user"] = float(wt_opt["generator.generator_radius_user"][0])
             if not self.modeling_options["flags"]["generator"]:
                 self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["grid"] = wt_opt["generator.generator_efficiency_user"][:, 0].tolist()
                 self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["values"] = wt_opt["generator.generator_efficiency_user"][:, 1].tolist()
