@@ -247,9 +247,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                                           user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"]))
 
         # Nacelle inputs
-        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
+        user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_elastic"]
+        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"] or user_elastic:
             self.add_subsystem("nacelle", Nacelle(flags=modeling_options["flags"],
-                                                  user_elastic=modeling_options["WISDEM"]["DriveSE"]["user_elastic"],
+                                                  user_elastic=user_elastic,
                                                   direct_drive=modeling_options["WISDEM"]["DriveSE"]["direct"]))
 
         # Generator inputs
