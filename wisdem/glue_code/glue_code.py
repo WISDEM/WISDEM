@@ -663,9 +663,10 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "fixedse.monopile.rna_F")
                 self.connect("drivese.base_M", "fixedse.monopile.rna_M")
-            self.connect("drivese.rna_I_TT", "fixedse.rna_I")
-            self.connect("drivese.rna_cm", "fixedse.rna_cg")
-            self.connect("drivese.rna_mass", "fixedse.rna_mass")
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+                self.connect("drivese.rna_I_TT", "fixedse.rna_I")
+                self.connect("drivese.rna_cm", "fixedse.rna_cg")
+                self.connect("drivese.rna_mass", "fixedse.rna_mass")
 
         if modeling_options["flags"]["jacket"]:
             self.connect("jacket.transition_piece_cost", "fixedse.transition_piece_cost")
@@ -722,9 +723,10 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
-            self.connect("drivese.rna_I_TT", "floatingse.rna_I")
-            self.connect("drivese.rna_cm", "floatingse.rna_cg")
-            self.connect("drivese.rna_mass", "floatingse.rna_mass")
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
+                self.connect("drivese.rna_cm", "floatingse.rna_cg")
+                self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
             # Individual member connections
             n_member = modeling_options["floating"]["members"]["n_members"]
