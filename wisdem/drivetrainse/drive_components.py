@@ -450,11 +450,11 @@ class YawSystem(om.ExplicitComponent):
         Tower top outer diameter
     rho : float, [kg/m**3]
         material density
+    yaw_mass_user : float, [kg]
+        user override mass value
 
     Returns
     -------
-    yaw_mass : float, [kg]
-        overall component mass
     yaw_cm : numpy array[3], [m]
         center of mass of the component in [x,y,z] for an arbitrary coordinate system
     yaw_I : numpy array[3], [kg*m**2]
@@ -467,6 +467,7 @@ class YawSystem(om.ExplicitComponent):
         self.add_input("rotor_diameter", 0.0, units="m")
         self.add_input("D_top", 0.0, units="m")
         self.add_input("rho", 0.0, units="kg/m**3")
+        self.add_input("yaw_mass_user", 0.0, units="kg")
 
         self.add_output("yaw_mass", 0.0, units="kg")
         self.add_output("yaw_cm", np.zeros(3), units="m")
@@ -477,6 +478,7 @@ class YawSystem(om.ExplicitComponent):
         D_rotor = float(inputs["rotor_diameter"][0])
         D_top = float(inputs["D_top"][0])
         rho = float(inputs["rho"][0])
+        m_yaw_usr = float(inputs["yaw_mass_user"][0])
 
         # Estimate the number of yaw motors (borrowed from old DriveSE utilities)
         n_motors = 2 * np.ceil(D_rotor / 30.0) - 2
@@ -488,7 +490,7 @@ class YawSystem(om.ExplicitComponent):
         m_frictionPlate = rho * np.pi * D_top * (0.1 * D_top) * (1e-3 * D_rotor)
 
         # Total mass estimate
-        outputs["yaw_mass"] = m_frictionPlate + n_motors * m_motor
+        outputs["yaw_mass"] = m_yaw_usr if m_yaw_usr > 0.0 else m_frictionPlate + n_motors * m_motor
 
         # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
         outputs["yaw_cm"] = np.zeros(3)
@@ -847,6 +849,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("cover_I", np.zeros(3), units="m")
         self.add_input("x_bedplate", val=np.zeros(12), units="m")
         self.add_input("constr_height", 0.0, units="m")
+        self.add_input("above_yaw_mass_user", 0.0, units="kg")
 
         self.add_output("shaft_start", np.zeros(3), units="m")
         self.add_output("other_mass", 0.0, units="kg")
@@ -944,6 +947,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_i = inputs[c + "_I"]
             I_cm_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
+        m_nac_usr = float(inputs["above_yaw_mass_user"][0])
+        coeff = 1.0 if m_nac_usr == 0.0 else m_nac_usr / m_nac
+        m_nac *= coeff
+        I_nac *= coeff
         outputs["above_yaw_mass"] = copy.copy(m_nac)
         outputs["above_yaw_cm"] = R = cm_nac.copy()
         outputs["above_yaw_I"] = I_nac.copy()
@@ -1106,7 +1113,7 @@ class RNA_Adder(om.ExplicitComponent):
         hub_cm = shaft0 + (L_drive + hub_cm_in) * cm_array
         blades_cm = shaft0 + (L_drive + hub_cm_in + blades_cm_in) * cm_array
         outputs["rna_cm"] = (hub_mass * hub_cm +
-                             blades_mass * blades_cm + 
+                             blades_mass * blades_cm +
                              nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
 
         # rna I
@@ -1119,7 +1126,7 @@ class RNA_Adder(om.ExplicitComponent):
 
         R = blades_cm
         blades_I_TT = blades_I + blades_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        
+
         outputs["rna_I_TT"] = util.unassembleI(hub_I_TT + blades_I_TT + nac_I_TT)
 
 

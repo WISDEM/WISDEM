@@ -1529,9 +1529,7 @@ class RotorElasticity(Group):
             "flap_iner",
         ]
 
-        if modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
-            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        
+        if modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("generate_KI", assemble_KI(modeling_options=modeling_options), promotes=['*'])
             self.add_subsystem("precomp", KI_to_Elastic(modeling_options=modeling_options), promotes=['*'])
 

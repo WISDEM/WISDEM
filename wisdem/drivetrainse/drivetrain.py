@@ -196,7 +196,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem("bear2", dc.MainBearing())
         self.add_subsystem("brake", dc.Brake(direct_drive=direct), promotes=["*"])
         self.add_subsystem("elec", dc.Electronics(), promotes=["*"])
-        self.add_subsystem("yaw", dc.YawSystem(), promotes=["yaw_mass", "yaw_I", "yaw_cm", "rotor_diameter", "D_top"])
+        self.add_subsystem("yaw", dc.YawSystem(), promotes=["yaw_mass", "yaw_mass_user", "yaw_I", "yaw_cm", "rotor_diameter", "D_top"])
 
         # Generator
         self.add_subsystem("rpm", dc.RPM_Input(n_pc=n_pc), promotes=["*"])

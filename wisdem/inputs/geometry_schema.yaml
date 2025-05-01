@@ -506,6 +506,12 @@ properties:
                         units: kg
                         description: Override regular regression-based calculation of pitch system mass with this value
                         minimum: 0.0
+                    hub_system_mass_user:
+                        type: number
+                        description: User input override of full hub system mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -811,13 +817,37 @@ properties:
                                     uniqueItems: false
                                     minimum: 0
                                     maximum: 6
+                            yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of yaw drive mass with this value
+                                minimum: 0.0
+                            above_yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
+                                minimum: 0.0
+                            spring_constant_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain spring constant with this value
+                                minimum: 0.0
+                            damping_coefficient_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain damping coefficient with this value
+                                minimum: 0.0
                     generator:
                         properties:
-                            mass_coefficient:
+                            generator_mass_user:
                                 type: number
                                 default: 0.0
                                 units: none
-                                description: When not doing a detailed generator design, use a simplified approach to generator scaling. This input allows for overriding of the regression-based scaling coefficient to obtain generator mass
+                                description: Override regular calculation of generator mass (bottom-up or regression-based) with this value
                                 minimum: 0.0
                             generator_length:
                                 type: number

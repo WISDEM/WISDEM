@@ -82,7 +82,7 @@ class RotorSEProp(om.Group):
 
         re_promote_add = ["r", "blade_mass", "blade_span_cg", "blade_moment_of_inertia",
                           "mass_all_blades", "I_all_blades"]
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["user_elastic"]["blade"]:
             re_promote_add = re_promote_add + ["chord", "theta", "precurve", "presweep"]
         self.add_subsystem(
             "re",
@@ -90,17 +90,17 @@ class RotorSEProp(om.Group):
             promotes=promoteGeom + re_promote_add,
         )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
             # Can't estimate blade cost with user defined blade elastic properties
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.add_subsystem(
                 "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
             )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] or modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] or modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
         
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
@@ -175,7 +175,7 @@ class RotorSEPerf(om.Group):
 
         # promotion list for RotorStructure
         promoteRS = ["precurveTip", "presweepTip", "blade_span_cg"]
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["user_elastic"]["blade"]:
             # Can't promote s when designConstraint component is not added
             promoteRS = promoteRS+["s"]
 
@@ -185,7 +185,7 @@ class RotorSEPerf(om.Group):
             promotes=promoteGeom + promoteCC + promoteRS,
         )
 
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
             n_span_out = (
@@ -231,7 +231,7 @@ class RotorSEPerf(om.Group):
         self.connect(
             "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega"]
         )
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["user_elastic"]["blade"]:
             # constr is not available when user defined blade elastic properties are used
             # TODO YL: move it back when constr is available for user defined blade elastic properties
             self.connect("rp.powercurve.rated_Omega", "rs.constr.rated_Omega")

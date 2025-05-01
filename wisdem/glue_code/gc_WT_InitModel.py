@@ -29,10 +29,10 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         environment = {}
 
-    if modeling_options["flags"]["blade"]:
+    if modeling_options["flags"]["blade"] or modeling_options["user_elastic"]["blade"]:
         blade = wt_init["components"]["blade"]
         blade_DV = opt_options["design_variables"]["blade"]
-        wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
+        wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade, modeling_options["user_elastic"]["blade"])
     else:
         blade = {}
 
@@ -48,17 +48,16 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
-    user_elastic = modeling_options["WISDEM"]["DriveSE"]["user_elastic"]
-    if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"] or user_elastic:
+    user_elastic = (modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["nacelle"])
+    if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"] or user_elastic or modeling_options["user_elastic"]["blade"]:
         hub = wt_init["components"]["hub"]
         wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
 
-    if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"] or user_elastic:
+    if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"] or user_elastic or modeling_options["user_elastic"]["blade"]:
         nacelle = wt_init["components"]["nacelle"]
         wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
-        
-        if "generator" in wt_init["components"]["nacelle"]:
-            user_elastic = modeling_options["WISDEM"]["DriveSE"]["generator"]["user_elastic"]
+
+        if modeling_options["flags"]["nacelle"]:
             wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
 
     if modeling_options["flags"]["RNA"]:
@@ -114,13 +113,13 @@ def MoI_setter(wt_opt, varstr, listin):
     else:
         raise ValueError(f"When setting, {varstr}, expected 3 or 6 elements but found {nn}")
 
-def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
+def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV["aero_shape"]
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
-    if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+    if not user_elastic:
         wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
-    else: 
+    else:
         wt_opt = assign_user_elastic(wt_opt, modeling_options, blade["elastic_properties"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
@@ -676,7 +675,7 @@ def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     wt_opt["blade.user_KI.K66"] = K66
 
     wt_opt["blade.user_KI.mass"] = PchipInterpolator(inertia_grid, inertia_matrix["mass"][:])(nd_span)
-    wt_opt["blade.user_KI.i_plr"] = PchipInterpolator(inertia_grid, inertia_matrix["i_plr"][:])(nd_span) 
+    wt_opt["blade.user_KI.i_plr"] = PchipInterpolator(inertia_grid, inertia_matrix["i_plr"][:])(nd_span)
     wt_opt["blade.user_KI.cm_y"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_y"][:])(nd_span)
     wt_opt["blade.user_KI.cm_x"] = PchipInterpolator(inertia_grid, inertia_matrix["cm_x"][:])(nd_span)
     wt_opt["blade.user_KI.i_flap"] = PchipInterpolator(inertia_grid, inertia_matrix["i_flap"][:])(nd_span)
@@ -794,7 +793,7 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         wt_opt["hub.radius"]   = hub["diameter"] / 2
         wt_opt["hub.cone"]     = hub["cone_angle"]
         # wt_opt["hub.drag_coeff"] = hub["drag_coefficient"] # GB: This doesn"t connect to anything
-    
+
     if flags["hub"]:
         wt_opt["hub.flange_t2shell_t"]            = hub["flange_t2shell_t"]
         wt_opt["hub.flange_OD2hub_D"]             = hub["flange_OD2hub_D"]
@@ -811,17 +810,9 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         wt_opt["hub.spinner_mass_user"]           = hub["spinner_mass_user"]
         wt_opt["hub.pitch_system_mass_user"]      = hub["pitch_system_mass_user"]
         wt_opt["hub.hub_shell_mass_user"]         = hub["hub_shell_mass_user"]
+        wt_opt["hub.hub_system_mass_user"]        = hub["hub_system_mass_user"]
 
-        if user_elastic:
-            # windio v2
-            #wt_opt["hub.hub_system_mass_user"]    = hub["elastic_properties"]["mass"]
-            #wt_opt["hub.hub_system_cm_user"]      = hub["elastic_properties"]["location"]
-            #MoI_setter(wt_opt, "hub.hub_system_I_user", hub["elastic_properties"]["inertia"])
-            # windio v1
-            wt_opt["hub.hub_system_mass_user"]    = hub["elastic_properties_mb"]["system_mass"]
-            wt_opt["hub.hub_system_cm_user"]      = hub["elastic_properties_mb"]["system_center_mass"][0]
-            MoI_setter(wt_opt, "hub.hub_system_I_user", hub["elastic_properties_mb"]["system_inertia"])
-    else:
+    elif user_elastic:
         # Note that this is stored in the drivese namespace per gc_WT_DataStruct to mimic DrivetrainSE
         # windio v2
         #wt_opt["drivese.hub_system_mass"]         = hub["elastic_properties"]["mass"]
@@ -832,7 +823,6 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         wt_opt["drivese.hub_system_cm"]           = hub["elastic_properties_mb"]["system_center_mass"][0]
         MoI_setter(wt_opt, "drivese.hub_system_I", hub["elastic_properties_mb"]["system_inertia"])
         # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
-        
 
     return wt_opt
 
@@ -844,11 +834,13 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
     wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
     wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
     wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
-        
+
     if flags["nacelle"]:
         wt_opt["nacelle.distance_hub_mb"] = nacelle["drivetrain"]["distance_hub_mb"]
         wt_opt["nacelle.distance_mb_mb"] = nacelle["drivetrain"]["distance_mb_mb"]
         wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
+        wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
+        wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
         wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
         wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
         wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
@@ -861,29 +853,11 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
         wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
         wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
+        wt_opt["nacelle.yaw_mass_user"]          = nacelle["drivetrain"]["yaw_mass_user"]
+        wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["drivetrain"]["above_yaw_mass_user"]
+        wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["drivetrain"]["spring_constant_user"]
+        wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["drivetrain"]["damping_coefficient_user"]
 
-        wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
-        wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
-
-        if user_elastic:
-            # windio v2
-            #wt_opt["nacelle.yaw_mass_user"]          = nacelle["yaw"]["elastic_properties"]["mass"]
-            #wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["drivetrain"]["elastic_properties"]["mass"]
-            #wt_opt["nacelle.above_yaw_cm_user"]      = nacelle["drivetrain"]["elastic_properties"]["location"]
-            #MoI_setter(wt_opt, "nacelle.above_yaw_I_TT_user", nacelle["drivetrain"]["elastic_properties"]["inertia"])
-            #MoI_setter(wt_opt, "nacelle.above_yaw_I_user", nacelle["drivetrain"]["elastic_properties"]["inertia"])
-            #wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["elastic_properties"]["spring_constant"]
-            #wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["elastic_properties"]["damping_coefficient"]
-            # windio v1
-            wt_opt["nacelle.yaw_mass_user"]          = nacelle["elastic_properties_mb"]["yaw_mass"]
-            wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["elastic_properties_mb"]["system_mass"]
-            wt_opt["nacelle.above_yaw_cm_user"]      = nacelle["elastic_properties_mb"]["system_center_mass"]
-            MoI_setter(wt_opt, "nacelle.above_yaw_I_TT_user", nacelle["elastic_properties_mb"]["system_inertia_tt"])
-            MoI_setter(wt_opt, "nacelle.above_yaw_I_user", nacelle["elastic_properties_mb"]["system_inertia"])
-
-            wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["elastic_properties_mb"]["spring_constant"]
-            wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
-            
         if modeling_options["WISDEM"]["DriveSE"]["direct"]:
             if wt_opt["nacelle.gear_ratio"] > 1:
                 raise Exception(
@@ -918,7 +892,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
-    else:
+
+    elif user_elastic:
         # windio v2
         #wt_opt["drivese.yaw_mass"]          = nacelle["yaw"]["elastic_properties"]["mass"]
         #wt_opt["drivese.above_yaw_mass"]    = nacelle["drivetrain"]["elastic_properties"]["mass"]
@@ -948,17 +923,13 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
     return wt_opt
 
 def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
-    if not flags["nacelle"]:
+    if user_elastic:
         #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
         MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
     else:
         wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
+        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["generator_mass_user"]
 
-        if user_elastic:
-            wt_opt["generator.generator_mass_user"] = nacelle["generator"]["elastic_properties_mb"]["system_mass"]
-            MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
-            #MoI_setter(wt_opt, "generator.generator_rotor_I_user", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
-    
         if not flags["generator"]:
             wt_opt["generator.generator_radius_user"] = nacelle["generator"]["generator_radius_user"]
 
@@ -974,7 +945,7 @@ def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elast
             else:
                 myeff = np.zeros((n_pc, 2))
             wt_opt["generator.generator_efficiency_user"] = myeff
-    
+
         else:
             wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
             wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
@@ -1273,7 +1244,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             grid_length = len(floating["members"][i]["outer_shape"]["side_length_a"]["grid"])
         else:
             grid_length = len(floating["members"][i]["outer_shape"]["outer_diameter"]["grid"])
-            
+
         usr_defined_flag = {}
         for coeff in usr_defined_coeffs:
             usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
@@ -1281,7 +1252,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                 coeff_length = len(floating["members"][i][coeff])
                 if usr_defined_flag[coeff]:
                         assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
-            else: 
+            else:
             # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
                 floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
 
@@ -1355,7 +1326,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                     floating["members"][i]["outer_shape"]["side_length_b"]["grid"],
                     floating["members"][i]["outer_shape"]["side_length_b"]["values"],
                 )(grid_geom)
-                
+
                 for coeff in usr_defined_flag.keys():
                     if usr_defined_flag[coeff]:
                         wt_opt[f"floating.memgrp{idx}.{coeff.lower()}_usr_geom"] = PchipInterpolator(
@@ -1424,7 +1395,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         wt_opt[f"floating.memgrp{idx}.ballast_materials"] = ballast_mat
 
         wt_opt[f"floating.memgrp{idx}.member_mass_user"] = floating["members"][i]["member_mass_user"]
-        
+
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
                 wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j] = floating["members"][i]["axial_joints"][j]["grid"]

@@ -36,13 +36,10 @@ properties:
                 default: {}
                 properties:
                     flag: &flag
-                        type: boolean
+                        type: [boolean, string]
+                        enum: [true, false, True, False, TRUE, FALSE, 0, 1, user_elastic, User_Elastic, USER_ELASTIC]
                         default: False
-                        description: Whether or not to run this module
-                    user_elastic: &usere
-                        type: boolean
-                        default: False
-                        description: Flag to use only user-defined elastic properties for this module
+                        description: Whether or not to run this module or pull from elastic properties
                     n_aoa:
                         type: integer
                         default: 200
@@ -178,7 +175,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    user_elastic: *usere
                     gamma_f: &gamma_f
                         type: number
                         description: Partial safety factor on loads
@@ -226,7 +222,6 @@ properties:
                         type: object
                         default: {}
                         properties:
-                            user_elastic: *usere
                             type:
                                 type: string
                                 enum: [dfig, eesg, scig, pmsg_outer, pmsg_arms, pmsg_disc, DFIG, EESG, SCIG, PMSG_Outer, PMSG_Arms, PMSG_Disc]
@@ -237,7 +232,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    user_elastic: *usere
                     wind: &wind
                         type: string
                         enum: [PowerWind, LogisticWind]
@@ -310,7 +304,6 @@ properties:
                         default: monopile
                         description: Can be `monopile` or `jacket`.
                     flag: *flag
-                    user_elastic: *usere
                     wind: *wind
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
@@ -356,7 +349,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    user_elastic: *usere
                     n_refine:
                         type: integer
                         default: 1

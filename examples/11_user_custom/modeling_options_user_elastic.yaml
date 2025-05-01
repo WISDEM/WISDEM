@@ -10,10 +10,7 @@ WISDEM:
         te_ps: TE_reinforcement_PS
         n_span: 60
     DriveSE:
-        flag: False
-        user_elastic: True
-        generator:
-            user_elastic: True
+        flag: user_elastic
     TowerSE:
         flag: True
     FixedBottomSE:
