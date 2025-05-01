@@ -3920,6 +3920,7 @@ class StandaloneBladeCost(om.Group):
             Blade(
                 rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                 opt_options=opt_options,
+                user_elastic=modeling_options["user_elastic"]["blade"],
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
@@ -4039,7 +4040,7 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
 
     blade = wt_init["components"]["blade"]
     blade_DV = opt_options['design_variables']['blade']
-    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade, modeling_options["user_elastic"]["blade"])
 
     airfoils = wt_init["airfoils"]
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)

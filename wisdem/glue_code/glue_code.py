@@ -562,9 +562,10 @@ class WT_RNTA(om.Group):
 
         # Connections to TowerSE
         if modeling_options["flags"]["tower"]:
-            self.connect("drivese.rna_I_TT", "towerse.rna_I")
-            self.connect("drivese.rna_cm", "towerse.rna_cg")
-            self.connect("drivese.rna_mass", "towerse.rna_mass")
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+                self.connect("drivese.rna_I_TT", "towerse.rna_I")
+                self.connect("drivese.rna_cm", "towerse.rna_cg")
+                self.connect("drivese.rna_mass", "towerse.rna_mass")
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "towerse.tower.rna_F")
                 self.connect("drivese.base_M", "towerse.tower.rna_M")
