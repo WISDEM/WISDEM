@@ -215,7 +215,6 @@ components:
             overhang: 5.
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
-            generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
@@ -235,6 +234,7 @@ components:
             hss_material: steel_drive
             bedplate_material: steel
         generator:
+            generator_length: 2.0
             generator_type: DFIG
             rho_Fe: 7700.0
             rho_Fes: 7850.0

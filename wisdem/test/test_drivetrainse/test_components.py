@@ -206,6 +206,7 @@ class TestComponents(unittest.TestCase):
         inputs["machine_rating"] = 10e3
         inputs["D_top"] = 5.0
         inputs["rho"] = 5e3
+        inputs["yaw_mass_user"] = 0.0
         for k in inputs:
             inputs[k] = np.array( [inputs[k]] )
         myobj.compute(inputs, outputs)
@@ -213,6 +214,10 @@ class TestComponents(unittest.TestCase):
         npt.assert_equal(outputs["yaw_cm"], 0.0)
         npt.assert_equal(outputs["yaw_I"], 0.0)
 
+        inputs["yaw_mass_user"] = np.array([1e5])
+        myobj.compute(inputs, outputs)
+        npt.assert_equal(outputs["yaw_mass"], 1e5)
+        
     def testMiscDirect(self):
         inputs = {}
         outputs = {}
@@ -336,6 +341,7 @@ class TestComponents(unittest.TestCase):
         discrete_inputs["uptower"] = True
         inputs["tilt"] = 0.0
         inputs["constr_height"] = 2.0
+        inputs["above_yaw_mass_user"] = 0.0
         for k in inputs:
             inputs[k] = np.array( [inputs[k]] )
         inputs["x_bedplate"] = -2 * np.ones(5)
@@ -390,6 +396,10 @@ class TestComponents(unittest.TestCase):
         npt.assert_equal(outputs["nacelle_cm"], np.r_[5.0, 0.0, 2.0])
         npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 4) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
+        inputs["above_yaw_mass_user"] = np.array([1e5])
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        npt.assert_equal(outputs["nacelle_mass"], 1e5+1e3)
+        
     def testNacelle_withTilt(self):
         inputs = {}
         outputs = {}
@@ -402,6 +412,7 @@ class TestComponents(unittest.TestCase):
         inputs["tilt"] = 5.0
         tr = 5 * np.pi / 180.0
         inputs["constr_height"] = 2.0
+        inputs["above_yaw_mass_user"] = 0.0
         for k in inputs:
             inputs[k] = np.array( [inputs[k]] )
         inputs["x_bedplate"] = -2 * np.ones(5)

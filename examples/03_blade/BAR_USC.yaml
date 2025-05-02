@@ -415,6 +415,11 @@ components:
                        -  [10.132577637481155, 0.0, 0.0, 0.0, 0.0, 0.22902956968390698, 10.132577637481155, 0.0, 0.0, 0.0, 0.007135739831967342, 10.132577637481155, -0.22902956968390698, -0.007135739831967342, 0.0, 0.17800255921715422, 0.17800255921715422, 0.0, 0.0, 0.0, 0.18693989853637416]
     hub: {cone_angle: 0.03490658503988659, diameter: 6.0, drag_coefficient: 0.5, hub_material: steel, spinner_material: glass_biax, flange_t2shell_t: 4.0, flange_OD2hub_D: 0.5, flange_ID2OD: 0.8, hub_blade_spacing_margin: 1.2, hub_stress_concentration: 2.5, n_front_brackets: 3, n_rear_brackets: 3, clearance_hub_spinner: 0.75, spin_hole_incr: 1.2, pitch_system_scaling_factor: 0.54, spinner_gust_ws: 70.0}
     nacelle:
+        generator:
+            generator_length: 2.0
+            generator_rpm_efficiency_user:
+                grid: [0.0, 1.0]
+                values: [0.95, 0.95]
         drivetrain:
             diameter: 3.0
             uptilt: 0.06981317007977318
@@ -424,7 +429,6 @@ components:
             overhang: 7.0
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
-            generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
@@ -442,20 +446,12 @@ components:
             lss_material: steel
             hss_material: steel
             bedplate_material: steel
-            generator_mass_user: 0.0
-            generator_rpm_efficiency_user:
-                grid: [0.0, 1.0]
-                values: [0.95, 0.95]
             nose_diameter: [0.3, 0.3]
             nose_wall_thickness: [0.1, 0.1]
             bedplate_wall_thickness:
                 grid: [0.0, 1.0]
                 values: [0.05, 0.05]
-            brake_mass_user: 0.0
             hvac_mass_coefficient: 0.08
-            converter_mass_user: 0.0
-            transformer_mass_user: 0.0
-            generator_radius_user: 0.0
             damping_ratio: 0.005
     tower:
         outer_shape_bem:

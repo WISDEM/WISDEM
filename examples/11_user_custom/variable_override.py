@@ -1,6 +1,4 @@
-import os
-import sys
-import time
+from os import path as osp
 
 from wisdem import run_wisdem
 
@@ -12,11 +10,10 @@ Specifically, you can supply a dictionary of values to overwrite after
 setup is called.
 """
 
-
-mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-fname_wt_input = os.path.join(os.path.dirname(mydir), "02_reference_turbines", "IEA-15-240-RWT.yaml")
-fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
-fname_analysis_options = mydir + os.sep + "analysis_options.yaml"
+mydir = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__))), "02_reference_turbines")
+fname_wt_input = osp.join(mydir, "IEA-15-240-RWT.yaml")
+fname_modeling_options = osp.join(mydir, "modeling_options.yaml")
+fname_analysis_options = osp.join(mydir, "analysis_options.yaml")
 
 wt_opt, modeling_options, analysis_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")

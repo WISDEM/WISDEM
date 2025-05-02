@@ -644,7 +644,6 @@ components:
       lss_wall_thickness: [0.02, 0.02]
       nose_diameter: [2.1, 2.1]
       nose_wall_thickness: [0.035, 0.035]
-      generator_length: 3.047
       bedplate_wall_thickness:
         grid: [0.0, 0.3333333333333333, 0.6666666666666666, 1.0]
         values: [0.1, 0.1, 0.1, 0.1]
@@ -655,10 +654,6 @@ components:
       uptower: true
       lss_material: steel_drive
       bedplate_material: steel
-      generator_rpm_efficiency_user:
-        grid: [1.98, 2.8, 3.47, 3.98, 4.31, 4.49, 5.1, 5.66, 6.39, 7.16]
-        values: [0.7878, 0.9071, 0.941, 0.9526, 0.9566, 0.9582, 0.9614, 0.9622, 0.9608, 0.9541]      
-      generator_mass_user: 508040.0
       distance_hub_mb: 1.8326555998427452
       distance_mb_mb: 0.8714585547144666
       generator_radius_user: 4.89
@@ -673,8 +668,15 @@ components:
         system_inertia: [11242533.974662142, 14539734.272247598, 14648892.347010525, 799429.7807778214, 2997469.283520137, -290639.9124403294]
         system_inertia_tt: [26198172.734007858, 57541186.93432835, 42740243.851778395, -1.1641532182693481e-10, 23470488.00157272, 292458.3165787493]
         system_center_mass: [-5.84704276641288, -0.1665313908538482, 4.2647901842947595]
+    generator:
+      generator_length: 3.047
+      generator_rpm_efficiency_user:
+        grid: [1.98, 2.8, 3.47, 3.98, 4.31, 4.49, 5.1, 5.66, 6.39, 7.16]
+        values: [0.7878, 0.9071, 0.941, 0.9526, 0.9566, 0.9582, 0.9614, 0.9622, 0.9608, 0.9541]
+      elastic_properties_mb:
+        system_mass: 508040.0
   tower:
-    outer_shape_bem: 
+    outer_shape_bem:
       reference_axis: &id003
         x:
           grid: [0.0, 0.021339950396958213, 0.05508684863374078, 0.08883374687052335, 0.1225806451742466, 0.15632754341102914, 0.19007444171475243, 0.22382133995153497, 0.25756823818831753, 0.29131513649204077, 0.32506203472882333, 0.3588089330325465, 0.39255583126932914, 0.4263027295061117, 0.460049627809835, 0.4937965260466175, 0.5275434243503407, 0.5612903225871233, 0.5950372208239059, 0.6287841191276291, 0.6625310173644117, 0.6962779156011942, 0.7300248139049175, 0.7637717121417, 0.797518610445423, 0.8312655086822058, 0.8650124069189884, 0.8987593052227116, 0.9325062034594942, 0.9662531017632174, 1.0]
@@ -703,63 +705,63 @@ components:
       transition_piece_mass: 100000.0
       transition_piece_cost: 100000.0
       joints:
-          -  
+          -
             name: main_keel
             location: [0.0, 0.0, -25.0]
             transition: false
             cylindrical: false
-          -  
+          -
             name: main_freeboard
             location: [0.0, 0.0, 15.0]
             transition: true
             cylindrical: false
-          -  
+          -
             name: col1_keel
             location: [65.0, 3.14159265, -25.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: col1_freeboard
             location: [65.0, 3.14159265, 15.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: col2_keel
             location: [65.0, 1.0471976, -25.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: col2_freeboard
             location: [65.0, 1.0471975, 15.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: col3_keel
             location: [65.0, -1.0471976, -25.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: col3_freeboard
             location: [65.0, -1.0471976, 15.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: anchor1
             location: [837.8, 3.14159265, -200.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: anchor2
             location: [837.8, 1.0471976, -200.0]
             cylindrical: true
             transition: false
-          -  
+          -
             name: anchor3
             location: [837.8, -1.0471976, -200.0]
             cylindrical: true
             transition: false
       members:
-          -  
+          -
             name: main_column
             joint1: main_keel
             joint2: main_freeboard
@@ -772,7 +774,7 @@ components:
                     values: [12.0, 12.0]
             internal_structure:
                 layers:
-                    -  
+                    -
                       name: main_twall
                       material: steel
                       thickness:
@@ -784,7 +786,7 @@ components:
                         grid: [0.0, 0.1, 0.25, 1.0]
                         values: [0.05, 0.05, 0.05, 0.05]
                 ballasts:
-                    -  
+                    -
                       variable_flag: true
                       grid: [0.0, 0.25]
                 outfitting_factor: 1.0
@@ -792,7 +794,7 @@ components:
                 -  {name: main_upper_pontoon, grid: 0.987}
                 -  {name: main_lower_pontoon, grid: 0.2}
             Cp: 0.0
-          -  
+          -
             name: column1
             joint1: col1_keel
             joint2: col1_freeboard
@@ -805,7 +807,7 @@ components:
                     values: [12.5, 12.5]
             internal_structure: &id005
                 layers:
-                    -  
+                    -
                       name: col_twall
                       material: steel
                       thickness:
@@ -819,7 +821,7 @@ components:
                 ring_stiffeners: {material: steel, flange_thickness: 0.1, flange_width: 0.2, web_height: 0.2, web_thickness: 0.1, spacing: 0.083333}
                 longitudinal_stiffeners: {material: steel, flange_thickness: 0.1, flange_width: 0.2, web_height: 0.2, web_thickness: 0.1, spacing: 0.52359}
                 ballasts:
-                    -  
+                    -
                       variable_flag: true
                       grid: [0.0, 0.35]
                 outfitting_factor: 1.0
@@ -828,7 +830,7 @@ components:
                 -  {name: col1_lower_pontoon, grid: 0.2}
                 -  {name: col1_fairlead, grid: 0.1714}
             Cp: 0.0
-          -  
+          -
             name: column2
             joint1: col2_keel
             joint2: col2_freeboard
@@ -841,7 +843,7 @@ components:
                 -  {name: col2_lower_pontoon, grid: 0.2}
                 -  {name: col2_fairlead, grid: 0.1714}
             Cp: 0.0
-          -  
+          -
             name: column3
             joint1: col3_keel
             joint2: col3_freeboard
@@ -854,7 +856,7 @@ components:
                 -  {name: col3_lower_pontoon, grid: 0.2}
                 -  {name: col3_fairlead, grid: 0.1714}
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_upper1
             joint1: main_upper_pontoon
             joint2: col1_upper_pontoon
@@ -867,7 +869,7 @@ components:
                     values: [0.91, 0.91]
             internal_structure: &id007
                 layers:
-                    -  
+                    -
                       name: pontoon_upper_twall
                       material: steel
                       thickness:
@@ -880,7 +882,7 @@ components:
                         grid: [0.0, 1.0]
                         values: [0.02, 0.02]
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_upper2
             joint1: main_upper_pontoon
             joint2: col2_upper_pontoon
@@ -889,7 +891,7 @@ components:
             outer_shape: *id006
             internal_structure: *id007
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_upper3
             joint1: main_upper_pontoon
             joint2: col3_upper_pontoon
@@ -898,7 +900,7 @@ components:
             outer_shape: *id006
             internal_structure: *id007
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_lower1
             joint1: main_lower_pontoon
             joint2: col1_lower_pontoon
@@ -911,14 +913,14 @@ components:
                     values: [10.0, 10.0]
             internal_structure: &id009
                 layers:
-                    -  
+                    -
                       name: pontoon_lower_twall
                       material: steel
                       thickness:
                           grid: [0.0, 1.0]
                           values: [0.04, 0.04]
                 ballasts:
-                    -  
+                    -
                       variable_flag: true
                       grid: [0.0, 1.0]
                 outfitting_factor: 1.0
@@ -928,7 +930,7 @@ components:
                         grid: [0.0, 1.0]
                         values: [0.02, 0.02]
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_lower2
             joint1: main_lower_pontoon
             joint2: col2_lower_pontoon
@@ -937,7 +939,7 @@ components:
             outer_shape: *id008
             internal_structure: *id009
             Cp: 0.0
-          -  
+          -
             name: Y_pontoon_lower3
             joint1: main_lower_pontoon
             joint2: col3_lower_pontoon

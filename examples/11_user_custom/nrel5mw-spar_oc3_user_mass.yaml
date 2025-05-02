@@ -219,7 +219,6 @@ components:
             overhang: 5.
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
-            generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
@@ -246,6 +245,8 @@ components:
             transformer_mass_user: 11500.0
             gearbox_mass_user: 21500.0
         generator:
+            generator_mass_user: 19500.0
+            generator_length: 2.0
             generator_type: DFIG
             rho_Fe: 7700.0
             rho_Fes: 7850.0
@@ -293,7 +294,7 @@ components:
             C_Fe: 0.556
             C_Fes: 0.50139
             C_PM: 50.0
-            generator_mass_user: 19500.0
+
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower

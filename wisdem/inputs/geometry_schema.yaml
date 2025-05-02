@@ -506,6 +506,12 @@ properties:
                         units: kg
                         description: Override regular regression-based calculation of pitch system mass with this value
                         minimum: 0.0
+                    hub_system_mass_user:
+                        type: number
+                        description: User input override of full hub system mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -578,46 +584,6 @@ properties:
                                 minimum: 0.
                                 maximum: 20.
                                 default: 5.0
-                            generator_length:
-                                type: number
-                                description: Length of generator along the shaft
-                                unit: meter
-                                minimum: 0.
-                                maximum: 20.
-                                default: 2.0
-                            generator_radius_user:
-                                type: number
-                                description: User input override of generator radius, only used when using simple generator scaling
-                                unit: m
-                                minimum: 0.
-                                maximum: 20.0
-                                default: 0.0
-                            generator_mass_user:
-                                type: number
-                                description: User input override of generator mass, only used when using simple generator mass scaling
-                                unit: kg
-                                minimum: 0.
-                                maximum: 1.e+9
-                                default: 0.0
-                            generator_inertia_user:
-                                type: number
-                                description: User input override of generator inertia
-                                unit: kg*m^2
-                                minimum: 0.
-                                maximum: 1.e+15
-                                default: 0.0
-                            generator_rpm_efficiency_user:
-                                type: object
-                                description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
-                                default: {'grid':[0.0], 'values':[0.0]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/length"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
                             gear_ratio:
                                 type: number
                                 description: Gear ratio of the drivetrain. Set it to 1 for direct drive machines.
@@ -851,378 +817,448 @@ properties:
                                     uniqueItems: false
                                     minimum: 0
                                     maximum: 6
+                            yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of yaw drive mass with this value
+                                minimum: 0.0
+                            above_yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
+                                minimum: 0.0
+                            spring_constant_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain spring constant with this value
+                                minimum: 0.0
+                            damping_coefficient_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain damping coefficient with this value
+                                minimum: 0.0
                     generator:
-                      properties:
-                        mass_coefficient:
-                          type: number
-                          default: 0.0
-                          units: none
-                          description: When not doing a detailed generator design, use a simplified approach to generator scaling. This input allows for overriding of the regression-based scaling coefficient to obtain generator mass
-                          minimum: 0.0
-                        generator_type:
-                          type: string
-                          default: DFIG
-                          enum: [DFIG, dfig, EESG, eesg, SCIG, scig, PMSG_Arms, PMSG_ARMS, pmsg_arms, PMSG_Disc, PMSG_Disk, PMSG_DISC, PMSG_DISK, pmsg_disk, pmsg_disc, PMSG_Outer, PMSG_OUTER, pmsg_outer]
-                        B_r:
-                          type: number
-                          default: 1.2
-                          units: Tesla
-                          description: Words
-                          minimum: 0.0
-                        P_Fe0e:
-                          type: number
-                          default: 1.0
-                          units: W/kg
-                          minimum: 0.0
-                          maximum: 1000.0
-                          description: Words
-                        P_Fe0h:
-                          type: number
-                          default: 4.0
-                          units: W/kg
-                          minimum: 0.0
-                          maximum: 1000.0
-                          description: Words
-                        S_N:
-                          type: number
-                          default: -0.002
-                          units: none
-                          minimum: -100.0
-                          maximum: 0.0
-                          description: Words
-                        S_Nmax:
-                          type: number
-                          default: -0.2
-                          units: none
-                          minimum: -100.0
-                          maximum: 0.0
-                          description: Words
-                        alpha_p:
-                          type: number
-                          default: 1.0995574287564276
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_r_tau_r:
-                          type: number
-                          default: 0.45
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_ro:
-                          type: number
-                          default: 0.004
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_s_tau_s:
-                          type: number
-                          default: 0.45
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_so:
-                          type: number
-                          default: 0.004
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        cofi:
-                          type: number
-                          default: 0.85
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        freq:
-                          type: number
-                          default: 60.0
-                          units: Hz
-                          minimum: 1.0
-                          maximum: 1000.0
-                          description: Words
-                        h_i:
-                          type: number
-                          default: 0.001
-                          units: m
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Words
-                        h_sy0:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_w:
-                          type: number
-                          default: 0.005
-                          units: m
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Words
-                        k_fes:
-                          type: number
-                          default: 0.9
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_fillr:
-                          type: number
-                          default: 0.7
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_fills:
-                          type: number
-                          default: 0.65
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_s:
-                          type: number
-                          default: 0.2
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        m:
-                          type: integer
-                          default: 3
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        mu_0:
-                          type: number
-                          default: 1.2566370614359173e-06
-                          units: m*kg/s^2/A^2
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Permittivity of free space
-                        mu_r:
-                          type: number
-                          default: 1.06
-                          units: m*kg/s^2/A^2
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        p:
-                          type: number
-                          default: 3.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        phi:
-                          type: number
-                          default: 1.5707963267948966 #90deg
-                          units: rad
-                          minimum: 0.0
-                          maximum: 7.0
-                          description: Words
-                        q1:
-                          type: integer
-                          default: 6
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        q3:
-                          type: integer
-                          default: 4
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        ratio_mw2pp:
-                          type: number
-                          default: 0.7
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        resist_Cu:
-                          type: number
-                          default: 2.52
-                          units: ohm/m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Resistivity of copper
-                        sigma:
-                          type: number
-                          default: 40.e+3
-                          units: kg/s^2/m
-                          minimum: 0.0
-                          maximum: 100.e+6
-                          description: Maximum allowable shear stress
-                        y_tau_p:
-                          type: number
-                          default: 1.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        y_tau_pr:
-                          type: number
-                          default: 0.83333333
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        I_0:
-                          type: number
-                          default: 0.0
-                          units: A
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        d_r:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_m:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_0:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        len_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        n_r:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        rad_ag:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        t_wr:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        n_s:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_st:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        d_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        t_ws:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        rho_Copper:
-                          type: number
-                          default: 8900.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Copper density
-                        rho_Fe:
-                          type: number
-                          default: 7700.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Structural steel density
-                        rho_Fes:
-                          type: number
-                          default: 7850.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Electrical steel density
-                        rho_PM:
-                          type: number
-                          default: 7450.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Permanent magnet density
-                        C_Cu:
-                          type: number
-                          default: 4.786
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Copper cost
-                        C_Fe:
-                          type: number
-                          default: 0.556
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Structural steel cost
-                        C_Fes:
-                          type: number
-                          default: 0.50139
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Electrical steel cost
-                        C_PM:
-                          type: number
-                          default: 50.0
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Permanent magnet cost
+                        properties:
+                            generator_mass_user:
+                                type: number
+                                default: 0.0
+                                units: none
+                                description: Override regular calculation of generator mass (bottom-up or regression-based) with this value
+                                minimum: 0.0
+                            generator_length:
+                                type: number
+                                description: Length of generator along the shaft
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 2.0
+                            generator_radius_user:
+                                type: number
+                                description: User input override of generator radius, only used when using simple generator scaling
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
+                            generator_rpm_efficiency_user:
+                                type: object
+                                description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
+                                default: {'grid':[0.0], 'values':[0.0]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/length"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/length"
+                            generator_type:
+                                type: string
+                                default: DFIG
+                                enum: [DFIG, dfig, EESG, eesg, SCIG, scig, PMSG_Arms, PMSG_ARMS, pmsg_arms, PMSG_Disc, PMSG_Disk, PMSG_DISC, PMSG_DISK, pmsg_disk, pmsg_disc, PMSG_Outer, PMSG_OUTER, pmsg_outer]
+                            B_r:
+                                type: number
+                                default: 1.2
+                                units: Tesla
+                                description: Words
+                                minimum: 0.0
+                            P_Fe0e:
+                                type: number
+                                default: 1.0
+                                units: W/kg
+                                minimum: 0.0
+                                maximum: 1000.0
+                                description: Words
+                            P_Fe0h:
+                                type: number
+                                default: 4.0
+                                units: W/kg
+                                minimum: 0.0
+                                maximum: 1000.0
+                                description: Words
+                            S_N:
+                                type: number
+                                default: -0.002
+                                units: none
+                                minimum: -100.0
+                                maximum: 0.0
+                                description: Words
+                            S_Nmax:
+                                type: number
+                                default: -0.2
+                                units: none
+                                minimum: -100.0
+                                maximum: 0.0
+                                description: Words
+                            alpha_p:
+                                type: number
+                                default: 1.0995574287564276
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_r_tau_r:
+                                type: number
+                                default: 0.45
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_ro:
+                                type: number
+                                default: 0.004
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_s_tau_s:
+                                type: number
+                                default: 0.45
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_so:
+                                type: number
+                                default: 0.004
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            cofi:
+                                type: number
+                                default: 0.85
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            freq:
+                                type: number
+                                default: 60.0
+                                units: Hz
+                                minimum: 1.0
+                                maximum: 1000.0
+                                description: Words
+                            h_i:
+                                type: number
+                                default: 0.001
+                                units: m
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Words
+                            h_sy0:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_w:
+                                type: number
+                                default: 0.005
+                                units: m
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Words
+                            k_fes:
+                                type: number
+                                default: 0.9
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_fillr:
+                                type: number
+                                default: 0.7
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_fills:
+                                type: number
+                                default: 0.65
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_s:
+                                type: number
+                                default: 0.2
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            m:
+                                type: integer
+                                default: 3
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            mu_0:
+                                type: number
+                                default: 1.2566370614359173e-06
+                                units: m*kg/s^2/A^2
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Permittivity of free space
+                            mu_r:
+                                type: number
+                                default: 1.06
+                                units: m*kg/s^2/A^2
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            p:
+                                type: number
+                                default: 3.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            phi:
+                                type: number
+                                default: 1.5707963267948966 #90deg
+                                units: rad
+                                minimum: 0.0
+                                maximum: 7.0
+                                description: Words
+                            q1:
+                                type: integer
+                                default: 6
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            q3:
+                                type: integer
+                                default: 4
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            ratio_mw2pp:
+                                type: number
+                                default: 0.7
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            resist_Cu:
+                                type: number
+                                default: 2.52
+                                units: ohm/m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Resistiity of copper
+                            sigma:
+                                type: number
+                                default: 40.e+3
+                                units: kg/s^2/m
+                                minimum: 0.0
+                                maximum: 100.e+6
+                                description: Maximum allowable shear stress
+                            y_tau_p:
+                                type: number
+                                default: 1.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            y_tau_pr:
+                                type: number
+                                default: 0.83333333
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            I_0:
+                                type: number
+                                default: 0.0
+                                units: A
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            d_r:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_m:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_0:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            len_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            n_r:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            rad_ag:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            t_wr:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            n_s:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_st:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            d_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            t_ws:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            rho_Copper:
+                                type: number
+                                default: 8900.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Copper ensity
+                            rho_Fe:
+                                type: number
+                                default: 7700.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Structural steel density
+                            rho_Fes:
+                                type: number
+                                default: 7850.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Electrical steel density
+                            rho_PM:
+                                type: number
+                                default: 7450.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Permanent magnet density
+                            C_Cu:
+                                type: number
+                                default: 4.786
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Copper cost
+                            C_Fe:
+                                type: number
+                                default: 0.556
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Structural steel cost
+                            C_Fes:
+                                type: number
+                                default: 0.50139
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Electrical steel cost
+                            C_PM:
+                                type: number
+                                default: 50.0
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Permanent magnet cost
+                            elastic_properties_mb:
+                                type: object
+                                default: {}
+                                properties:
+                                    system_mass:
+                                        type: number
+                                        description: Mass of the generator system, including both rotor and stator
+                                        unit: kg
+                                        minimum: 0
+                                        default: 0.0
+                                    rotor_inertia:
+                                      type: array
+                                      description: Inertia of the rotating generator rotor system with respect to its center of mass.
+                                      default: [0.0, 0.0, 0.0]
+                                      items:
+                                          type: number
+                                          unit: kgm2
+                                          minItems: 3
+                                          maxItems: 3
+                                          uniqueItems: false
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -1271,7 +1307,7 @@ properties:
                                     uniqueItems: false
                             spring_constant:
                                 type: number
-                                description: Equivalent spring constant for the drivetrain system 
+                                description: Equivalent spring constant for the drivetrain system
                                 unit: N*m/rad
                                 minimum: 0.0
                                 default: 0.0

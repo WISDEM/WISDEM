@@ -50,7 +50,7 @@ class WT_RNTA_Prop(om.Group):
         elif modeling_options["flags"]["jacket"]:
             self.add_subsystem("fixedse", JacketSEProp(modeling_options=modeling_options))
 
-            
+
 class WT_RNA(om.Group):
     # Openmdao group to iterate on the rated torque - turbine efficiency
 
@@ -76,7 +76,7 @@ class WT_RNA(om.Group):
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
 
-            
+
 class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
 
@@ -91,7 +91,7 @@ class WT_RNTA(om.Group):
 
         # Analysis components
         self.add_subsystem("wt_prop", WT_RNTA_Prop(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
-        
+
         if modeling_options["flags"]["blade"] or modeling_options["flags"]["nacelle"]:
             self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
@@ -158,7 +158,7 @@ class WT_RNTA(om.Group):
                 ["rotorse.nBlades", "rotorse.re.n_blades"],
             )
             self.connect("configuration.ws_class", "rotorse.wt_class.turbine_class")
-            
+
             # Connections to RotorPower
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
             self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
@@ -178,15 +178,12 @@ class WT_RNTA(om.Group):
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
-            elif not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+            elif not modeling_options["user_elastic"]["blade"]:
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
 
             # Connections to rotor elastic and frequency analysis
-            if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
-                self.connect(
-                "configuration.n_blades",
-                "rotorse.rs.constr.blade_number",
-                )
+            if not modeling_options["user_elastic"]["blade"]:
+                self.connect("configuration.n_blades", "rotorse.rs.constr.blade_number")
                 self.connect("nacelle.uptilt", "rotorse.re.precomp.uptilt")
                 self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.re.pitch_axis")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
@@ -200,12 +197,12 @@ class WT_RNTA(om.Group):
                 self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
                 if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
                     self.connect("blade.internal_structure_2d_fem.joint_bolt", "rotorse.rs.bjs.joint_bolt")
-                    # Let wisdem estimate the joint mass, although 
+                    # Let wisdem estimate the joint mass, although
                     # this generates an implicit loop since the bjs modules requires loads among the inputs
-                    self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass") 
+                    self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass")
                 else:
                     # joint mass as user input from yaml
-                    self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass") 
+                    self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass")
                 self.connect("materials.name", "rotorse.re.precomp.mat_name")
                 self.connect("materials.orth", "rotorse.re.precomp.orth")
                 self.connect("materials.E", "rotorse.re.precomp.E")
@@ -321,7 +318,7 @@ class WT_RNTA(om.Group):
                     self.connect("materials.fwf", "rotorse.rc.fwf")
                     self.connect("materials.fvf", "rotorse.rc.fvf")
                     self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
-                
+
             else:
                 # connections for user-defined blade elastic properties
                 # stiffness matrix
@@ -355,7 +352,7 @@ class WT_RNTA(om.Group):
                 self.connect("blade.user_KI.i_flap", "rotorse.re.i_flap")
                 self.connect("blade.user_KI.i_plr", "rotorse.re.i_plr")
                 self.connect("blade.user_KI.i_cp", "rotorse.re.i_cp")
-                
+
 
 
         # Connections to DriveSE
@@ -375,17 +372,17 @@ class WT_RNTA(om.Group):
             self.connect("hub.hub_shell_mass_user", "drivese.hub_shell_mass_user")
             self.connect("hub.spinner_mass_user", "drivese.spinner_mass_user")
             self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
-            if modeling_options["WISDEM"]["DriveSE"]["user_elastic"]:
-                self.connect("hub.hub_system_mass_user", "drivese.hub_system_mass_user")
-                self.connect("hub.hub_system_cm_user", "drivese.hub_system_cm_user")
-                self.connect("hub.hub_system_I_user", "drivese.hub_system_I_user")
-                self.connect("nacelle.drivetrain_spring_constant_user", "drivese.drivetrain_spring_constant_user")
-                self.connect("nacelle.drivetrain_damping_coefficient_user", "drivese.drivetrain_damping_coefficient_user")
-                self.connect('nacelle.yaw_mass_user', 'drivese.yaw_mass_user')
-                self.connect('nacelle.above_yaw_mass_user', 'drivese.above_yaw_mass_user')
-                self.connect('nacelle.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
-                self.connect('nacelle.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
-                self.connect('nacelle.above_yaw_I_user', 'drivese.above_yaw_I_user')
+            self.connect("hub.hub_system_mass_user", "drivese.hub_system_mass_user")
+            self.connect("hub.hub_system_cm_user", "drivese.hub_system_cm_user")
+            self.connect("hub.hub_system_I_user", "drivese.hub_system_I_user")
+            self.connect("nacelle.drivetrain_spring_constant_user", "drivese.drivetrain_spring_constant_user")
+            self.connect("nacelle.drivetrain_damping_coefficient_user", "drivese.drivetrain_damping_coefficient_user")
+            self.connect('nacelle.yaw_mass_user', 'drivese.yaw_mass_user')
+            self.connect('nacelle.above_yaw_mass_user', 'drivese.above_yaw_mass_user')
+            # Not yet implemented
+            #self.connect('nacelle.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
+            #self.connect('nacelle.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
+            #self.connect('nacelle.above_yaw_I_user', 'drivese.above_yaw_I_user')
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 
@@ -410,7 +407,7 @@ class WT_RNTA(om.Group):
 
             self.connect("nacelle.distance_hub_mb", "drivese.L_h1")
             self.connect("nacelle.distance_mb_mb", "drivese.L_12")
-            self.connect("nacelle.L_generator", "drivese.L_generator")
+            self.connect("generator.L_generator", "drivese.L_generator")
             self.connect("nacelle.overhang", "drivese.overhang")
             self.connect("nacelle.distance_tt_hub", "drivese.drive_height")
             self.connect("nacelle.uptilt", "drivese.tilt")
@@ -469,7 +466,10 @@ class WT_RNTA(om.Group):
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
             self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
-            if modeling_options["flags"]["generator"]:
+            if not modeling_options["flags"]["generator"]:
+                self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
+                self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
+            else:
                 self.connect("generator.B_r", "drivese.generator.B_r")
                 self.connect("generator.P_Fe0e", "drivese.generator.P_Fe0e")
                 self.connect("generator.P_Fe0h", "drivese.generator.P_Fe0h")
@@ -526,7 +526,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.C_Fes", "drivese.generator.C_Fes")
                 self.connect("generator.C_PM", "drivese.generator.C_PM")
 
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
+                if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
                     self.connect("generator.N_c", "drivese.generator.N_c")
                     self.connect("generator.b", "drivese.generator.b")
                     self.connect("generator.c", "drivese.generator.c")
@@ -544,13 +544,13 @@ class WT_RNTA(om.Group):
                     self.connect("generator.B_tmax", "drivese.generator.B_tmax")
                     self.connect("rotorse.rp.powercurve.rated_mech", "drivese.generator.P_mech")
 
-                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                     self.connect("generator.tau_p", "drivese.generator.tau_p")
                     self.connect("generator.h_ys", "drivese.generator.h_ys")
                     self.connect("generator.h_yr", "drivese.generator.h_yr")
                     self.connect("generator.b_arm", "drivese.generator.b_arm")
 
-                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
+                elif modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
                     self.connect("generator.B_symax", "drivese.generator.B_symax")
                     self.connect("generator.S_Nmax", "drivese.generator.S_Nmax")
 
@@ -560,19 +560,15 @@ class WT_RNTA(om.Group):
                 else:
                     self.connect("nacelle.hss_diameter", "drivese.generator.D_shaft", src_indices=[-1])
 
-            else:
-                self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
-                self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
-
-                
         # Connections to TowerSE
         if modeling_options["flags"]["tower"]:
-            if modeling_options["flags"]["nacelle"]:
-                self.connect("drivese.base_F", "towerse.tower.rna_F")
-                self.connect("drivese.base_M", "towerse.tower.rna_M")
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
                 self.connect("drivese.rna_I_TT", "towerse.rna_I")
                 self.connect("drivese.rna_cm", "towerse.rna_cg")
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
+            if modeling_options["flags"]["nacelle"]:
+                self.connect("drivese.base_F", "towerse.tower.rna_F")
+                self.connect("drivese.base_M", "towerse.tower.rna_M")
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.rp.gust.V_gust", "towerse.env.Uref")
             self.connect("high_level_tower_props.hub_height", "towerse.wind_reference_height")
@@ -667,6 +663,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "fixedse.monopile.rna_F")
                 self.connect("drivese.base_M", "fixedse.monopile.rna_M")
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
                 self.connect("drivese.rna_I_TT", "fixedse.rna_I")
                 self.connect("drivese.rna_cm", "fixedse.rna_cg")
                 self.connect("drivese.rna_mass", "fixedse.rna_mass")
@@ -726,7 +723,7 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
-            if modeling_options["flags"]["nacelle"]:
+            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
                 self.connect("drivese.rna_I_TT", "floatingse.rna_I")
                 self.connect("drivese.rna_cm", "floatingse.rna_cg")
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
@@ -738,7 +735,7 @@ class WT_RNTA(om.Group):
 
                 self.connect(f"floatingse.member{k}.nodes_xyz_all", f"floatingse.member{k}:nodes_xyz")
                 self.connect(f"floatingse.member{k}.constr_ballast_capacity", f"floatingse.member{k}:constr_ballast_capacity")
-                
+
                 if member_shape == "circular":
                     self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
                     self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
@@ -753,7 +750,7 @@ class WT_RNTA(om.Group):
 
                 for var in ["z_global", "s_full", "s_all"]:
                     self.connect(f"floatingse.member{k}.{var}", f"floatingse.memload{k}.{var}")
-            
+
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
                 if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
@@ -793,7 +790,7 @@ class WT_RNTA(om.Group):
                     self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
                 self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}:mass_user")
-                    
+
                 for var in ["joint1", "joint2"]:
                     self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
 

@@ -722,7 +722,7 @@ class ComputePowerCurve(ExplicitComponent):
                 P_aero_i = myout["P"]
                 eff_i = np.interp(Omega_rpm_i, lss_rpm, driveEta)
                 P_i = P_aero_i * eff_i
-                return 1e-4 * (P_i - P_rated)
+                return 1e-4 * (P_i[0] - P_rated)
 
             # Solve for Region 3 pitch
             if self.regulation_reg_III:

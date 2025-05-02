@@ -1901,7 +1901,7 @@ class RotorStructure(Group):
             CCBladeEvaluate(modeling_options=modeling_options),
             promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["user_elastic"]["blade"]:
 
             self.add_subsystem(
                 "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
@@ -1956,7 +1956,7 @@ class RotorStructure(Group):
         self.connect("3d_curv", "tip_pos.3d_curv_tip", src_indices=[-1])
 
         # Strains from frame3dd to constraint
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
+        if not modeling_options["user_elastic"]["blade"]:
             # TODO YL: no constr component, remove the above conditional when the constr component is enabled for user defined blade
             self.connect("strains.strainU_spar", "constr.strainU_spar")
             self.connect("strains.strainL_spar", "constr.strainL_spar")

@@ -422,7 +422,6 @@ components:
             lss_wall_thickness: [0.1, 0.1]
             nose_diameter: [2.2, 2.2]
             nose_wall_thickness: [0.1, 0.1]
-            generator_length: 2.15
             bedplate_wall_thickness:
                 grid: [0.0, 1.0]
                 values: [0.05, 0.05]
@@ -434,6 +433,7 @@ components:
             lss_material: steel_drive
             bedplate_material: steel_drive
         generator:
+            generator_length: 2.15
             generator_type: PMSG_Outer
             rho_Fe: 7700.0
             rho_Fes: 7850.0
@@ -499,7 +499,6 @@ components:
             y_allow_pcent: 1.0
             z_allow_deg: 0.05
             sigma: 60.e+3
-
             h_0: 0.05
             C_Cu: 4.786
             C_Fe: 0.556
