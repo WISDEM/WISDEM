@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wisdem"
-version = "3.20.1"
+version = "3.21.0"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -51,14 +51,14 @@ classifiers = [  # Optional
 dependencies = [
   "dearpygui",
   "jsonschema",
-  "marmot-agents>=0.2.5",
   "moorpy",
   "numpy",
   "openmdao",
   "openpyxl",
+  "orbit-nrel>=1.2.1",
   "pandas",
   "pydoe3",
-  "python-benedict<0.33.2",
+  "python-benedict",
   "pyyaml",
   "ruamel.yaml",
   "scipy",
@@ -79,7 +79,7 @@ dependencies = [
 dev = ["meson", "ninja", "swig"]
 test = ["coveralls", "pytest", "pytest-cov"]
 docs = ["sphinx", "sphinxcontrib-bibtex", "sphinx_rtd_theme>=1.3", "sphinx-jsonschema"]
-opt = ["pyoptsparse","nlopt"]
+opt = ["pyoptsparse","nlopt<=2.8"]
 
 # List URLs that are relevant to your project
 #

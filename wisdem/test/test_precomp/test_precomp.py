@@ -286,7 +286,7 @@ class TestPreCompProperties(unittest.TestCase):
                         npt.assert_array_less(rel_err_K, max_pc_error_K)
                         
                         # Check all elements of I
-                        max_pc_error_I = np.array([9, 9, 9, 11, 17, 12]) # Relative errors at the time of setting up test
+                        max_pc_error_I = np.array([9, 9, 9, 12, 12, 12]) # Relative errors at the time of setting up test. Updated after switching rotation and translation
                         rel_err_I = np.zeros(len(ix))
                         for i in range(len(ix)):
                             rel_err_I[i] = abs((I_precomp[ix[i],ix[i]]-I_anba[ix[i],ix[i]])/I_anba[ix[i],ix[i]]*100.)

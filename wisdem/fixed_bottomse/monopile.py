@@ -8,9 +8,7 @@ from wisdem.commonse import NFREQ, gravity
 from wisdem.commonse.environment import TowerSoil
 
 RIGID = 1e30
-NREFINE = 3
 NPTS_SOIL = 10
-
 
 class PreDiscretization(om.ExplicitComponent):
     """
@@ -255,6 +253,7 @@ class MonopileFrame(om.ExplicitComponent):
     """
 
     def initialize(self):
+        self.options.declare("n_refine", default=3)
         self.options.declare("n_full")
         self.options.declare("n_full_tow")
         self.options.declare("nLC")
@@ -392,7 +391,8 @@ class MonopileFrame(om.ExplicitComponent):
         frame3dd_opt = self.options["frame3dd_opt"]
         nLC          = self.options["nLC"]
         tower_flag   = self.options["n_full_tow"] > 0
-
+        nref         = self.options["n_refine"]
+        
         # ------- node data ----------------
         if tower_flag:
             xyz = np.vstack((inputs["nodes_xyz"][:-1, :], inputs["tower_xyz"]))
@@ -416,7 +416,7 @@ class MonopileFrame(om.ExplicitComponent):
                 k_soil = inputs["k_soil"]
                 depth = float(inputs["water_depth"][0])
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
-                if z_pile.size != NREFINE + 1:
+                if z_pile.size != nref + 1:
                     print(z)
                     print(z_soil)
                     print(z_pile)
@@ -436,7 +436,7 @@ class MonopileFrame(om.ExplicitComponent):
             else:
                 z_pile = z[z <= (z[0] + 1e-1 + inputs["suctionpile_depth"])]
                 npile = z_pile.size
-                if npile != NREFINE + 1:
+                if npile != nref + 1:
                     print(z)
                     print(z_pile)
                     print(inputs["suctionpile_depth"])
@@ -652,7 +652,7 @@ class MonopileFrame(om.ExplicitComponent):
             modal.xmpf,
             modal.ympf,
             modal.zmpf,
-            idx0=NREFINE,
+            idx0=nref,
             base_slope0=(not self.options["soil_springs"]),
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
@@ -727,13 +727,14 @@ class MonopileSEProp(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-
+        nref = mod_opt["n_refine"]
+        
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
             n_height_mono = mod_opt["n_height_monopile"]
             n_height = mod_opt["n_height"] = n_height_mono
-        n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
+        n_full = mem.get_nfull(n_height, nref=nref)
 
         self.add_subsystem("predis", PreDiscretization(), promotes=["*"])
 
@@ -798,7 +799,7 @@ class MonopileSEProp(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE, member_shape = "circular"),
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=nref, member_shape = "circular"),
             promotes=promlist,
         )
 
@@ -858,7 +859,8 @@ class MonopileSEPerf(om.Group):
         else:
             n_height_mono = mod_opt["n_height_monopile"]
             n_height = mod_opt["n_height"] = n_height_mono
-        n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
+        nref = mod_opt["n_refine"]
+        n_full = mem.get_nfull(n_height, nref=nref)
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
@@ -871,6 +873,7 @@ class MonopileSEPerf(om.Group):
         self.add_subsystem(
             "monopile",
             MonopileFrame(
+                n_refine=nref,
                 n_full=n_full,
                 n_full_tow=n_full_tow,
                 frame3dd_opt=frame3dd_opt,

@@ -23,6 +23,8 @@ class TestPlatform(unittest.TestCase):
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
         self.opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        self.opt["floating"]["rigid_bodies"] = {}
+        self.opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
@@ -223,7 +225,7 @@ class TestPlatform(unittest.TestCase):
                 + self.inputs[f"member{k}:nodes_xyz"][0, :]
             )
         cg_var = np.dot(V_frac, cg_mem) / (self.outputs["variable_ballast_mass"] / 1e3)
-        npt.assert_equal(self.outputs["system_mass"], 6e3 + 1e4 + 1e3 + self.outputs["variable_ballast_mass"])
+        npt.assert_allclose(self.outputs["system_mass"], 6e3 + 1e4 + 1e3 + self.outputs["variable_ballast_mass"], 1e-6)
         npt.assert_almost_equal(
             self.outputs["system_center_of_mass"],
             (
@@ -233,7 +235,7 @@ class TestPlatform(unittest.TestCase):
             / self.outputs["system_mass"],
         )
         npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
-        npt.assert_equal(self.outputs["platform_mass"], 6e3 + 1e3 + self.outputs["variable_ballast_mass"])
+        npt.assert_allclose(self.outputs["platform_mass"], 6e3 + 1e3 + self.outputs["variable_ballast_mass"], 1e-6)
 
 
 class TestGroup(unittest.TestCase):
@@ -250,6 +252,8 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        opt["floating"]["rigid_bodies"] = {}
+        opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3

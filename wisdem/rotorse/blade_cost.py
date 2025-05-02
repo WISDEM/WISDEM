@@ -2962,6 +2962,9 @@ class BladeSplit(om.ExplicitComponent):
 
 
 class TotalBladeCosts(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("modeling_options")
+
     def setup(self):
         self.add_input(
             "joint_cost",
@@ -2990,7 +2993,10 @@ class TotalBladeCosts(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]
+        if self.options["modeling_options"]["user_elastic"]["blade"]:
+            outputs["total_blade_cost"] = 0.0
+        else:
+            outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]
 
 
 # OpenMDAO component to execute the blade cost model
@@ -3914,6 +3920,7 @@ class StandaloneBladeCost(om.Group):
             Blade(
                 rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                 opt_options=opt_options,
+                user_elastic=modeling_options["user_elastic"]["blade"],
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
@@ -4018,7 +4025,7 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.fwf", "rc.fwf")
             self.connect("materials.roll_mass", "rc.roll_mass")
 
-        self.add_subsystem("total_bc", TotalBladeCosts())
+        self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
@@ -4033,7 +4040,7 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
 
     blade = wt_init["components"]["blade"]
     blade_DV = opt_options['design_variables']['blade']
-    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade, modeling_options["user_elastic"]["blade"])
 
     airfoils = wt_init["airfoils"]
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)

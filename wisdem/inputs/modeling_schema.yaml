@@ -36,9 +36,10 @@ properties:
                 default: {}
                 properties:
                     flag: &flag
-                        type: boolean
+                        type: [boolean, string]
+                        enum: [true, false, True, False, TRUE, FALSE, 0, 1, user_elastic, User_Elastic, USER_ELASTIC]
                         default: False
-                        description: Whether or not to run this module
+                        description: Whether or not to run this module or pull from elastic properties
                     n_aoa:
                         type: integer
                         default: 200
@@ -174,10 +175,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    model_generator:
-                        type: boolean
-                        default: False
-                        description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
                     gamma_f: &gamma_f
                         type: number
                         description: Partial safety factor on loads
@@ -221,6 +218,15 @@ properties:
                                 maximum: 5.0
                                 default: 1.5
                                 unit: none
+                    generator:
+                        type: object
+                        default: {}
+                        properties:
+                            type:
+                                type: string
+                                enum: [dfig, eesg, scig, pmsg_outer, pmsg_arms, pmsg_disc, DFIG, EESG, SCIG, PMSG_Outer, PMSG_Arms, PMSG_Disc]
+                                default: pmsg_outer
+                                description: Type of generator architecture for detailed property, performance, and cost modeling
             TowerSE:
                 type: object
                 default: {}

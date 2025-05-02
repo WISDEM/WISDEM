@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fsolve
+import warnings
 
 
 class CylinderBuckling:
@@ -319,7 +320,10 @@ class CylinderBuckling:
         return shell_util, gamma_m
 
     def get_fak(self, axial, bending, hoop, shear):
-        fak = fsolve(self._fak_wrapper, -np.abs(axial), args=(bending, hoop, shear), xtol=1e-4, maxfev=50)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            fak = fsolve(self._fak_wrapper, -np.abs(axial), args=(bending, hoop, shear), xtol=1e-4, maxfev=50)
 
         # Using mean instead of min here for more stable performance in optimization
         return np.abs(fak).mean()

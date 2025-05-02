@@ -17,7 +17,7 @@ from wisdem.commonse.akima import Akima
 
 NULL = -9999
 MEMMAX = 200
-NREFINE = 1
+NREFINE_DEFAULT = 1
 
 # For rectangular
 # This assumes that the Ca only depends on the aspect ratio
@@ -138,7 +138,7 @@ class RectCrossSection(CrossSection):
         self.b = make_float(self.b)
 
 
-def get_nfull(npts, nref=NREFINE):
+def get_nfull(npts, nref=NREFINE_DEFAULT):
     n_full = int(1 + nref * (npts - 1))
     return n_full
 
@@ -507,9 +507,15 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["axial_stff"] = E_param * Az
 
         # While the sections are simple, store cross section info for fatigue
-        cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
+        if len(z) == 1:
+            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+        else:
+            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
+            
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
+        if cross_section_xz == 0.0:
+            breakpoint()
         ax_load2stress[:, 0] = 1.0 / cross_section_xz
         ax_load2stress[:, 1] = 1.0 / cross_section_xz
         ax_load2stress[:, 2] = 1.0 / isection.Area
@@ -609,7 +615,7 @@ class MemberDiscretization(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
         self.options.declare("member_shape_variables")
 
     def setup(self):
@@ -815,14 +821,14 @@ class ShellMassCost(om.ExplicitComponent):
         for k in range(d_sec.size):
             iprop = CircCrossSection(
                 D=d_sec[k],
-                t=coeff[k] * t_full[k],
-                A=coeff[k] * itube.Area[k],
-                Ixx=coeff[k] * itube.Ixx[k],
-                Iyy=coeff[k] * itube.Iyy[k],
-                J0=coeff[k] * itube.J0[k],
+                t= t_full[k],
+                A= itube.Area[k],
+                Ixx= itube.Ixx[k],
+                Iyy= itube.Iyy[k],
+                J0= itube.J0[k],
                 Asx=itube.Asx[k],
                 Asy=itube.Asy[k],
-                rho=rho[k],
+                rho=coeff[k] * rho[k],
                 E=Emat[k],
                 G=Gmat[k],
                 sigy=sigymat[k],
@@ -1118,7 +1124,7 @@ class MemberComplex(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
         self.options.declare("idx")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_refine", default=NREFINE_DEFAULT)
 
     def setup(self):
         opt = self.options["options"]
@@ -1349,14 +1355,14 @@ class MemberComplex(om.ExplicitComponent):
                 itube = cs.Tube(d_sec[k], t_full[k])
                 iprop = CircCrossSection(
                     D=d_sec[k],
-                    t=coeff[k] * t_full[k] + t_eff[k],
-                    A=coeff[k] * itube.Area + A_stiff,
-                    Ixx=coeff[k] * itube.Ixx + Ix_stiff[k],
-                    Iyy=coeff[k] * itube.Iyy + Ix_stiff[k],
-                    J0=coeff[k] * itube.J0 + Iz_stiff[k],
+                    t= t_full[k] + t_eff[k],
+                    A= itube.Area + A_stiff,
+                    Ixx= itube.Ixx + Ix_stiff[k],
+                    Iyy= itube.Iyy + Ix_stiff[k],
+                    J0= itube.J0 + Iz_stiff[k],
                     Asx=itube.Asx,
                     Asy=itube.Asy,
-                    rho=rho[k],
+                    rho= coeff[k] * rho[k],
                     E=Emat[k],
                     G=Gmat[k],
                     TorsC=itube.TorsConst,
@@ -1369,14 +1375,14 @@ class MemberComplex(om.ExplicitComponent):
                 iprop = RectCrossSection(
                     a=a_sec[k],
                     b=b_sec[k],
-                    t=coeff[k] * t_full[k] + t_eff[k],
-                    A=coeff[k] * irect.Area + A_stiff,
-                    Ixx=coeff[k] * irect.Ixx + Ix_stiff[k],
-                    Iyy=coeff[k] * irect.Iyy + Ix_stiff[k],
-                    J0=coeff[k] * irect.J0 + Iz_stiff[k],
+                    t=t_full[k] + t_eff[k],
+                    A=irect.Area + A_stiff,
+                    Ixx=irect.Ixx + Ix_stiff[k],
+                    Iyy=irect.Iyy + Ix_stiff[k],
+                    J0=irect.J0 + Iz_stiff[k],
                     Asx=irect.Asx,
                     Asy=irect.Asy,
-                    rho=rho[k],
+                    rho=coeff[k] * rho[k],
                     E=Emat[k],
                     G=Gmat[k],
                     TorsC=irect.TorsConst,
@@ -1637,7 +1643,7 @@ class MemberComplex(om.ExplicitComponent):
                     J0=irect.J0,
                     Asx=irect.Asx,
                     Asy=irect.Asy,
-                    rho=rho[k],
+                    rho=coeff_bulk[k] * rho[k],
                     E=E_bulk[k],
                     G=G_bulk[k],
                     TorsC=irect.TorsConst,
@@ -1789,19 +1795,19 @@ class MemberComplex(om.ExplicitComponent):
             ishell = cs.Tube(2 * R_od_stiff[k], twall_stiff[k])
             iweb = cs.Tube(2 * R_wo[k], h_web)
             iflange = cs.Tube(2 * R_fo[k], t_flange)
-            Ak = coeff_stiff[k] * ishell.Area + iflange.Area + iweb.Area * web_frac
+            Ak = ishell.Area + iflange.Area + iweb.Area * web_frac
             # Find effective thickness for OpenFAST
             t_eff = R_od_stiff[k] - np.sqrt(R_od_stiff[k] ** 2 - Ak / np.pi)
             iprop = CircCrossSection(
                 D=2 * R_od_stiff[k],
                 t=t_eff,
                 A=Ak,
-                Ixx=coeff_stiff[k] * ishell.Ixx + iflange.Ixx + iweb.Ixx * web_frac,
-                Iyy=coeff_stiff[k] * ishell.Iyy + iflange.Iyy + iweb.Iyy * web_frac,
-                J0=coeff_stiff[k] * ishell.J0 + iflange.J0 + iweb.J0 * web_frac,
+                Ixx=ishell.Ixx + iflange.Ixx + iweb.Ixx * web_frac,
+                Iyy=ishell.Iyy + iflange.Iyy + iweb.Iyy * web_frac,
+                J0=ishell.J0 + iflange.J0 + iweb.J0 * web_frac,
                 Asx=ishell.Asx + iflange.Asx + iweb.Asx * web_frac,
                 Asy=ishell.Asy + iflange.Asy + iweb.Asy * web_frac,
-                rho=rho_stiff[k],
+                rho=coeff_stiff[k] * rho_stiff[k],
                 E=E_stiff[k],
                 G=G_stiff[k],
                 sigy=sigy_stiff[k],

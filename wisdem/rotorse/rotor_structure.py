@@ -1893,6 +1893,7 @@ class RotorStructure(Group):
             "yu_te",
             "yl_te",
         ]
+
         self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=promoteListStrains)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
         self.add_subsystem(
@@ -1900,18 +1901,22 @@ class RotorStructure(Group):
             CCBladeEvaluate(modeling_options=modeling_options),
             promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
-        self.add_subsystem(
-            "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
-        )
-        self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if not modeling_options["user_elastic"]["blade"]:
+
             self.add_subsystem(
-                "bjs",
-                BladeJointSizing(
-                    rotorse_options=modeling_options["WISDEM"]["RotorSE"],
-                    n_mat=self.options["modeling_options"]["materials"]["n_mat"],
-                ),
+                "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
             )
+
+            # Can't do sizing with user defined blade elastic properties
+            self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
+            if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+                self.add_subsystem(
+                    "bjs",
+                    BladeJointSizing(
+                        rotorse_options=modeling_options["WISDEM"]["RotorSE"],
+                        n_mat=self.options["modeling_options"]["materials"]["n_mat"],
+                    ),
+                )
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
         #     promoteListFatigue = ['r', 'gamma_f', 'gamma_m', 'E', 'Xt', 'Xc', 'x_tc', 'y_tc', 'EIxx', 'EIyy', 'pitch_axis', 'chord', 'layer_name', 'layer_mat', 'definition_layer', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats','rthick']
@@ -1951,16 +1956,19 @@ class RotorStructure(Group):
         self.connect("3d_curv", "tip_pos.3d_curv_tip", src_indices=[-1])
 
         # Strains from frame3dd to constraint
-        self.connect("strains.strainU_spar", "constr.strainU_spar")
-        self.connect("strains.strainL_spar", "constr.strainL_spar")
-        self.connect("strains.strainU_te", "constr.strainU_te")
-        self.connect("strains.strainL_te", "constr.strainL_te")
-        self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
-        self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
-        self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
+        if not modeling_options["user_elastic"]["blade"]:
+            # TODO YL: no constr component, remove the above conditional when the constr component is enabled for user defined blade
+            self.connect("strains.strainU_spar", "constr.strainU_spar")
+            self.connect("strains.strainL_spar", "constr.strainL_spar")
+            self.connect("strains.strainU_te", "constr.strainU_te")
+            self.connect("strains.strainL_te", "constr.strainL_te")
 
-        # Blade root moment to blade root sizing
-        self.connect("frame.root_M", "brs.root_M")
+            self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
+            self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
+            self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
+
+            # Blade root moment to blade root sizing
+            self.connect("frame.root_M", "brs.root_M")
 
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             # Moments to joint sizing
