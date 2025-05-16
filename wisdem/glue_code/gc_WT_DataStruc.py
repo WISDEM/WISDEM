@@ -583,8 +583,15 @@ class Blade(om.Group):
 
         self.add_subsystem("opt_var", opt_var)
 
+        ivc = self.add_subsystem("blade_indep_vars", om.IndepVarComp(), promotes=["*"])
+        ivc.add_output(
+            "ref_axis_yaml",
+            val=np.zeros((rotorse_options["n_span"], 3)),
+            units="m",
+            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
+        )
         # Import outer shape BEM
-        self.add_subsystem("outer_shape_bem", Blade_Outer_Shape_BEM(rotorse_options=rotorse_options))
+        self.add_subsystem("outer_shape", Blade_Outer_Shape(rotorse_options=rotorse_options))
 
         # Parametrize blade outer shape
         self.add_subsystem(
@@ -595,7 +602,7 @@ class Blade(om.Group):
         self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
         self.connect("opt_var.twist_opt", "pa.twist_opt")
         self.connect("opt_var.chord_opt", "pa.chord_opt")
-        self.connect("outer_shape_bem.s", "pa.s")
+        self.connect("outer_shape.s", "pa.s")
 
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem(
@@ -604,14 +611,14 @@ class Blade(om.Group):
         )
 
         # Connections from oute_shape_bem to interp_airfoils
-        self.connect("outer_shape_bem.s", "interp_airfoils.s")
-        self.connect("outer_shape_bem.r_thick_yaml_interp", "interp_airfoils.r_thick_yaml")
+        self.connect("outer_shape.s", "interp_airfoils.s")
+        self.connect("outer_shape.rthick_yaml_interp", "interp_airfoils.rthick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
-        self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
+        self.connect("outer_shape.section_offset_x", ["interp_airfoils.section_offset_x", "compute_coord_xy_dim.section_offset_x"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
-        self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("outer_shape.ref_axis", "high_level_blade_props.blade_ref_axis_user")
         self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
@@ -627,7 +634,7 @@ class Blade(om.Group):
                     aero_shape_opt_options=opt_options["design_variables"]["blade"]["aero_shape"],
                 ),
             )
-            self.connect("outer_shape_bem.s", "run_inn_af.s")
+            self.connect("outer_shape.s", "run_inn_af.s")
             self.connect("pa.chord_param", "run_inn_af.chord")
             self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick")
             self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
@@ -665,10 +672,10 @@ class Blade(om.Group):
                 "internal_structure_2d_fem",
                 Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
             )
-            self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
+            self.connect("outer_shape.s", "internal_structure_2d_fem.s")
             self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
             self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
-            self.connect("outer_shape_bem.pitch_axis", "internal_structure_2d_fem.pitch_axis")
+            self.connect("outer_shape.section_offset_x", "internal_structure_2d_fem.section_offset_x")
 
             self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
 
@@ -681,7 +688,7 @@ class Blade(om.Group):
                 self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
                 self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
-            self.connect("outer_shape_bem.s", "ps.s")
+            self.connect("outer_shape.s", "ps.s")
             # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
             self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
 
@@ -702,7 +709,7 @@ class Blade(om.Group):
         self.add_subsystem("fatigue", fat_var)
 
 
-class Blade_Outer_Shape_BEM(om.Group):
+class Blade_Outer_Shape(om.Group):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -733,28 +740,29 @@ class Blade_Outer_Shape_BEM(om.Group):
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         ivc.add_output(
-            "pitch_axis_yaml",
+            "section_offset_x_yaml",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
-        )
-        ivc.add_output(
-            "ref_axis_yaml",
-            val=np.zeros((n_span, 3)),
             units="m",
-            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         ivc.add_output(
-            "r_thick_yaml", val=np.zeros(n_span), desc="1D array of the relative thickness values defined along blade span."
+            "section_offset_y_yaml",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
+        )
+        ivc.add_output(
+            "rthick_yaml", val=np.zeros(n_span), desc="1D array of the relative thickness values defined along blade span."
         )
 
         self.add_subsystem(
-            "compute_blade_outer_shape_bem",
-            Compute_Blade_Outer_Shape_BEM(rotorse_options=rotorse_options),
+            "compute_blade_outer_shape",
+            Compute_Blade_Outer_Shape(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
 
-class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
+class Compute_Blade_Outer_Shape(om.ExplicitComponent):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -783,14 +791,19 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_input(
-            "r_thick_yaml",
+            "rthick_yaml",
             val=np.zeros(n_span),
             desc="1D array of the relative thickness values defined along blade span.",
         )
         self.add_input(
-            "pitch_axis_yaml",
+            "section_offset_x_yaml",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
+        )
+        self.add_input(
+            "section_offset_y_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
         )
         self.add_input(
             "ref_axis_yaml",
@@ -825,12 +838,19 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_output(
-            "pitch_axis",
+            "section_offset_x",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         self.add_output(
-            "r_thick_yaml_interp",
+            "section_offset_y",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
+        )
+        self.add_output(
+            "rthick_yaml_interp",
             val=np.zeros(n_span),
             desc="1D array of the relative thickness values defined along blade span.",
         )
@@ -848,8 +868,8 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
 
             chord_orig = PchipInterpolator(inputs["s_default"], inputs["chord_yaml"])(nd_span_orig)
             twist_orig = PchipInterpolator(inputs["s_default"], inputs["twist_yaml"])(nd_span_orig)
-            pitch_axis_orig = PchipInterpolator(inputs["s_default"], inputs["pitch_axis_yaml"])(nd_span_orig)
-            r_thick_orig = PchipInterpolator(inputs["s_default"], inputs["r_thick_yaml"])(nd_span_orig)
+            section_offset_x_orig = PchipInterpolator(inputs["s_default"], inputs["section_offset_x_yaml"])(nd_span_orig)
+            r_thick_orig = PchipInterpolator(inputs["s_default"], inputs["rthick_yaml"])(nd_span_orig)
             ref_axis_orig = np.zeros((self.n_span, 3))
             ref_axis_orig[:, 0] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 0])(nd_span_orig)
             ref_axis_orig[:, 1] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 1])(nd_span_orig)
@@ -876,8 +896,8 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             outputs["s"][idx_flap_end] = flap_end
             outputs["chord"] = PchipInterpolator(nd_span_orig, chord_orig)(outputs["s"])
             outputs["twist"] = PchipInterpolator(nd_span_orig, twist_orig)(outputs["s"])
-            outputs["pitch_axis"] = PchipInterpolator(nd_span_orig, pitch_axis_orig)(outputs["s"])
-            outputs["r_thick_yaml_interp"] = PchipInterpolator(nd_span_orig, r_thick_orig)(outputs["s"])
+            outputs["section_offset_x"] = PchipInterpolator(nd_span_orig, section_offset_x_orig)(outputs["s"])
+            outputs["rthick_yaml_interp"] = PchipInterpolator(nd_span_orig, r_thick_orig)(outputs["s"])
             outputs["ref_axis"][:, 0] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 0])(outputs["s"])
             outputs["ref_axis"][:, 1] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 1])(outputs["s"])
             outputs["ref_axis"][:, 2] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 2])(outputs["s"])
@@ -885,8 +905,8 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             outputs["s"] = inputs["s_default"]
             outputs["chord"] = inputs["chord_yaml"]
             outputs["twist"] = inputs["twist_yaml"]
-            outputs["pitch_axis"] = inputs["pitch_axis_yaml"]
-            outputs["r_thick_yaml_interp"] = inputs["r_thick_yaml"]
+            outputs["section_offset_x"] = inputs["section_offset_x_yaml"]
+            outputs["rthick_yaml_interp"] = inputs["rthick_yaml"]
             outputs["ref_axis"] = inputs["ref_axis_yaml"]
 
 
@@ -920,9 +940,10 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         self.add_input(
-            "pitch_axis",
+            "section_offset_x",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis..",
         )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
@@ -961,7 +982,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
         )
         self.add_input(
-            "r_thick_yaml",
+            "rthick_yaml",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -1027,11 +1048,11 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         spline = PchipInterpolator
         rthick_spline = spline(inputs["af_position"], r_thick_used)
         ac_spline = spline(inputs["af_position"], ac_used)
-        if np.max(inputs["r_thick_yaml"]) < 1.e-6:
+        if np.max(inputs["rthick_yaml"]) < 1.e-6:
             rthick_spline = spline(inputs["af_position"], r_thick_used)
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
-            outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            outputs["r_thick_interp"] = inputs["rthick_yaml"]
             if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
                 raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
 
@@ -1055,8 +1076,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             if outputs["r_thick_interp"][i] < 0.4:
                 coord_xy_interp[i, :, :] = trailing_edge_smoothing(coord_xy_interp[i, :, :])
 
-        pitch_axis = inputs["pitch_axis"]
-        chord = inputs["chord"]
 
         # Spanwise interpolation of the airfoil polars with a pchip
         cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
@@ -1085,9 +1104,10 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         self.add_input(
-            "pitch_axis",
+            "section_offset_x",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         self.add_input(
             "twist",
@@ -1123,13 +1143,13 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         self.add_output("projected_area", val=0.0, units="m**2", desc="The projected surface area of the blade")
 
     def compute(self, inputs, outputs):
-        pitch_axis = inputs["pitch_axis"]
+        section_offset_x = inputs["section_offset_x"]
         chord = inputs["chord"]
         twist = inputs["twist"]
         coord_xy_interp = inputs["coord_xy_interp"]
 
         coord_xy_dim = copy.copy(coord_xy_interp)
-        coord_xy_dim[:, :, 0] -= pitch_axis[:, np.newaxis]
+        coord_xy_dim[:, :, 0] -= section_offset_x[:, np.newaxis] / chord[:, np.newaxis]
         coord_xy_dim = coord_xy_dim * chord[:, np.newaxis, np.newaxis]
 
         outputs["coord_xy_dim"] = coord_xy_dim
@@ -1561,13 +1581,13 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
 
         self.add_subsystem(
-            "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+            "compute_structure",
+            Compute_Structure(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
 
-class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
+class Compute_Structure(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("rotorse_options")
 
@@ -1694,7 +1714,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         self.add_input(
-            "pitch_axis",
+            "section_offset_x",
             val=np.zeros(n_span),
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
@@ -1790,8 +1810,8 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             xy_arc_i /= arc_L_i
             idx_le = np.argmin(xy_coord_i[:, 0])
             LE_loc = xy_arc_i[idx_le]
-            chord = inputs["chord"][i]
-            p_le_i = inputs["pitch_axis"][i]
+            chord_i = inputs["chord"][i]
+            section_offset_x_i = inputs["section_offset_x"][i]
             ratio_SCmax = 0.8
             ratio_Websmax = 0.75
 
@@ -1799,12 +1819,12 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             for j in range(self.n_webs):
                 offset = inputs["web_offset_y_pa_yaml"][j, i]
                 # Geometry checks on webs
-                if offset < ratio_Websmax * (-chord * p_le_i) or offset > ratio_Websmax * (chord * (1.0 - p_le_i)):
+                if offset < ratio_Websmax * (-section_offset_x_i) or offset > ratio_Websmax * (chord_i - section_offset_x_i):
                     offset_old = copy.copy(offset)
                     if offset_old <= 0.0:
-                        offset = ratio_Websmax * (-chord * p_le_i)
+                        offset = ratio_Websmax * (-section_offset_x_i)
                     else:
-                        offset = ratio_Websmax * (chord * (1.0 - p_le_i))
+                        offset = ratio_Websmax * (chord_i - section_offset_x_i)
 
                     outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
                     layer_resize_warning = (
@@ -1880,11 +1900,11 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     width = inputs["layer_width_yaml"][j, i]
                     offset = inputs["layer_offset_y_pa_yaml"][j, i]
                     if (
-                        offset + 0.5 * width > ratio_SCmax * chord * (1.0 - p_le_i)
-                        or offset - 0.5 * width < -ratio_SCmax * chord * p_le_i
+                        offset + 0.5 * width > ratio_SCmax * (chord_i - section_offset_x_i)
+                        or offset - 0.5 * width < -ratio_SCmax * section_offset_x_i
                     ):  # hitting TE or LE
                         width_old = copy.copy(width)
-                        width = 2.0 * min([ratio_SCmax * (chord * p_le_i), ratio_SCmax * (chord * (1.0 - p_le_i))])
+                        width = 2.0 * min([ratio_SCmax * section_offset_x_i, ratio_SCmax * (chord_i - section_offset_x_i)])
                         offset = 0.0
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
