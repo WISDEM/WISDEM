@@ -1469,8 +1469,8 @@ class PoseOptimization(object):
         if self.modeling["flags"]["floating"]:
             float_constr = self.opt["constraints"]["floating"]
             wt_opt["floatingse.max_surge_fraction"] = float_constr["max_surge"]["upper_bound"]
-            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="rad")
-            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="rad")
+            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="deg")
+            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="deg")
 
         return wt_opt
 

@@ -76,7 +76,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             airfoils.add_output(
                 "aoa",
                 val=np.zeros(n_aoa),
-                units="rad",
+                units="deg",
                 desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
             )
             airfoils.add_output(
@@ -140,7 +140,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 inn_af.add_output(
                     "stall_margin_opt",
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
-                    units="rad",
+                    units="deg",
                 )
                 inn_af.add_output(
                     "z",
@@ -194,13 +194,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output(
                 "V_out", val=0.0, units="m/s", desc="Cut out wind speed. This is the wind speed where region III ends."
             )
-            ctrl_ivc.add_output("minOmega", val=0.0, units="rad/s", desc="Minimum allowed rotor speed.")
-            ctrl_ivc.add_output("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
+            ctrl_ivc.add_output("minOmega", val=0.0, units="rpm", desc="Minimum allowed rotor speed.")
+            ctrl_ivc.add_output("maxOmega", val=0.0, units="rpm", desc="Maximum allowed rotor speed.")
             ctrl_ivc.add_output("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
-            ctrl_ivc.add_output("max_pitch_rate", val=0.0, units="rad/s", desc="Maximum allowed blade pitch rate")
+            ctrl_ivc.add_output("max_pitch_rate", val=0.0, units="deg/s", desc="Maximum allowed blade pitch rate")
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
-            ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+            ctrl_ivc.add_output("rated_pitch", val=0.0, units="deg", desc="Constant pitch angle in region II.")
             ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
             ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
@@ -462,7 +462,7 @@ class Blade(om.Group):
         opt_var.add_output(
             "twist_opt",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
-            units="rad",
+            units="deg",
         )
         opt_var.add_output(
             "chord_opt",
@@ -729,7 +729,7 @@ class Blade_Outer_Shape_BEM(om.Group):
         ivc.add_output(
             "twist_yaml",
             val=np.zeros(n_span),
-            units="rad",
+            units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         ivc.add_output(
@@ -779,7 +779,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         self.add_input(
             "twist_yaml",
             val=np.zeros(n_span),
-            units="rad",
+            units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_input(
@@ -821,7 +821,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         self.add_output(
             "twist",
             val=np.zeros(n_span),
-            units="rad",
+            units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_output(
@@ -935,7 +935,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
-            units="rad",
+            units="deg",
             desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
         )
         self.add_input(
@@ -1092,7 +1092,7 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         self.add_input(
             "twist",
             val=np.zeros(n_span),
-            units="rad",
+            units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_input(
@@ -1188,7 +1188,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
-            units="rad",
+            units="deg",
             desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
         )
         self.add_input(
@@ -1230,7 +1230,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "stall_margin_opt",
             val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]),
-            units="rad",
+            units="deg",
         )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
@@ -1276,7 +1276,7 @@ class INN_Airfoils(om.ExplicitComponent):
             "aoa_inn",
             val=np.pi * np.ones(n_span),
             desc="1D array with the operational angles of attack prescribed by the INN for the airfoils along blade span.",
-            units="rad",
+            units="deg",
         )
 
         self.inn = INN()
@@ -1323,7 +1323,7 @@ class INN_Airfoils(om.ExplicitComponent):
                 all_coords, alpha_inn, y_inv, z_val = self.inn.inverse_design(
                     c_d[i],
                     L_D[i],
-                    np.rad2deg(stall_margin[i]),
+                    stall_margin[i],
                     r_thick[i],
                     Re,
                     N=1,
@@ -1382,7 +1382,7 @@ class INN_Airfoils(om.ExplicitComponent):
                 outputs["cl_interp"][i, :, j, 0] = cl_interp
                 outputs["cd_interp"][i, :, j, 0] = cd_interp
 
-            outputs["aoa_inn"][i] = np.deg2rad(alpha_inn)
+            outputs["aoa_inn"][i] = alpha_inn
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
@@ -1459,7 +1459,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output(
             "layer_orientation",
             val=np.zeros((n_layers, n_span)),
-            units="rad",
+            units="deg",
             desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         ivc.add_output(
@@ -1500,7 +1500,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output(
             "web_rotation_yaml",
             val=np.zeros((n_webs, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
         )
         ivc.add_output(
@@ -1512,7 +1512,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output(
             "layer_rotation_yaml",
             val=np.zeros((n_layers, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
         )
         ivc.add_output(
@@ -1587,7 +1587,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         self.add_input(
             "web_rotation_yaml",
             val=np.zeros((n_webs, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
         )
         self.add_input(
@@ -1621,13 +1621,13 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         self.add_input(
             "layer_orientation",
             val=np.zeros((n_layers, n_span)),
-            units="rad",
+            units="deg",
             desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_input(
             "layer_rotation_yaml",
             val=np.zeros((n_layers, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
         )
         self.add_input(
@@ -1687,7 +1687,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         self.add_input(
             "twist",
             val=np.zeros(n_span),
-            units="rad",
+            units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         self.add_input(
@@ -1702,7 +1702,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         self.add_output(
             "web_rotation",
             val=np.zeros((n_webs, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
         )
         self.add_output(
@@ -1724,7 +1724,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         self.add_output(
             "layer_rotation",
             val=np.zeros((n_layers, n_span)),
-            units="rad",
+            units="deg",
             desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
         )
         self.add_output(
@@ -2022,7 +2022,7 @@ class Hub(om.Group):
     def setup(self):
         ivc = self.add_subsystem("hub_indep_vars", om.IndepVarComp(), promotes=["*"])
 
-        ivc.add_output("cone", val=0.0, units="rad", desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.")
+        ivc.add_output("cone", val=0.0, units="deg", desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.")
         # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output("diameter", val=0.0, units="m")
 
@@ -2062,7 +2062,7 @@ class Nacelle(om.Group):
         ivc = self.add_subsystem("nac_indep_vars", om.IndepVarComp(), promotes=["*"])
 
         # Common direct and geared
-        ivc.add_output("uptilt", val=0.0, units="rad", desc="Nacelle uptilt angle. A standard machine has positive values.")
+        ivc.add_output("uptilt", val=0.0, units="deg", desc="Nacelle uptilt angle. A standard machine has positive values.")
         ivc.add_output("distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top plane to hub flange")
         ivc.add_output("overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange")
         ivc.add_output("gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive")
@@ -2160,7 +2160,7 @@ class Generator(om.Group):
             ivc.add_output("mu_0", val=np.pi * 4e-7, units="m*kg/s**2/A**2")
             ivc.add_output("mu_r", val=1.06, units="m*kg/s**2/A**2")
             ivc.add_output("p", val=3.0)
-            ivc.add_output("phi", val=np.deg2rad(90), units="rad")
+            ivc.add_output("phi", val=90, units="deg")
             ivc.add_discrete_output("q1", val=6)
             ivc.add_discrete_output("q2", val=4)
             ivc.add_output("ratio_mw2pp", val=0.7)
@@ -2504,7 +2504,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+            ivc.add_output("axial_stiffener_spacing", 0.0, units="deg")
             ivc.add_output("member_mass_user", 0.0, units="kg", desc="Override bottom-up calculation of total member mass with this value")
 
             # Use the memidx to query the correct member_shape
@@ -3238,7 +3238,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         self.add_input(
             "cone",
             val=0.0,
-            units="rad",
+            units="deg",
             desc="Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.",
         )
         self.add_input(
@@ -3391,7 +3391,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
-            units="rad",
+            units="deg",
             desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
         )
         self.add_input(
