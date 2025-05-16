@@ -155,7 +155,6 @@ class WindTurbineOntologyPython(object):
                 ]["airfoils"][i]["name"]
 
         # Blade
-        self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
         if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -184,7 +183,6 @@ class WindTurbineOntologyPython(object):
                     self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i] = self.wt_init["components"]["blade"]["structure"]["webs"][i]["name"]
                     joint_pos = self.wt_init["components"]["blade"]["structure"]["joint"]["position"]
                 if joint_pos > 0.0:
-                    self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
                     # Adjust grid to have grid point at join location
                     closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
                     self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
@@ -942,11 +940,6 @@ class WindTurbineOntologyPython(object):
                     self.wt_init["components"]["blade"]["structure"]["layers"][i]["fiber_orientation"][
                         "values"
                     ] = np.zeros(len(wt_opt["blade.structure.s"])).tolist()
-
-                # TODO assign joint mass to wt_init from rs.bjs
-                # Elastic properties of the blade
-                if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    self.wt_init["components"]["blade"]["structure"]["joint"]["mass"] = wt_opt["rotorse.rs.bjs.joint_mass"][0]
 
             self.wt_init["components"]["blade"]["elastic_properties"] = {}
             self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"] = {}

@@ -3933,7 +3933,7 @@ class StandaloneBladeCost(om.Group):
         )
         self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if modeling_options["WISDEM"]["RotorSE"]["jointed_blade"]:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
             n_span_out = (
@@ -4026,7 +4026,7 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.roll_mass", "rc.roll_mass")
 
         self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if modeling_options["WISDEM"]["RotorSE"]["jointed_blade"]:
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
             self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "total_bc.joint_cost")

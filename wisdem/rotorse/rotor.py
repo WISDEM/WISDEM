@@ -90,17 +90,17 @@ class RotorSEProp(om.Group):
             promotes=promoteGeom + re_promote_add,
         )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
+        if not modeling_options["user_elastic"]["blade"]:
             # Can't estimate blade cost with user defined blade elastic properties
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.add_subsystem(
                 "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
             )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] or modeling_options["user_elastic"]["blade"]:
+        if not modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
         
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
+        if not modeling_options["user_elastic"]["blade"]:
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
@@ -185,7 +185,7 @@ class RotorSEPerf(om.Group):
             promotes=promoteGeom + promoteCC + promoteRS,
         )
 
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["user_elastic"]["blade"]:
+        if not modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
             n_span_out = (
@@ -224,7 +224,6 @@ class RotorSEPerf(om.Group):
 
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
-            self.connect("rs.bjs.joint_total_cost", "total_bc.joint_cost")
 
         # Connection from ra to rs for the rated conditions
         self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])

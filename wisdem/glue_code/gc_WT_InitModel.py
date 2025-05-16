@@ -113,6 +113,7 @@ def MoI_setter(wt_opt, varstr, listin):
     else:
         raise ValueError(f"When setting, {varstr}, expected 3 or 6 elements but found {nn}")
 
+
 def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic):
     # Function to assign values to the openmdao group Blade
     
@@ -566,6 +567,7 @@ def assign_structure_values(wt_opt, modeling_options, structure):
 
     return wt_opt
 
+
 def assign_user_elastic(wt_opt, user_elastic_properties):
 
     nd_span = wt_opt["blade.outer_shape.s_default"]
@@ -774,6 +776,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["drivese.rna_I_TT"] = wt_opt["drivese.above_yaw_I_TT"]
 
     return wt_opt
+
 
 def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
     if user_elastic:
@@ -1673,12 +1676,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
             Xc[i, :] = materials[i]["Xc"]
             if "S" in materials[i]:
                 S[i, :] = materials[i]["S"]
-            else:
-                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    raise Exception(
-                        "The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material "
-                        + materials[i]["name"]
-                    )
 
         else:
             raise ValueError("The flag orth must be set to either 0 or 1. Error in material " + name[i])

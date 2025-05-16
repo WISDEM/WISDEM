@@ -951,10 +951,6 @@ class PoseOptimization(object):
                 )
         if blade_constr["tip_deflection"]["flag"]:
             wt_opt.model.add_constraint("tcons.tip_deflection_ratio", upper=1.0)
-        if blade_constr["t_sc_joint"]["flag"] and self.modeling["WISDEM"]["RotorSE"]["bjs"]:
-            wt_opt.model.add_constraint(
-                "rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0
-            )
         if blade_constr["chord"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"]:
                 wt_opt.model.add_constraint("blade.pa.max_chord_constr", upper=1.0)
