@@ -771,10 +771,6 @@ class Compute_Blade_Outer_Shape(om.ExplicitComponent):
         rotorse_options = self.options["rotorse_options"]
         n_af_span = rotorse_options["n_af_span"]
         self.n_span = n_span = rotorse_options["n_span"]
-        if "n_te_flaps" in rotorse_options.keys():
-            n_te_flaps = rotorse_options["n_te_flaps"]
-        else:
-            n_te_flaps = 0
 
         self.add_input(
             "s_default",
@@ -810,17 +806,6 @@ class Compute_Blade_Outer_Shape(om.ExplicitComponent):
             val=np.zeros((n_span, 3)),
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
-        )
-
-        self.add_input(
-            "span_end",
-            val=np.zeros(n_te_flaps),
-            desc="1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.",
-        )
-        self.add_input(
-            "span_ext",
-            val=np.zeros(n_te_flaps),
-            desc="1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.",
         )
 
         self.add_output(
@@ -942,7 +927,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         self.add_input(
             "section_offset_x",
             val=np.zeros(n_span),
-            units="m",
+            unit="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis..",
         )
         self.add_input(

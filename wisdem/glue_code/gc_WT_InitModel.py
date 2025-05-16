@@ -133,8 +133,7 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic)
     if not user_elastic:
         wt_opt = assign_structure_values(wt_opt, modeling_options, blade["structure"])
     else:
-        wt_opt = assign_user_elastic(wt_opt, modeling_options, blade["elastic_properties"])
-    wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
+        wt_opt = assign_user_elastic(wt_opt, blade["elastic_properties"])
 
     return wt_opt
 
@@ -567,16 +566,15 @@ def assign_structure_values(wt_opt, modeling_options, structure):
 
     return wt_opt
 
-def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
+def assign_user_elastic(wt_opt, user_elastic_properties):
 
-    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
     nd_span = wt_opt["blade.outer_shape.s_default"]
 
-    stiff_grid = user_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
-    stiff_matrix = user_elastic_properties["six_x_six"]["stiff_matrix"]
+    stiff_grid = user_elastic_properties["stiffness_matrix"]["grid"]
+    stiffness_matrix = user_elastic_properties["stiffness_matrix"]
 
-    inertia_grid = user_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
-    inertia_matrix = user_elastic_properties["six_x_six"]["inertia_matrix"]
+    inertia_grid = user_elastic_properties["inertia_matrix"]["grid"]
+    inertia_matrix = user_elastic_properties["inertia_matrix"]
 
     # 21-element inertia matrix
     # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
@@ -587,27 +585,27 @@ def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
 
     # Assemble stiffnees and inertia matrices
-    K11 = PchipInterpolator(stiff_grid, stiff_matrix["K11"][:])(nd_span)
-    K22 = PchipInterpolator(stiff_grid, stiff_matrix["K22"][:])(nd_span)
-    K33 = PchipInterpolator(stiff_grid, stiff_matrix["K33"][:])(nd_span)
-    K44 = PchipInterpolator(stiff_grid, stiff_matrix["K44"][:])(nd_span)
-    K55 = PchipInterpolator(stiff_grid, stiff_matrix["K55"][:])(nd_span)
-    K66 = PchipInterpolator(stiff_grid, stiff_matrix["K66"][:])(nd_span)
-    K12 = PchipInterpolator(stiff_grid, stiff_matrix["K12"][:])(nd_span)
-    K13 = PchipInterpolator(stiff_grid, stiff_matrix["K13"][:])(nd_span)
-    K14 = PchipInterpolator(stiff_grid, stiff_matrix["K14"][:])(nd_span)
-    K15 = PchipInterpolator(stiff_grid, stiff_matrix["K15"][:])(nd_span)
-    K16 = PchipInterpolator(stiff_grid, stiff_matrix["K16"][:])(nd_span)
-    K23 = PchipInterpolator(stiff_grid, stiff_matrix["K23"][:])(nd_span)
-    K24 = PchipInterpolator(stiff_grid, stiff_matrix["K24"][:])(nd_span)
-    K25 = PchipInterpolator(stiff_grid, stiff_matrix["K25"][:])(nd_span)
-    K26 = PchipInterpolator(stiff_grid, stiff_matrix["K26"][:])(nd_span)
-    K34 = PchipInterpolator(stiff_grid, stiff_matrix["K34"][:])(nd_span)
-    K35 = PchipInterpolator(stiff_grid, stiff_matrix["K35"][:])(nd_span)
-    K36 = PchipInterpolator(stiff_grid, stiff_matrix["K36"][:])(nd_span)
-    K45 = PchipInterpolator(stiff_grid, stiff_matrix["K45"][:])(nd_span)
-    K46 = PchipInterpolator(stiff_grid, stiff_matrix["K46"][:])(nd_span)
-    K56 = PchipInterpolator(stiff_grid, stiff_matrix["K56"][:])(nd_span)
+    K11 = PchipInterpolator(stiff_grid, stiffness_matrix["K11"][:])(nd_span)
+    K22 = PchipInterpolator(stiff_grid, stiffness_matrix["K22"][:])(nd_span)
+    K33 = PchipInterpolator(stiff_grid, stiffness_matrix["K33"][:])(nd_span)
+    K44 = PchipInterpolator(stiff_grid, stiffness_matrix["K44"][:])(nd_span)
+    K55 = PchipInterpolator(stiff_grid, stiffness_matrix["K55"][:])(nd_span)
+    K66 = PchipInterpolator(stiff_grid, stiffness_matrix["K66"][:])(nd_span)
+    K12 = PchipInterpolator(stiff_grid, stiffness_matrix["K12"][:])(nd_span)
+    K13 = PchipInterpolator(stiff_grid, stiffness_matrix["K13"][:])(nd_span)
+    K14 = PchipInterpolator(stiff_grid, stiffness_matrix["K14"][:])(nd_span)
+    K15 = PchipInterpolator(stiff_grid, stiffness_matrix["K15"][:])(nd_span)
+    K16 = PchipInterpolator(stiff_grid, stiffness_matrix["K16"][:])(nd_span)
+    K23 = PchipInterpolator(stiff_grid, stiffness_matrix["K23"][:])(nd_span)
+    K24 = PchipInterpolator(stiff_grid, stiffness_matrix["K24"][:])(nd_span)
+    K25 = PchipInterpolator(stiff_grid, stiffness_matrix["K25"][:])(nd_span)
+    K26 = PchipInterpolator(stiff_grid, stiffness_matrix["K26"][:])(nd_span)
+    K34 = PchipInterpolator(stiff_grid, stiffness_matrix["K34"][:])(nd_span)
+    K35 = PchipInterpolator(stiff_grid, stiffness_matrix["K35"][:])(nd_span)
+    K36 = PchipInterpolator(stiff_grid, stiffness_matrix["K36"][:])(nd_span)
+    K45 = PchipInterpolator(stiff_grid, stiffness_matrix["K45"][:])(nd_span)
+    K46 = PchipInterpolator(stiff_grid, stiffness_matrix["K46"][:])(nd_span)
+    K56 = PchipInterpolator(stiff_grid, stiffness_matrix["K56"][:])(nd_span)
 
     wt_opt["blade.user_KI.K33"] = K33
     wt_opt["blade.user_KI.K11"] = K11
@@ -638,108 +636,6 @@ def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     wt_opt["blade.user_KI.i_flap"] = PchipInterpolator(inertia_grid, inertia_matrix["i_flap"][:])(nd_span)
     wt_opt["blade.user_KI.i_edge"] = PchipInterpolator(inertia_grid, inertia_matrix["i_edge"][:])(nd_span)
     wt_opt["blade.user_KI.i_cp"] = PchipInterpolator(inertia_grid, inertia_matrix["i_cp"][:])(nd_span)
-
-    return wt_opt
-
-
-def assign_te_flaps_values(wt_opt, modeling_options, blade):
-    # Function to assign the trailing edge flaps data to the openmdao data structure
-    if modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] > 0:
-        n_te_flaps = modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"]
-        for i in range(n_te_flaps):
-            wt_opt["dac_ivc.te_flap_start"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-            wt_opt["dac_ivc.te_flap_end"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-            wt_opt["dac_ivc.chord_start"][i] = blade["aerodynamic_control"]["te_flaps"][i]["chord_start"]
-            wt_opt["dac_ivc.delta_max_pos"][i] = blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"]
-            wt_opt["dac_ivc.delta_max_neg"][i] = blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"]
-
-            wt_opt["dac_ivc.te_flap_ext"] = (
-                blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-                - blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-            )
-            # wt_opt["dac_ivc.te_flap_end"] = blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-
-            # Checks for consistency
-            if blade["aerodynamic_control"]["te_flaps"][i]["span_start"] < 0.0:
-                raise ValueError(
-                    "Error: the start along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined smaller than 0, which corresponds to blade root. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_start"] > 1.0:
-                raise ValueError(
-                    "Error: the start along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined bigger than 1, which corresponds to blade tip. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_end"] < 0.0:
-                raise ValueError(
-                    "Error: the end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined smaller than 0, which corresponds to blade root. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_end"] > 1.0:
-                raise ValueError(
-                    "Error: the end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined bigger than 1, which corresponds to blade tip. Please check the yaml input."
-                )
-            elif (
-                blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-                == blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-            ):
-                raise ValueError(
-                    "Error: the start and end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " are defined equal. Please check the yaml input."
-                )
-            elif i > 0:
-                if (
-                    blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-                    < blade["aerodynamic_control"]["te_flaps"][i - 1]["span_end"]
-                ):
-                    raise ValueError(
-                        "Error: the start along blade span of the trailing edge flap number "
-                        + str(i)
-                        + " is smaller than the end of the trailing edge flap number "
-                        + str(i - 1)
-                        + ". Please check the yaml input."
-                    )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["chord_start"] < 0.2:
-                raise ValueError(
-                    "Error: the start along the chord of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than 0.2, which is too close to the leading edge. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["chord_start"] > 1.0:
-                raise ValueError(
-                    "Error: the end along the chord of the trailing edge flap number "
-                    + str(i)
-                    + " is larger than 1., which is beyond the trailing edge. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"] > 30.0 / 180.0 * np.pi:
-                raise ValueError(
-                    "Error: the max positive deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"] < -30.0 / 180.0 * np.pi:
-                raise ValueError(
-                    "Error: the max negative deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input."
-                )
-            elif (
-                blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"]
-                < blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"]
-            ):
-                raise ValueError(
-                    "Error: the max positive deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than the max negative deflection. Please check the yaml input."
-                )
-            else:
-                pass
 
     return wt_opt
 
