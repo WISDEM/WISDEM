@@ -38,7 +38,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["airfoils"]:
         airfoils = wt_init["airfoils"]
-        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils)
+        airfoils_used = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
+        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils)
     else:
         airfoils = {}
 
@@ -144,9 +145,9 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
-    n_af_span = modeling_options["WISDEM"]["RotorSE"]["n_af_span"]
+    n_af_used = modeling_options["WISDEM"]["RotorSE"]["n_af_used"]
 
-    for i in range(n_af_span):
+    for i in range(n_af_used):
         wt_opt["blade.outer_shape.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
         wt_opt["blade.opt_var.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
 
@@ -1245,139 +1246,121 @@ def assign_costs_values(wt_opt, costs):
     return wt_opt
 
 
-def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=False):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
 
+    
     n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
+    n_af_used = modeling_options["WISDEM"]["RotorSE"]["n_af_used"]
+    af_used = modeling_options["WISDEM"]["RotorSE"]["af_used"]
     n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]
     aoa = modeling_options["WISDEM"]["RotorSE"]["aoa"]
     n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]
-    n_tab = modeling_options["WISDEM"]["RotorSE"]["n_tab"]
+    Re = modeling_options["WISDEM"]["RotorSE"]["Re"]
     n_xy = modeling_options["WISDEM"]["RotorSE"]["n_xy"]
 
-    name = n_af * [""]
-    ac = np.zeros(n_af)
-    r_thick = np.zeros(n_af)
-    Re_all = []
-    for i in range(n_af):
-        name[i] = airfoils[i]["name"]
-        ac[i] = airfoils[i]["aerodynamic_center"]
-        r_thick[i] = airfoils[i]["relative_thickness"]
-        for j in range(len(airfoils[i]["polars"])):
-            Re_all.append(airfoils[i]["polars"][j]["re"])
-    Re = np.unique(Re_all)
+    coord_xy = np.zeros((n_af_used, n_xy, 2))
 
-    cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    ac_used = np.zeros(n_af_used)
+    cl_used = np.zeros((n_af_used, n_aoa, n_Re))
+    cd_used = np.zeros((n_af_used, n_aoa, n_Re))
+    cm_used = np.zeros((n_af_used, n_aoa, n_Re))
+    
+    
+    for i in range(n_af_used):
+        for j in range(n_af):
+            if af_used[i] == airfoils[j]["name"]:
+                ac_used[i] = airfoils[j]["aerodynamic_center"]
+                points = np.column_stack((airfoils[j]["coordinates"]["x"], airfoils[j]["coordinates"]["y"]))
+                # Check that airfoil points are declared from the TE suction side to TE pressure side
+                idx_le = np.argmin(points[:, 0])
+                if np.mean(points[:idx_le, 1]) > 0.0:
+                    points = np.flip(points, axis=0)
 
-    coord_xy = np.zeros((n_af, n_xy, 2))
+                # Remap points using class AirfoilShape
+                af = AirfoilShape(points=points)
+                af.redistribute(n_xy, even=False, dLE=True)
+                af_points = af.points
 
-    # Interp cl-cd-cm along predefined grid of angle of attack
-    for i in range(n_af):
-        Re_i = np.array( [airfoils[i]["polars"][j]["re"] for j in range(len(airfoils[i]["polars"]))] )
-        n_Re_i = len(np.unique(Re_i))
-        Re_j = np.zeros(n_Re_i)
-        j_Re = np.zeros(n_Re_i, dtype=int)
-        for j in range(n_Re_i):
-            Re_j[j] = airfoils[i]["polars"][j]["re"]
-            j_Re[j] = np.argmin(np.abs(Re - Re_j[j]))
-            for k in range(n_tab):
-                cl[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
-                )(aoa)
-                cd[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_d"]["grid"], airfoils[i]["polars"][j]["c_d"]["values"]
-                )(aoa)
-                cm[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_m"]["grid"], airfoils[i]["polars"][j]["c_m"]["values"]
-                )(aoa)
+                # Add trailing edge point if not defined
+                if [1, 0] not in af_points.tolist():
+                    af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
+                c = max(af_points[:, 0]) - min(af_points[:, 0])
+                af_points[:, :] /= c
 
-                if np.abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
-                    cl[i, 0, j, k] = cl[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the lift coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                    )
-                if np.abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
-                    cd[i, 0, j, k] = cd[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the drag coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                    )
-                if np.abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
-                    cm[i, 0, j, k] = cm[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the moment coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                    )
+                coord_xy[i, :, :] = af_points
 
-        # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
-        for l in range(n_aoa):
-            for k in range(n_tab):
-                cl[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cl[i, l, j_Re, k])(Re)
-                    if (len(cl[i, l, j_Re, k]) != 1)
-                    else cl[i, l, j_Re, k]
-                )
-                cd[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cd[i, l, j_Re, k])(Re)
-                    if (len(cd[i, l, j_Re, k]) != 1)
-                    else cd[i, l, j_Re, k]
-                )
-                cm[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cm[i, l, j_Re, k])(Re)
-                    if (len(cm[i, l, j_Re, k]) != 1)
-                    else cm[i, l, j_Re, k]
-                )
+                if coordinates_only:
+                    break
+                
+                # now move on to the polars, first combining polars across configurations
+                n_configs = len(airfoils_used[i]["configuration"])
+                configuration = [''] * n_configs
+                weights = np.zeros(n_configs)
+                for k in range(n_configs):
+                    configuration[k] = airfoils_used[i]["configuration"][k]
+                    weights[k] = airfoils_used[i]["weight"][k]
+                    for l in range(len(airfoils[j]["polars"])):
+                        if configuration[k] == airfoils[j]["polars"][l]["configuration"]:
+                            n_re_config = len(airfoils[j]["polars"][l]["re_sets"])
+                            re_config = np.zeros(n_re_config)
+                            cl_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            cd_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            cm_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            for re_i in range(len(airfoils[j]["polars"][l]["re_sets"])):
+                                cl_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["values"]
+                                )(aoa)
+                            
+                                cd_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["values"]
+                                )(aoa)
+                                cm_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["values"]
+                                )(aoa)
 
-        points = np.column_stack((airfoils[i]["coordinates"]["x"], airfoils[i]["coordinates"]["y"]))
-        # Check that airfoil points are declared from the TE suction side to TE pressure side
-        idx_le = np.argmin(points[:, 0])
-        if np.mean(points[:idx_le, 1]) > 0.0:
-            points = np.flip(points, axis=0)
+                                re_config = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
 
-        # Remap points using class AirfoilShape
-        af = AirfoilShape(points=points)
-        af.redistribute(n_xy, even=False, dLE=True)
-        s = af.s
-        af_points = af.points
+                                break
+                            
+                # Perform weighted average across configurations
+                cl_used_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
+                cd_used_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
+                cm_used_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
 
-        # Add trailing edge point if not defined
-        if [1, 0] not in af_points.tolist():
-            af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
-        c = max(af_points[:, 0]) - min(af_points[:, 0])
-        af_points[:, :] /= c
+                # Interpolate across Re sets
+                if n_re_config == 1:
+                    for j in range(n_Re):
+                        cl_used[i, :, j] = cl_used_i[:, 0]
+                        cd_used[i, :, j] = cd_used_i[:, 0]
+                        cm_used[i, :, j] = cm_used_i[:, 0]
+                else:
+                    for j in range(n_aoa):
+                        cl_used[i, j, :] = PchipInterpolator(
+                                            re_config, cl_used_i[j, :]
+                                        )(Re)
+                        cd_used[i, j, :] = PchipInterpolator(
+                                            re_config, cd_used_i[j, :]
+                                        )(Re)
+                        cm_used[i, j, :] = PchipInterpolator(
+                                            re_config, cm_used_i[j, :]
+                                        )(Re)
+                            
+            break
 
-        coord_xy[i, :, :] = af_points
 
-        # Plotting
-        # import matplotlib.pyplot as plt
-        # plt.plot(af_points[:,0], af_points[:,1], ".")
-        # plt.plot(af_points[:,0], af_points[:,1])
-        # plt.show()
-
+    
+    
     # Assign to openmdao structure
-    wt_opt["airfoils.name"] = name
-    wt_opt["airfoils.r_thick"] = r_thick
+    wt_opt["airfoils.coord_xy"] = coord_xy
     if coordinates_only == False:
         wt_opt["airfoils.aoa"] = aoa
-        wt_opt["airfoils.ac"] = ac
+        wt_opt["airfoils.ac"] = ac_used
         wt_opt["airfoils.Re"] = Re
-        wt_opt["airfoils.cl"] = cl
-        wt_opt["airfoils.cd"] = cd
-        wt_opt["airfoils.cm"] = cm
+        wt_opt["airfoils.cl"] = cl_used
+        wt_opt["airfoils.cd"] = cd_used
+        wt_opt["airfoils.cm"] = cm_used
 
-    wt_opt["airfoils.coord_xy"] = coord_xy
 
     return wt_opt
 

@@ -3,13 +3,13 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
+from scipy.interpolate import PchipInterpolator
 
 import moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
-from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
+from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing
 
 try:
     from INN_interface.INN import INN
@@ -410,7 +410,7 @@ class Blade(om.Group):
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
-        opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
+        opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_used"]))
 
         if not user_elastic:
             for i in range(rotorse_options["n_layers"]):
@@ -629,13 +629,13 @@ class Blade_Outer_Shape(om.Group):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        n_af_span = rotorse_options["n_af_span"]
+        n_af_used = rotorse_options["n_af_used"]
         self.n_span = n_span = rotorse_options["n_span"]
 
         ivc = self.add_subsystem("blade_outer_shape_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
             "af_position",
-            val=np.zeros(n_af_span),
+            val=np.zeros(n_af_used),
             desc="1D array of the non dimensional positions of the airfoils af_used defined along blade span.",
         )
         ivc.add_output(
@@ -682,7 +682,7 @@ class Compute_Blade_Outer_Shape(om.ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        n_af_span = rotorse_options["n_af_span"]
+        n_af_used = rotorse_options["n_af_used"]
         self.n_span = n_span = rotorse_options["n_span"]
 
         self.add_input(
@@ -816,7 +816,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        self.n_af_span = n_af_span = rotorse_options["n_af_span"]
+        self.n_af_used = n_af_used = rotorse_options["n_af_used"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_af = n_af = rotorse_options["n_af"]  # Number of airfoils
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
@@ -829,7 +829,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         self.add_input(
             "af_position",
-            val=np.zeros(n_af_span),
+            val=np.zeros(n_af_used),
             desc="1D array of the non dimensional positions of the airfoils af_used defined along blade span.",
         )
         self.add_input(
@@ -919,18 +919,18 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Reconstruct the blade relative thickness along span with a pchip
-        r_thick_used = np.zeros(self.n_af_span)
-        ac_used = np.zeros(self.n_af_span)
-        coord_xy_used = np.zeros((self.n_af_span, self.n_xy, 2))
+        r_thick_used = np.zeros(self.n_af_used)
+        ac_used = np.zeros(self.n_af_used)
+        coord_xy_used = np.zeros((self.n_af_used, self.n_xy, 2))
         coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
-        cl_used = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cl_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
         cl_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cd_used = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cd_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
         cd_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cm_used = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cm_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
         cm_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
 
-        for i in range(self.n_af_span):
+        for i in range(self.n_af_used):
             for j in range(self.n_af):
                 if self.af_used[i] == discrete_inputs["name"][j]:
                     r_thick_used[i] = inputs["r_thick_discrete"][j]
@@ -1162,6 +1162,7 @@ class Blade_Structure(om.Group):
             units="deg",
             desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
+
 
 class Hub(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.

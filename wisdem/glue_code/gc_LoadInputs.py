@@ -143,6 +143,7 @@ class WindTurbineOntologyPython(object):
                 if len(self.wt_init["airfoils"][i]["polars"]) > 1:
                     self.modeling_options["WISDEM"]["RotorSE"]["AFTabMod"] = 2
             self.modeling_options["WISDEM"]["RotorSE"]["n_Re"] = len(np.unique(Re_all))
+            self.modeling_options["WISDEM"]["RotorSE"]["Re"] = np.unique(Re_all)
             self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
             self.modeling_options["WISDEM"]["RotorSE"]["n_xy"] = self.modeling_options["WISDEM"]["RotorSE"]["n_xy"]
             n_af_used = len(self.wt_init["components"]["blade"][
@@ -159,7 +160,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             )  # Equally spaced non-dimensional spanwise grid
-            self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = n_af_used
+            self.modeling_options["WISDEM"]["RotorSE"]["n_af_used"] = n_af_used
 
             self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False # Is this always false? It is not in the schema and not changed anywhere else.
             self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed, this should be common so moved out of the conditional
