@@ -134,8 +134,6 @@ class WT_RNTA(om.Group):
             self.connect("af_3d.cl_corrected", "rotorse.airfoils_cl")
             self.connect("af_3d.cd_corrected", "rotorse.airfoils_cd")
             self.connect("af_3d.cm_corrected", "rotorse.airfoils_cm")
-            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.connect("blade.run_inn_af.aoa_inn", "rotorse.ccblade.aoa_op")
             self.connect("high_level_tower_props.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
@@ -176,9 +174,8 @@ class WT_RNTA(om.Group):
             self.connect("env.weibull_k", "rotorse.rp.cdf.k")
             self.connect("configuration.turb_class", "rotorse.rp.gust.turbulence_class")
 
-            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.re.coord_xy_interp")
-            elif not modeling_options["user_elastic"]["blade"]:
+
+            if not modeling_options["user_elastic"]["blade"]:
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
 
             # Connections to rotor elastic and frequency analysis
@@ -221,10 +218,7 @@ class WT_RNTA(om.Group):
                 self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
                 self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
                 self.connect("blade.pa.chord_param", "rotorse.rc.chord")
-                if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                    self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.rc.coord_xy_interp")
-                else:
-                    self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
+                self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.rc.layer_thickness")
                 self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rc.layer_start_nd")
                 self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rc.layer_end_nd")

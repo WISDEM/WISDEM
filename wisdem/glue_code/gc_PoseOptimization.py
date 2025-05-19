@@ -448,86 +448,6 @@ class PoseOptimization(object):
                 "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
-        L_D_options = blade_opt["aero_shape"]["L/D"]
-        if L_D_options["flag"]:
-            n_opt = L_D_options["n_opt"]
-            indices = range(L_D_options["index_start"], L_D_options["index_end"])
-            s_opt_L_D = np.linspace(0.0, 1.0, n_opt)
-            L_D_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
-            )
-            init_L_D_opt = L_D_interpolator(s_opt_L_D)
-
-            wt_opt.model.add_design_var(
-                "inn_af.L_D_opt",
-                indices=indices,
-                lower=init_L_D_opt[indices] - L_D_options["max_decrease"],
-                upper=init_L_D_opt[indices] + L_D_options["max_increase"],
-            )
-
-        c_d_options = blade_opt["aero_shape"]["c_d"]
-        if c_d_options["flag"]:
-            n_opt = c_d_options["n_opt"]
-            indices = range(c_d_options["index_start"], c_d_options["index_end"])
-            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
-            c_d_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
-            )
-            init_c_d_opt = c_d_interpolator(s_opt_c_d)
-
-            wt_opt.model.add_design_var(
-                "inn_af.c_d_opt",
-                indices=indices,
-                lower=init_c_d_opt[indices] - c_d_options["max_decrease"],
-                upper=init_c_d_opt[indices] + c_d_options["max_increase"],
-            )
-
-        stall_options = blade_opt["aero_shape"]["stall_margin"]
-        if stall_options["flag"]:
-            n_opt = stall_options["n_opt"]
-            indices = range(stall_options["index_start"], stall_options["index_end"])
-            s_opt_stall = np.linspace(0.0, 1.0, n_opt)
-            stall_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-            )
-            init_stall_opt = stall_interpolator(s_opt_stall)
-
-            wt_opt.model.add_design_var(
-                "inn_af.stall_margin_opt",
-                indices=indices,
-                lower=init_stall_opt[indices] - stall_options["max_decrease"],
-                upper=init_stall_opt[indices] + stall_options["max_increase"],
-            )
-
-        t_c_options = blade_opt["aero_shape"]["rthick"]
-        if t_c_options["flag"]:
-            n_opt = t_c_options["n_opt"]
-            indices = range(t_c_options["index_start"], t_c_options["index_end"])
-            s_opt_t_c = np.linspace(0.0, 1.0, n_opt)
-            t_c_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
-            )
-            init_t_c_opt = t_c_interpolator(s_opt_t_c)
-
-            wt_opt.model.add_design_var(
-                "inn_af.r_thick_opt",
-                indices=indices,
-                lower=init_t_c_opt[indices] - t_c_options["max_decrease"],
-                upper=init_t_c_opt[indices] + t_c_options["max_increase"],
-            )
-
-        z_options = blade_opt["aero_shape"]["z"]
-        if z_options["flag"]:
-            wt_opt.model.add_design_var(
-                "inn_af.z",
-                lower=z_options["lower_bound"],
-                upper=z_options["upper_bound"],
-            )
-
         if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             if self.modeling["user_elastic"]["blade"]:
                 raise Exception("Blade structural design variables not available for user-defined blade elastic model. Please modify the modeling or optimization options.")
@@ -1388,38 +1308,6 @@ class PoseOptimization(object):
             )
             init_chord_opt = chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
-            if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
-                wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rthick"]["n_opt"])
-                r_thick_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
-                )
-                init_r_thick_opt = r_thick_interpolator(wt_opt["inn_af.s_opt_r_thick"])
-                wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
-                wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
-                L_D_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
-                )
-                init_L_D_opt = L_D_interpolator(wt_opt["inn_af.s_opt_L_D"])
-                wt_opt["inn_af.L_D_opt"] = init_L_D_opt
-                wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
-                c_d_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
-                )
-                init_c_d_opt = c_d_interpolator(wt_opt["inn_af.s_opt_c_d"])
-                wt_opt["inn_af.c_d_opt"] = init_c_d_opt
-
-                wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
-                    0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
-                )
-                stall_margin_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-                )
-                init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
-                wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
             
             if not self.modeling["user_elastic"]["blade"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
