@@ -68,45 +68,35 @@ class RunPreComp(ExplicitComponent):
         # Inner structure
         self.add_input(
             "web_start_nd",
-            val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+            val=np.zeros((n_span, n_webs)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each entry along blade span, the second dimension represents each web.",
         )
         self.add_input(
             "web_end_nd",
-            val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "layer_web",
-            val=np.zeros(n_layers),
-            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
-        )
-        self.add_discrete_input(
-            "definition_layer",
-            val=np.zeros(n_layers),
-            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
+            val=np.zeros((n_span, n_webs)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1.  The first dimension represents each entry along blade span, the second dimension represents each web.",
         )
         self.add_input(
             "layer_thickness",
-            val=np.zeros((n_layers, n_span)),
+            val=np.zeros((n_span, n_layers)),
             units="m",
-            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "layer_start_nd",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            val=np.zeros((n_span, n_layers)),
+            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "layer_end_nd",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            val=np.zeros((n_span, n_layers)),
+            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "fiber_orientation",
-            val=np.zeros((n_layers, n_span)),
+            val=np.zeros((n_span, n_layers)),
             units="deg",
-            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
 
         # Materials

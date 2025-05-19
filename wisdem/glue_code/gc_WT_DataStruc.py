@@ -589,15 +589,9 @@ class Blade(om.Group):
         # when not using the user-defined elastic properties only
         if not user_elastic:
             self.add_subsystem(
-                "internal_structure_2d_fem",
-                Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+                "structure",
+                Blade_Structure(rotorse_options=rotorse_options),
             )
-            self.connect("outer_shape.s", "internal_structure_2d_fem.s")
-            self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
-            self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
-            self.connect("outer_shape.section_offset_x", "internal_structure_2d_fem.section_offset_x")
-
-            self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
 
             self.add_subsystem(
                 "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
@@ -609,8 +603,7 @@ class Blade(om.Group):
                 self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
             self.connect("outer_shape.s", "ps.s")
-            # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
-            self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+            self.connect("structure.layer_thickness", "ps.layer_thickness_original")
 
         # Fatigue specific parameters
         fat_var = om.IndepVarComp()
@@ -1121,7 +1114,7 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
             )
 
 
-class Blade_Internal_Structure_2D_FEM(om.Group):
+class Blade_Structure(om.Group):
     # Openmdao group with the blade internal structure data coming from the input yaml file.
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -1131,592 +1124,44 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
-        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
-        ivc = self.add_subsystem("blade_2dfem_indep_vars", om.IndepVarComp(), promotes=["*"])
+        ivc = self.add_subsystem("blade_struct_indep_vars", om.IndepVarComp(), promotes=["*"])
+
         ivc.add_output(
-            "layer_web",
-            val=np.zeros(n_layers),
-            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.",
+            "web_start_nd",
+            val=np.zeros((n_span, n_webs)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each entry along blade span, the second dimension represents each web.",
         )
+        ivc.add_output(
+            "web_end_nd",
+            val=np.zeros((n_span, n_webs)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1.  The first dimension represents each entry along blade span, the second dimension represents each web.",
+        )
+        
         ivc.add_output(
             "layer_thickness",
-            val=np.zeros((n_layers, n_span)),
+            val=np.zeros((n_span, n_layers)),
             units="m",
-            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "layer_orientation",
-            val=np.zeros((n_layers, n_span)),
+            "layer_start_nd_arc",
+            val=np.zeros((n_span, n_layers)),
             units="deg",
-            desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "layer_midpoint_nd",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_discrete_output(
-            "layer_side",
-            val=n_layers * [""],
-            desc="1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.",
-        )
-        ivc.add_discrete_output(
-            "definition_web",
-            val=np.zeros(n_webs),
-            desc="1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation",
-        )
-        ivc.add_discrete_output(
-            "definition_layer",
-            val=np.zeros(n_layers),
-            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
-        )
-        ivc.add_discrete_output(
-            "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
-        )
-        ivc.add_discrete_output("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
-
-        ivc.add_output(
-            "web_start_nd_yaml",
-            val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "web_end_nd_yaml",
-            val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "web_rotation_yaml",
-            val=np.zeros((n_webs, n_span)),
+            "layer_end_nd_arc",
+            val=np.zeros((n_span, n_layers)),
             units="deg",
-            desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
+            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "web_offset_y_pa_yaml",
-            val=np.zeros((n_webs, n_span)),
-            units="m",
-            desc="2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "layer_rotation_yaml",
-            val=np.zeros((n_layers, n_span)),
+            "fiber_orientation",
+            val=np.zeros((n_span, n_layers)),
             units="deg",
-            desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
+            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
-        ivc.add_output(
-            "layer_start_nd_yaml",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "layer_end_nd_yaml",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "layer_offset_y_pa_yaml",
-            val=np.zeros((n_layers, n_span)),
-            units="m",
-            desc="2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-        ivc.add_output(
-            "layer_width_yaml",
-            val=np.zeros((n_layers, n_span)),
-            units="m",
-            desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-
-        ivc.add_output(
-            "joint_position",
-            val=0.0,
-            desc="Spanwise position of the segmentation joint.",
-        )
-        ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
-        ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
-        ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
-        ivc.add_discrete_output(
-            "reinforcement_layer_ss",
-            val="joint_reinf_ss",
-            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, suction side",
-        )
-        ivc.add_discrete_output(
-            "reinforcement_layer_ps",
-            val="joint_reinf_ps",
-            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, pressure side",
-        )
-
-        ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
-        ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
-
-        self.add_subsystem(
-            "compute_structure",
-            Compute_Structure(rotorse_options=rotorse_options),
-            promotes=["*"],
-        )
-
-
-class Compute_Structure(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare("rotorse_options")
-
-    def setup(self):
-        rotorse_options = self.options["rotorse_options"]
-        self.n_span = n_span = rotorse_options["n_span"]
-        self.n_anchors = n_anchors = rotorse_options["n_anchors"]
-        self.n_webs = n_webs = rotorse_options["n_webs"]
-        self.n_layers = n_layers = rotorse_options["n_layers"]
-        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-
-        # From user defined yaml
-        self.add_input(
-            "s",
-            val=np.zeros(n_span),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
-        )
-        self.add_input(
-            "anchor_start_nd_arc_yaml",
-            val=np.zeros((n_anchors, n_span)),
-            units="deg",
-            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each anchor, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "offset_arc_yaml",
-            val=np.zeros((n_anchors, n_span)),
-            units="deg",
-            desc="2D array of the offset_arc of the anchors. The first dimension represents each anchor, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "anchor_end_nd_arc_yaml",
-            val=np.zeros((n_anchors, n_span)),
-            units="deg",
-            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each anchor, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "anchor_midpoint_nd_arc_yaml",
-            val=np.zeros((n_anchors, n_span)),
-            units="deg",
-            desc="2D array of the midpoint_nd_arc of the anchors. The first dimension represents each anchor, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "anchor_width_yaml",
-            val=np.zeros((n_anchors, n_span)),
-            units="deg",
-            desc="2D array of the width of the anchors. The first dimension represents each anchor, the second dimension represents each entry along blade span.",
-        )
-        
-        
-        
-        # self.add_input(
-        #     "web_rotation_yaml",
-        #     val=np.zeros((n_webs, n_span)),
-        #     units="deg",
-        #     desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
-        # )
-        # self.add_input(
-        #     "web_offset_y_pa_yaml",
-        #     val=np.zeros((n_webs, n_span)),
-        #     units="m",
-        #     desc="2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "web_start_nd_yaml",
-        #     val=np.zeros((n_webs, n_span)),
-        #     desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "web_end_nd_yaml",
-        #     val=np.zeros((n_webs, n_span)),
-        #     desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        # )
-
-        # self.add_input(
-        #     "layer_web",
-        #     val=np.zeros(n_layers),
-        #     desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.",
-        # )
-        # self.add_input(
-        #     "layer_thickness",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "layer_orientation",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="deg",
-        #     desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "layer_rotation_yaml",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="deg",
-        #     desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
-        # )
-        # self.add_input(
-        #     "layer_offset_y_pa_yaml",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "layer_width_yaml",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "layer_midpoint_nd",
-        #     val=np.zeros((n_layers, n_span)),
-        #     desc="2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_discrete_input(
-        #     "layer_side",
-        #     val=n_layers * [""],
-        #     desc="1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.",
-        # )
-        # self.add_input(
-        #     "layer_start_nd_yaml",
-        #     val=np.zeros((n_layers, n_span)),
-        #     desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_input(
-        #     "layer_end_nd_yaml",
-        #     val=np.zeros((n_layers, n_span)),
-        #     desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_discrete_input(
-        #     "definition_web",
-        #     val=np.zeros(n_webs),
-        #     desc="1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation",
-        # )
-        # self.add_discrete_input(
-        #     "definition_layer",
-        #     val=np.zeros(n_layers),
-        #     desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
-        # )
-        # self.add_discrete_input(
-        #     "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
-        # )
-        # self.add_discrete_input("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
-
-        # # From blade outer shape
-        # self.add_input(
-        #     "coord_xy_dim",
-        #     val=np.zeros((n_span, n_xy, 2)),
-        #     units="m",
-        #     desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
-        # )
-        # self.add_input(
-        #     "twist",
-        #     val=np.zeros(n_span),
-        #     units="deg",
-        #     desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        # )
-        # self.add_input(
-        #     "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
-        # )
-        # self.add_input(
-        #     "section_offset_x",
-        #     val=np.zeros(n_span),
-        #     desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
-        # )
-
-        # self.add_output(
-        #     "web_rotation",
-        #     val=np.zeros((n_webs, n_span)),
-        #     units="deg",
-        #     desc="2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.",
-        # )
-        # self.add_output(
-        #     "web_start_nd",
-        #     val=np.zeros((n_webs, n_span)),
-        #     desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "web_end_nd",
-        #     val=np.zeros((n_webs, n_span)),
-        #     desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "web_offset_y_pa",
-        #     val=np.zeros((n_webs, n_span)),
-        #     units="m",
-        #     desc="2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "layer_rotation",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="deg",
-        #     desc="2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.",
-        # )
-        # self.add_output(
-        #     "layer_start_nd",
-        #     val=np.zeros((n_layers, n_span)),
-        #     desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "layer_end_nd",
-        #     val=np.zeros((n_layers, n_span)),
-        #     desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "layer_offset_y_pa",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-        # self.add_output(
-        #     "layer_width",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
-
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        # Initialize temporary arrays for the outputs
-        web_rotation = np.zeros((self.n_webs, self.n_span))
-        layer_rotation = np.zeros((self.n_layers, self.n_span))
-        web_start_nd = np.zeros((self.n_webs, self.n_span))
-        web_end_nd = np.zeros((self.n_webs, self.n_span))
-        layer_start_nd = np.zeros((self.n_layers, self.n_span))
-        layer_end_nd = np.zeros((self.n_layers, self.n_span))
-
-        layer_name = self.options["rotorse_options"]["layer_name"]
-        web_name = self.options["rotorse_options"]["web_name"]
-
-        # Loop through spanwise stations
-        for i in range(self.n_span):
-            # Compute the arc length (arc_L_i), the non-dimensional arc coordinates (xy_arc_i), and the non dimensional position of the leading edge of the profile at position i
-            xy_coord_i = inputs["coord_xy_dim"][i, :, :]
-            xy_arc_i = arc_length(xy_coord_i)
-            arc_L_i = xy_arc_i[-1]
-            xy_arc_i /= arc_L_i
-            idx_le = np.argmin(xy_coord_i[:, 0])
-            LE_loc = xy_arc_i[idx_le]
-            chord_i = inputs["chord"][i]
-            section_offset_x_i = inputs["section_offset_x"][i]
-            ratio_SCmax = 0.8
-            ratio_Websmax = 0.75
-
-            # Loop through the webs and compute non-dimensional start and end positions along the profile
-            for j in range(self.n_webs):
-                offset = inputs["web_offset_y_pa_yaml"][j, i]
-                # Geometry checks on webs
-                if offset < ratio_Websmax * (-section_offset_x_i) or offset > ratio_Websmax * (chord_i - section_offset_x_i):
-                    offset_old = copy.copy(offset)
-                    if offset_old <= 0.0:
-                        offset = ratio_Websmax * (-section_offset_x_i)
-                    else:
-                        offset = ratio_Websmax * (chord_i - section_offset_x_i)
-
-                    outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
-                    layer_resize_warning = (
-                        'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'
-                        % (web_name[j], offset_old, offset, inputs["s"][i], i)
-                    )
-                    # print(layer_resize_warning)
-                else:
-                    outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
-
-                if discrete_inputs["definition_web"][j] == 1:
-                    web_rotation[j, i] = -inputs["twist"][i]
-                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        -web_rotation[j, i],
-                        outputs["web_offset_y_pa"][j, i],
-                        [0.0, 0.0],
-                        ["suction", "pressure"],
-                    )
-                elif discrete_inputs["definition_web"][j] == 2:
-                    web_rotation[j, i] = -inputs["web_rotation_yaml"][j, i]
-                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        -web_rotation[j, i],
-                        outputs["web_offset_y_pa"][j, i],
-                        [0.0, 0.0],
-                        ["suction", "pressure"],
-                    )
-                elif discrete_inputs["definition_web"][j] == 3:
-                    web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
-                    web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
-                elif discrete_inputs["definition_web"][j] == 4:
-                    web_rotation[j, i] = -inputs["web_rotation_yaml"][j, i]
-                    web_rotation[j, i] -= inputs["twist"][i]
-                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        -web_rotation[j, i],
-                        outputs["web_offset_y_pa"][j, i],
-                        [0.0, 0.0],
-                        ["suction", "pressure"],
-                    )
-                else:
-                    raise ValueError(
-                        "Blade web " + web_name[j] + " not described correctly. Please check the yaml input file."
-                    )
-
-            # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
-            for j in range(self.n_layers):
-                if discrete_inputs["definition_layer"][j] == 1:  # All around
-                    layer_start_nd[j, i] = 0.0
-                    layer_end_nd[j, i] = 1.0
-                elif (
-                    discrete_inputs["definition_layer"][j] == 2
-                    or discrete_inputs["definition_layer"][j] == 3
-                    or discrete_inputs["definition_layer"][j] == 13
-                ):  # Midpoint and width
-                    if discrete_inputs["definition_layer"][j] == 2:
-                        layer_rotation[j, i] = -inputs["twist"][i]
-                    elif discrete_inputs["definition_layer"][j] == 3:
-                        layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
-                    else:
-                        layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
-                        layer_rotation[j, i] -= inputs["twist"][i]
-                    midpoint = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        -layer_rotation[j, i],
-                        inputs["layer_offset_y_pa_yaml"][j, i],
-                        [0.0, 0.0],
-                        [discrete_inputs["layer_side"][j]],
-                    )[0]
-
-                    # Geometry check to make sure the spar caps does not exceed 80% of the chord
-                    width = inputs["layer_width_yaml"][j, i]
-                    offset = inputs["layer_offset_y_pa_yaml"][j, i]
-                    if (
-                        offset + 0.5 * width > ratio_SCmax * (chord_i - section_offset_x_i)
-                        or offset - 0.5 * width < -ratio_SCmax * section_offset_x_i
-                    ):  # hitting TE or LE
-                        width_old = copy.copy(width)
-                        width = 2.0 * min([ratio_SCmax * section_offset_x_i, ratio_SCmax * (chord_i - section_offset_x_i)])
-                        offset = 0.0
-                        outputs["layer_width"][j, i] = copy.copy(width)
-                        outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
-                        layer_resize_warning = (
-                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
-                            % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
-                        )
-                    else:
-                        outputs["layer_width"][j, i] = copy.copy(width)
-                        outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
-
-                    layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
-                    layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                elif discrete_inputs["definition_layer"][j] == 4:  # Midpoint and width
-                    midpoint = 1.0
-                    inputs["layer_midpoint_nd"][j, i] = midpoint
-                    width = inputs["layer_width_yaml"][j, i]
-                    outputs["layer_width"][j, i] = copy.copy(width)
-                    layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
-                    layer_end_nd[j, i] = width / arc_L_i / 2.0
-                elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
-                    midpoint = LE_loc
-                    inputs["layer_midpoint_nd"][j, i] = midpoint
-                    width = inputs["layer_width_yaml"][j, i]
-                    outputs["layer_width"][j, i] = copy.copy(width)
-                    layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
-                    layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
-                    layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
-                    layer_end_nd[j, i] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), i]
-                elif discrete_inputs["definition_layer"][j] == 7:  # Start nd and width
-                    width = inputs["layer_width_yaml"][j, i]
-                    outputs["layer_width"][j, i] = copy.copy(width)
-                    layer_start_nd[j, i] = inputs["layer_start_nd_yaml"][j, i]
-                    layer_end_nd[j, i] = layer_start_nd[j, i] + width / arc_L_i
-                elif discrete_inputs["definition_layer"][j] == 8:  # End nd and width
-                    width = inputs["layer_width_yaml"][j, i]
-                    outputs["layer_width"][j, i] = copy.copy(width)
-                    layer_end_nd[j, i] = inputs["layer_end_nd_yaml"][j, i]
-                    layer_start_nd[j, i] = layer_end_nd[j, i] - width / arc_L_i
-                elif discrete_inputs["definition_layer"][j] == 9:  # Start and end nd positions
-                    layer_start_nd[j, i] = inputs["layer_start_nd_yaml"][j, i]
-                    layer_end_nd[j, i] = inputs["layer_end_nd_yaml"][j, i]
-                elif discrete_inputs["definition_layer"][j] == 10:  # Web layer
-                    pass
-                elif discrete_inputs["definition_layer"][j] == 11:  # Start nd arc locked to LE
-                    layer_start_nd[j, i] = LE_loc + 1.0e-6
-                    layer_end_nd[j, i] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), i]
-                elif discrete_inputs["definition_layer"][j] == 12:  # End nd arc locked to LE
-                    layer_end_nd[j, i] = LE_loc - 1.0e-6
-                    layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
-                else:
-                    raise ValueError(
-                        "Blade layer "
-                        + str(layer_name[j])
-                        + " not described correctly. Please check the yaml input file."
-                    )
-
-        # Assign openmdao outputs
-        outputs["web_rotation"] = web_rotation
-        outputs["web_start_nd"] = web_start_nd
-        outputs["web_end_nd"] = web_end_nd
-        outputs["layer_rotation"] = layer_rotation
-        outputs["layer_start_nd"] = layer_start_nd
-        outputs["layer_end_nd"] = layer_end_nd
-
-
-def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
-    # dimentional analysis that takes a rotation and offset from the pitch axis and calculates the airfoil intersection
-    # rotation
-    offset_x = offset * np.cos(rotation) + p_le_d[0]
-    offset_y = offset * np.sin(rotation) + p_le_d[1]
-
-    m_rot = np.sin(rotation) / np.cos(rotation)  # slope of rotated axis
-    plane_rot = [m_rot, -1 * m_rot * p_le_d[0] + p_le_d[1]]  # coefficients for rotated axis line: a1*x + a0
-
-    m_intersection = np.sin(rotation + np.pi / 2.0) / np.cos(
-        rotation + np.pi / 2.0
-    )  # slope perpendicular to rotated axis
-    plane_intersection = [
-        m_intersection,
-        -1 * m_intersection * offset_x + offset_y,
-    ]  # coefficients for line perpendicular to rotated axis line at the offset: a1*x + a0
-
-    # intersection between airfoil surface and the line perpendicular to the rotated/offset axis
-    y_intersection = np.polyval(plane_intersection, xy_coord[:, 0])
-
-    idx_le = np.argmin(xy_coord[:, 0])
-    xy_coord_arc = arc_length(xy_coord)
-    arc_L = xy_coord_arc[-1]
-    xy_coord_arc /= arc_L
-
-    idx_inter = np.argwhere(
-        np.diff(np.sign(xy_coord[:, 1] - y_intersection))
-    ).flatten()  # find closest airfoil surface points to intersection
-
-    midpoint_arc = []
-    for sidei in side:
-        if sidei.lower() == "suction":
-            tangent_line = np.polyfit(
-                xy_coord[idx_inter[0] : idx_inter[0] + 2, 0], xy_coord[idx_inter[0] : idx_inter[0] + 2, 1], 1
-            )
-        elif sidei.lower() == "pressure":
-            tangent_line = np.polyfit(
-                xy_coord[idx_inter[1] : idx_inter[1] + 2, 0], xy_coord[idx_inter[1] : idx_inter[1] + 2, 1], 1
-            )
-
-        midpoint_x = (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
-        midpoint_y = (
-            plane_intersection[0]
-            * (tangent_line[1] - plane_intersection[1])
-            / (plane_intersection[0] - tangent_line[0])
-            + plane_intersection[1]
-        )
-
-        # convert to arc position
-        if sidei.lower() == "suction":
-            x_half = xy_coord[: idx_le + 1, 0]
-            arc_half = xy_coord_arc[: idx_le + 1]
-
-        elif sidei.lower() == "pressure":
-            x_half = xy_coord[idx_le:, 0]
-            arc_half = xy_coord_arc[idx_le:]
-
-        midpoint_arc.append(remap2grid(x_half, arc_half, midpoint_x, spline=interp1d))
-
-    return midpoint_arc
-
 
 class Hub(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
@@ -2027,12 +1472,12 @@ class Monopile(om.Group):
             val=n_layers * [""],
             desc="1D array of the names of the materials of each layer modeled in the tower structure.",
         )
-        ivc.add_output(            "layer_thickness",
+        ivc.add_output("layer_thickness",
             val=np.zeros((n_layers, n_height)),
             units="m",
             desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
         )
-        ivc.add_output(            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+        ivc.add_output("outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
