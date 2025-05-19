@@ -191,6 +191,8 @@ class WindTurbineOntologyPython(object):
                     closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
                     self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
                     self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
+                else:
+                    self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = 0
 
         # Drivetrain config
         self.modeling_options["WISDEM"]["DriveSE"]["direct"] = self.wt_init["assembly"]["drivetrain"].lower() in ["direct", "direct_drive", "pm_direct_drive"]

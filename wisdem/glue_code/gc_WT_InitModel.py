@@ -132,7 +132,8 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic)
     blade_DV_aero = blade_DV["aero_shape"]
     wt_opt = assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape"])
     if not user_elastic:
-        wt_opt = assign_structure_values(wt_opt, modeling_options, blade["structure"])
+        wt_opt = assign_blade_structural_webs_values(wt_opt, modeling_options, blade["structure"])
+        wt_opt = assign_blade_structural_layers_values(wt_opt, modeling_options, blade["structure"])
     else:
         wt_opt = assign_user_elastic(wt_opt, blade["elastic_properties"])
 
@@ -177,393 +178,158 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
     return wt_opt
 
 
-def assign_structure_values(wt_opt, modeling_options, structure):
-    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
+    # Function to assign values to the openmdao component Blade_Structure
 
-    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+    n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
     n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
-
-    web_rotation = np.zeros((n_webs, n_span))
-    web_offset_y_pa = np.zeros((n_webs, n_span))
-    web_start_nd = np.zeros((n_webs, n_span))
-    web_end_nd = np.zeros((n_webs, n_span))
-    definition_web = np.zeros(n_webs)
     nd_span = wt_opt["blade.outer_shape.s_default"]
-
-    # Loop through the webs and interpolate spanwise the values
+    anchors = structure["anchors"]
     for i in range(n_webs):
-        if "rotation" in structure["webs"][i] and "offset_y_pa" in structure["webs"][i]:
-            if "fixed" in structure["webs"][i]["rotation"].keys():
-                if structure["webs"][i]["rotation"]["fixed"] == "twist":
-                    definition_web[i] = 1
-                else:
-                    raise ValueError(
-                        "Invalid rotation reference for web "
-                        + modeling_options["WISDEM"]["RotorSE"]["web_name"][i]
-                        + ". Please check the yaml input file"
-                    )
-            else:
-                web_rotation[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["webs"][i]["rotation"]["grid"],
-                        structure["webs"][i]["rotation"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-                definition_web[i] = 2
-            web_offset_y_pa[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["webs"][i]["offset_y_pa"]["grid"],
-                    structure["webs"][i]["offset_y_pa"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        elif "offset_plane" in structure["webs"][i]:
-            web_rotation[i, :] = np.ones_like(nd_span) * structure["webs"][i]["offset_plane"]["blade_rotation"]
-            web_offset_y_pa[i, :] = -np.nan_to_num(
-                PchipInterpolator(
-                    structure["webs"][i]["offset_plane"]["offset"]["grid"],
-                    structure["webs"][i]["offset_plane"]["offset"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            definition_web[i] = 4
-        elif (
-            "start_nd_arc" in structure["webs"][i]
-            and "end_nd_arc" in structure["webs"][i]
-        ):
-            definition_web[i] = 3
-            web_start_nd[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["webs"][i]["start_nd_arc"]["grid"],
-                    structure["webs"][i]["start_nd_arc"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            web_end_nd[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["webs"][i]["end_nd_arc"]["grid"],
-                    structure["webs"][i]["end_nd_arc"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        else:
-            raise ValueError("Webs definition not supported. Please check the yaml input.")
-
-    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
-    layer_name = n_layers * [""]
-    layer_mat = n_layers * [""]
-    thickness = np.zeros((n_layers, n_span))
-    orientation = np.zeros((n_layers, n_span))
-    layer_rotation = np.zeros((n_layers, n_span))
-    layer_offset_y_pa = np.zeros((n_layers, n_span))
-    layer_width = np.zeros((n_layers, n_span))
-    layer_midpoint_nd = np.zeros((n_layers, n_span))
-    layer_start_nd = np.zeros((n_layers, n_span))
-    layer_end_nd = np.zeros((n_layers, n_span))
-    layer_web = np.zeros(n_layers)
-    layer_side = n_layers * [""]
-    definition_layer = np.zeros(n_layers)
-    index_layer_start = np.zeros(n_layers)
-    index_layer_end = np.zeros(n_layers)
-
-    # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
-    for i in range(n_layers):
-        layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
-        layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
-        thickness[i, :] = np.nan_to_num(
-            PchipInterpolator(
-                structure["layers"][i]["thickness"]["grid"],
-                structure["layers"][i]["thickness"]["values"],
-                extrapolate=False,
-            )(nd_span)
-        )
-        orientation[i, :] = np.nan_to_num(
-            PchipInterpolator(
-                structure["layers"][i]["fiber_orientation"]["grid"],
-                structure["layers"][i]["fiber_orientation"]["values"],
-                extrapolate=False,
-            )(nd_span)
-        )
-        if (
-            "rotation" not in structure["layers"][i]
-            and "offset_y_pa" not in structure["layers"][i]
-            and "width" not in structure["layers"][i]
-            and "start_nd_arc" not in structure["layers"][i]
-            and "end_nd_arc" not in structure["layers"][i]
-            and "web" not in structure["layers"][i]
-            and "offset_plane" not in structure["layers"][i]
-        ):
-            definition_layer[i] = 1
-
-        if (
-            "rotation" in structure["layers"][i]
-            and "offset_y_pa" in structure["layers"][i]
-            and "width" in structure["layers"][i]
-            and "side" in structure["layers"][i]
-        ):
-            if "fixed" in structure["layers"][i]["rotation"].keys():
-                if structure["layers"][i]["rotation"]["fixed"] == "twist":
-                    definition_layer[i] = 2
-                else:
-                    raise ValueError(
-                        "Invalid rotation reference for layer " + layer_name[i] + ". Please check the yaml input file."
-                    )
-            else:
-                layer_rotation[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["rotation"]["grid"],
-                        structure["layers"][i]["rotation"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-                definition_layer[i] = 3
-            layer_offset_y_pa[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["layers"][i]["offset_y_pa"]["grid"],
-                    structure["layers"][i]["offset_y_pa"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["layers"][i]["width"]["grid"],
-                    structure["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            layer_side[i] = structure["layers"][i]["side"]
-        if (
-            "midpoint_nd_arc" in structure["layers"][i]
-            and "width" in structure["layers"][i]
-        ):
-            if "fixed" in structure["layers"][i]["midpoint_nd_arc"].keys():
-                if structure["layers"][i]["midpoint_nd_arc"]["fixed"] == "TE":
-                    layer_midpoint_nd[i, :] = np.ones(n_span)
-                    definition_layer[i] = 4
-                elif structure["layers"][i]["midpoint_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 5
-            else:
-                layer_midpoint_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["midpoint_nd_arc"]["grid"],
-                        structure["layers"][i]["midpoint_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["layers"][i]["width"]["grid"],
-                    structure["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        if "start_nd_arc" in structure["layers"][i] and definition_layer[i] == 0:
-            if "fixed" in structure["layers"][i]["start_nd_arc"].keys():
-                if structure["layers"][i]["start_nd_arc"]["fixed"] == "TE":
-                    layer_start_nd[i, :] = np.zeros(n_span)
-                elif structure["layers"][i]["start_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 11
-                else:
-                    definition_layer[i] = 6
-                    flag = False
-                    for k in range(n_layers):
-                        if layer_name[k] == structure["layers"][i]["start_nd_arc"]["fixed"]:
-                            index_layer_start[i] = k
-                            flag = True
-                            break
-                    if flag == False:
-                        raise ValueError(
-                            "The start position of the layer "
-                            + structure["layers"][i]["name"]
-                            + " is linked to the layer "
-                            + structure["layers"][i]["start_nd_arc"]["fixed"]
-                            + " , but this layer does not exist in the yaml."
-                        )
-            else:
-                layer_start_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["start_nd_arc"]["grid"],
-                        structure["layers"][i]["start_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-                if np.min(layer_start_nd[i, :]) < 0.0 or np.max(layer_start_nd[i, :]) > 1.0:
-                    raise Exception(
-                        """The start_nd_arc layer cannot be smaller than 0 nor
-                    larger than 1. Check the input yaml for layer """,
-                        layer_name[i],
-                    )
-
-            if "end_nd_arc" in structure["layers"][i]:
-                if "fixed" in structure["layers"][i]["end_nd_arc"].keys():
-                    if structure["layers"][i]["end_nd_arc"]["fixed"] == "TE":
-                        layer_end_nd[i, :] = np.ones(n_span)
-                        # raise ValueError("No need to fix element to TE, set it to 0.")
-                    elif structure["layers"][i]["end_nd_arc"]["fixed"] == "LE":
-                        definition_layer[i] = 12
-                    else:
-                        flag = False
-                        for k in range(n_layers):
-                            if layer_name[k] == structure["layers"][i]["end_nd_arc"]["fixed"]:
-                                index_layer_end[i] = k
-                                flag = True
-                                break
-                        if flag == False:
-                            raise ValueError(
-                                "The end position of the layer "
-                                + structure["layers"][i]["name"]
-                                + " is linked to the layer "
-                                + structure["layers"][i]["end_nd_arc"]["fixed"]
-                                + " , but this layer does not exist in the yaml."
-                            )
-            if "width" in structure["layers"][i]:
-                definition_layer[i] = 7
-                layer_width[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["width"]["grid"],
-                        structure["layers"][i]["width"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-        if "end_nd_arc" in structure["layers"][i] and definition_layer[i] == 0:
-            if "fixed" in structure["layers"][i]["end_nd_arc"].keys():
-                if structure["layers"][i]["end_nd_arc"]["fixed"] == "TE":
-                    layer_end_nd[i, :] = np.ones(n_span)
-                    # raise ValueError("No need to fix element to TE, set it to 0.")
-                elif structure["layers"][i]["end_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 12
-                else:
-                    definition_layer[i] = 6
-                    flag = False
-                    for k in range(n_layers):
-                        if layer_name[k] == structure["layers"][i]["end_nd_arc"]["fixed"]:
-                            index_layer_end[i] = k
-                            flag = True
-                            break
-                    if flag == False:
-                        raise ValueError("Error with layer " + structure["layers"][i]["name"])
-            else:
-                layer_end_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["end_nd_arc"]["grid"],
-                        structure["layers"][i]["end_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-            if np.min(layer_end_nd[i, :]) < 0.0 or np.max(layer_end_nd[i, :]) > 1.0:
-                raise Exception(
-                    """The end_nd_arc layer cannot be smaller than 0 nor
-                larger than 1. Check the input yaml for layer """,
-                    layer_name[i],
-                )
-
-            if "width" in structure["layers"][i]:
-                definition_layer[i] = 8
-                layer_width[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        structure["layers"][i]["width"]["grid"],
-                        structure["layers"][i]["width"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-            if "start_nd_arc" in structure["layers"][i]:
-                definition_layer[i] = 9
-
-        if "web" in structure["layers"][i]:
-            web_name_i = structure["layers"][i]["web"]
-            for j in range(modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                if web_name_i == modeling_options["WISDEM"]["RotorSE"]["web_name"][j]:
-                    k = j + 1
+        web_i = structure["webs"][i]
+        # web_start_nd
+        if "grid" in web_i["start_nd_arc"] and "values" in web_i["start_nd_arc"]:
+            web_start_nd_grid = web_i["start_nd_arc"]["grid"]
+            web_start_nd_values = web_i["start_nd_arc"]["values"]
+        elif "anchor" in web_i["start_nd_arc"]:
+            anchor_name = web_i["start_nd_arc"]["anchor"]["name"]
+            anchor_handle = web_i["start_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    web_start_nd_grid = anchors[j][anchor_handle]["grid"]
+                    web_start_nd_values = anchors[j][anchor_handle]["values"]
                     break
-            layer_web[i] = k
-            definition_layer[i] = 10
-
-        if "offset_plane" in structure["layers"][i]:
-            layer_rotation[i, :] = np.ones_like(nd_span) * structure["layers"][i]["offset_plane"]["blade_rotation"]
-            layer_offset_y_pa[i, :] = -np.nan_to_num(
-                PchipInterpolator(
-                    structure["layers"][i]["offset_plane"]["offset"]["grid"],
-                    structure["layers"][i]["offset_plane"]["offset"]["values"],
-                    extrapolate=False,
-                )(nd_span)
+        else:
+            raise Exception(
+                "Blade structure web start_nd_arc must be defined by either grid/values or anchor"
             )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    structure["layers"][i]["width"]["grid"],
-                    structure["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
+        
+        
+        web_start_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        web_start_nd_grid,
+                        web_start_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.web_start_nd"][:, i] = web_start_nd
+
+        # web_end_nd
+        if "grid" in web_i["end_nd_arc"] and "values" in web_i["end_nd_arc"]:
+            web_end_nd_grid = web_i["end_nd_arc"]["grid"]
+            web_end_nd_values = web_i["end_nd_arc"]["values"]
+        elif "anchor" in web_i["end_nd_arc"]:
+            anchor_name = web_i["end_nd_arc"]["anchor"]["name"]
+            anchor_handle = web_i["end_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    web_end_nd_grid = anchors[j][anchor_handle]["grid"]
+                    web_end_nd_values = anchors[j][anchor_handle]["values"]
+                    break
+        else:
+            raise Exception(
+                "Blade structure web end_nd_arc must be defined by either grid/values or anchor"
             )
-            definition_layer[i] = 13
-            layer_side[i] = structure["layers"][i]["side"]
+    
+        web_end_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        web_end_nd_grid,
+                        web_end_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.web_end_nd"][:, i] = web_end_nd
 
-        # Fatigue params
-        if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+    return wt_opt
 
-        elif layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.sparL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
+    # Function to assign values to the openmdao component Blade_Structure
+    n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
+    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+    nd_span = wt_opt["blade.outer_shape.s_default"]
+    anchors = structure["anchors"]
+    for i in range(n_layers):
+        layer_i = structure["layers"][i]
+        # layer_start_nd
+        if "grid" in layer_i["start_nd_arc"] and "values" in layer_i["start_nd_arc"]:
+            layer_start_nd_grid = layer_i["start_nd_arc"]["grid"]
+            layer_start_nd_values = layer_i["start_nd_arc"]["values"]
+        elif "anchor" in layer_i["start_nd_arc"]:
+            anchor_name = layer_i["start_nd_arc"]["anchor"]["name"]
+            anchor_handle = layer_i["start_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    layer_start_nd_grid = anchors[j][anchor_handle]["grid"]
+                    layer_start_nd_values = anchors[j][anchor_handle]["values"]
+                    break
+        else:
+            raise Exception(
+                "Blade structure layer start_nd_arc must be defined by either grid/values or anchor"
+            )
+        
+        
+        layer_start_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_start_nd_grid,
+                        layer_start_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_start_nd"][:, i] = layer_start_nd
 
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.teU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.teU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.teU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.teL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.teL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.teL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-    # Assign the openmdao values
-    wt_opt["blade.structure.layer_side"] = layer_side
-    wt_opt["blade.structure.layer_thickness"] = thickness
-    wt_opt["blade.structure.layer_orientation"] = orientation
-    wt_opt["blade.structure.layer_midpoint_nd"] = layer_midpoint_nd
-    wt_opt["blade.structure.layer_web"] = layer_web
-    wt_opt["blade.structure.definition_web"] = definition_web
-    wt_opt["blade.structure.definition_layer"] = definition_layer
-    wt_opt["blade.structure.index_layer_start"] = index_layer_start
-    wt_opt["blade.structure.index_layer_end"] = index_layer_end
-
-    wt_opt["blade.structure.web_offset_y_pa_yaml"] = web_offset_y_pa
-    wt_opt["blade.structure.web_rotation_yaml"] = web_rotation
-    wt_opt["blade.structure.web_start_nd_yaml"] = web_start_nd
-    wt_opt["blade.structure.web_end_nd_yaml"] = web_end_nd
-    wt_opt["blade.structure.layer_offset_y_pa_yaml"] = layer_offset_y_pa
-    wt_opt["blade.structure.layer_width_yaml"] = layer_width
-    wt_opt["blade.structure.layer_start_nd_yaml"] = layer_start_nd
-    wt_opt["blade.structure.layer_end_nd_yaml"] = layer_end_nd
-    wt_opt["blade.structure.layer_rotation_yaml"] = layer_rotation
-
-    # Spanwise joint
-    wt_opt["blade.structure.joint_bolt"] = structure["joint"]["bolt"]
-    wt_opt["blade.structure.joint_position"] = structure["joint"]["position"]
-    wt_opt["blade.structure.joint_mass"] = structure["joint"]["mass"]
-    wt_opt["blade.structure.joint_nonmaterial_cost"] = structure["joint"][
-        "nonmaterial_cost"
-    ]
-    wt_opt["blade.structure.reinforcement_layer_ss"] = structure["joint"][
-        "reinforcement_layer_ss"
-    ]
-    wt_opt["blade.structure.reinforcement_layer_ps"] = structure["joint"][
-        "reinforcement_layer_ps"
-    ]
-
-    # Blade root
-    wt_opt["blade.structure.d_f"] = structure["root"]["d_f"]
-    wt_opt["blade.structure.sigma_max"] = structure["root"]["sigma_max"]
+        # layer_end_nd
+        if "grid" in layer_i["end_nd_arc"] and "values" in layer_i["end_nd_arc"]:
+            layer_end_nd_grid = layer_i["end_nd_arc"]["grid"]
+            layer_end_nd_values = layer_i["end_nd_arc"]["values"]
+        elif "anchor" in layer_i["end_nd_arc"]:
+            anchor_name = layer_i["end_nd_arc"]["anchor"]["name"]
+            anchor_handle = layer_i["end_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    layer_end_nd_grid = anchors[j][anchor_handle]["grid"]
+                    layer_end_nd_values = anchors[j][anchor_handle]["values"]
+                    break
+        else:
+            raise Exception(
+                "Blade structure layer end_nd_arc must be defined by either grid/values or anchor"
+            )
+    
+        layer_end_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_end_nd_grid,
+                        layer_end_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_end_nd"][:, i] = layer_end_nd
+        
+        # thickness
+        if "thickness" in layer_i:
+            layer_thickness_grid = layer_i["thickness"]["grid"]
+            layer_thickness_values = layer_i["thickness"]["values"]
+    
+        layer_thickness = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_thickness_grid,
+                        layer_thickness_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_thickness"][:, i] = layer_thickness
+        
+        # fiber_orientation
+        if "fiber_orientation" in layer_i:
+            layer_fiber_orientation_grid = layer_i["fiber_orientation"]["grid"]
+            layer_fiber_orientation_values = layer_i["fiber_orientation"]["values"]
+    
+        layer_fiber_orientation = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_fiber_orientation_grid,
+                        layer_fiber_orientation_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_fiber_orientation"][:, i] = layer_fiber_orientation
 
     return wt_opt
 

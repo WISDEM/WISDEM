@@ -840,7 +840,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         self.add_input(
             "section_offset_x",
             val=np.zeros(n_span),
-            unit="m",
+            units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis..",
         )
         self.add_input(
@@ -1145,19 +1145,19 @@ class Blade_Structure(om.Group):
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "layer_start_nd_arc",
+            "layer_start_nd",
             val=np.zeros((n_span, n_layers)),
             units="deg",
             desc="2D array of the start_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "layer_end_nd_arc",
+            "layer_end_nd",
             val=np.zeros((n_span, n_layers)),
             units="deg",
             desc="2D array of the end_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         ivc.add_output(
-            "fiber_orientation",
+            "layer_fiber_orientation",
             val=np.zeros((n_span, n_layers)),
             units="deg",
             desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
