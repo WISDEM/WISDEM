@@ -1139,6 +1139,15 @@ class Blade_Structure(om.Group):
             units="deg",
             desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents span.",
         )
+        ivc.add_output(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of a blde segmentation joint.",
+        )
+        ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the blade spanwise joint.")
+        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the blade root fastener.")
+        ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on each blade root bolt.")
 
 
 class Hub(om.Group):

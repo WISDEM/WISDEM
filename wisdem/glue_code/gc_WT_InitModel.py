@@ -135,6 +135,7 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic)
     if not user_elastic:
         wt_opt = assign_blade_structural_webs_values(wt_opt, modeling_options, blade["structure"])
         wt_opt = assign_blade_structural_layers_values(wt_opt, modeling_options, blade["structure"])
+        wt_opt = assign_blade_root_joint_values(wt_opt, blade["structure"])
     else:
         wt_opt = assign_user_elastic(wt_opt, blade["elastic_properties"])
 
@@ -336,6 +337,16 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
     return wt_opt
 
 
+def assign_blade_root_joint_values(wt_opt, structure):
+
+    wt_opt["blade.structure.joint_position"] = structure["joint"]["position"]
+    wt_opt["blade.structure.joint_mass"] = structure["joint"]["mass"]
+    wt_opt["blade.structure.joint_cost"] = structure["joint"]["cost"]
+    wt_opt["blade.structure.d_f"] = structure["root"]["d_f"]
+    wt_opt["blade.structure.sigma_max"] = structure["root"]["sigma_max"]
+
+    return wt_opt
+
 def assign_user_elastic(wt_opt, user_elastic_properties):
 
     nd_span = wt_opt["blade.outer_shape.s_default"]
@@ -345,14 +356,6 @@ def assign_user_elastic(wt_opt, user_elastic_properties):
 
     inertia_grid = user_elastic_properties["inertia_matrix"]["grid"]
     inertia_matrix = user_elastic_properties["inertia_matrix"]
-
-    # 21-element inertia matrix
-    # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
-    # M   = [m, 0, 0, 0, 0, -mYcm, m, 0, 0, 0, mXcm, m,  mYcm, -mXcm, 0,  iedge, -icp, 0,  iflap, 0,  iplr]
-
-    # 21-element stiffness matrix
-    # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
-    # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
 
     # Assemble stiffnees and inertia matrices
     K11 = PchipInterpolator(stiff_grid, stiffness_matrix["K11"][:])(nd_span)
