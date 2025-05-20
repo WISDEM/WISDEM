@@ -128,7 +128,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
             self.connect("blade.high_level_blade_props.Rtip", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
-            self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
+            self.connect("blade.interp_airfoils.rthick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
             self.connect("airfoils.Re", "rotorse.airfoils_Re")
             self.connect("af_3d.cl_corrected", "rotorse.airfoils_cl")

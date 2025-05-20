@@ -70,7 +70,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
             airfoils.add_output("ac", val=np.zeros(n_af_master), desc="1D array of the aerodynamic centers of each airfoil used along span.")
             airfoils.add_output(
-                "r_thick", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil used along span."
+                "rthick_master", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil used along span."
             )
             airfoils.add_output(
                 "aoa",
@@ -171,7 +171,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     user_elastic=modeling_options["user_elastic"]["blade"],
                 ),
             )
-            self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
+            self.connect("airfoils.rthick_master", "blade.interp_airfoils.rthick_master")
             self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
             self.connect("airfoils.aoa", "blade.interp_airfoils.aoa")
@@ -362,7 +362,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("blade.interp_airfoils.cm_interp", "af_3d.cm")
             self.connect("blade.high_level_blade_props.rotor_diameter", "af_3d.rotor_diameter")
             self.connect("blade.high_level_blade_props.r_blade", "af_3d.r_blade")
-            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
+            self.connect("blade.interp_airfoils.rthick_interp", "af_3d.rthick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
             self.connect("control.rated_TSR", "af_3d.rated_TSR")
             self.connect("control.maxOmega", "blade.compute_reynolds.maxOmega")
@@ -705,7 +705,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Airfoil properties
         self.add_input("ac", val=np.zeros(n_af_master), desc="1D array of the aerodynamic centers of each airfoil.")
-        self.add_input("r_thick_discrete", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil.")
+        self.add_input("rthick_master", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil.")
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
@@ -742,7 +742,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Polars and coordinates interpolated along span
         self.add_output(
-            "r_thick_interp",
+            "rthick_interp",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -777,24 +777,20 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # Pchip does have an associated derivative method built-in:
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline = PchipInterpolator
-        rthick_spline = spline(inputs["af_position"], inputs["rthick_yaml"])
-        ac_spline = spline(inputs["af_position"], inputs["ac"])
-        if np.max(inputs["rthick_yaml"]) < 1.e-6:
-            rthick_spline = spline(inputs["af_position"], inputs["rthick_yaml"])
-            outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        if max(inputs["rthick_yaml"]) < 1.e-6:
+            rthick_spline = spline(inputs["af_position"], inputs["rthick_master"])
+            outputs["rthick_interp"] = rthick_spline(inputs["s"])
         else:
-            outputs["r_thick_interp"] = inputs["rthick_yaml"]
-            if np.min(outputs["r_thick_interp"]) < np.min(inputs["rthick_yaml"]):
-                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
-
+            outputs["rthick_interp"] = inputs["rthick_yaml"]
+        
         ac_spline = spline(inputs["af_position"], inputs["ac"])
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
         # Is this unique an issue? Does it assume no two airfoils have the same relative thickness?
-        r_thick_unique, indices = np.unique(inputs["rthick_yaml"], return_index=True)
-        profile_spline = spline(r_thick_unique, inputs["coord_xy"][indices, :, :])
-        coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        rthick_unique, indices = np.unique(outputs["rthick_interp"] , return_index=True)
+        profile_spline = spline(rthick_unique, inputs["coord_xy"][indices, :, :])
+        coord_xy_interp = np.flip(profile_spline(np.flip(outputs["rthick_interp"])), axis=0)
 
         for i in range(self.n_span):
             # Correction to move the leading edge (min x point) to (0,0)
@@ -804,17 +800,17 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             c = max(coord_xy_interp[i, :, 0]) - min(coord_xy_interp[i, :, 0])
             coord_xy_interp[i, :, :] /= c
             # If the rel thickness is smaller than 0.4 apply a trailing ege smoothing step
-            if outputs["r_thick_interp"][i] < 0.4:
+            if outputs["rthick_interp"][i] < 0.4:
                 coord_xy_interp[i, :, :] = trailing_edge_smoothing(coord_xy_interp[i, :, :])
 
 
         # Spanwise interpolation of the airfoil polars with a pchip
-        cl_spline = spline(r_thick_unique, inputs["cl"][indices, :, :, :])
-        cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cd_spline = spline(r_thick_unique, inputs["cd"][indices, :, :, :])
-        cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cm_spline = spline(r_thick_unique, inputs["cm"][indices, :, :, :])
-        cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        cl_spline = spline(rthick_unique, inputs["cl"][indices, :, :, :])
+        cl_interp = np.flip(cl_spline(np.flip(outputs["rthick_interp"])), axis=0)
+        cd_spline = spline(rthick_unique, inputs["cd"][indices, :, :, :])
+        cd_interp = np.flip(cd_spline(np.flip(outputs["rthick_interp"])), axis=0)
+        cm_spline = spline(rthick_unique, inputs["cm"][indices, :, :, :])
+        cm_interp = np.flip(cm_spline(np.flip(outputs["rthick_interp"])), axis=0)
 
         outputs["coord_xy_interp"] = coord_xy_interp
         outputs["cl_interp"] = cl_interp
@@ -2416,7 +2412,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input(
-            "r_thick",
+            "rthick",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -2446,7 +2442,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
             if (
-                inputs["r_thick"][i] < 0.7 and self.af_correction
+                inputs["rthick"][i] < 0.7 and self.af_correction
             ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
                 logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):

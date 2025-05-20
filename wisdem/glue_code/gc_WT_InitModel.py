@@ -347,6 +347,7 @@ def assign_blade_root_joint_values(wt_opt, structure):
 
     return wt_opt
 
+
 def assign_user_elastic(wt_opt, user_elastic_properties):
 
     nd_span = wt_opt["blade.outer_shape.s"]
@@ -1278,9 +1279,10 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
     Re = modeling_options["WISDEM"]["RotorSE"]["Re"]
     n_xy = modeling_options["WISDEM"]["RotorSE"]["n_xy"]
 
-    coord_xy = np.zeros((n_af_master, n_xy, 2))
+    coord_xy_master = np.zeros((n_af_master, n_xy, 2))
 
     ac_master = np.zeros(n_af_master)
+    rthick_master = np.zeros(n_af_master)
     cl_master = np.zeros((n_af_master, n_aoa, n_Re))
     cd_master = np.zeros((n_af_master, n_aoa, n_Re))
     cm_master = np.zeros((n_af_master, n_aoa, n_Re))
@@ -1292,6 +1294,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
             if af_master[i] == airfoils[j]["name"]:
                 airfoil_exists = True
                 ac_master[i] = airfoils[j]["aerodynamic_center"]
+                rthick_master[i] = airfoils[j]["rthick"]
                 points = np.column_stack((airfoils[j]["coordinates"]["x"], airfoils[j]["coordinates"]["y"]))
                 # Check that airfoil points are declared from the TE suction side to TE pressure side
                 idx_le = np.argmin(points[:, 0])
@@ -1309,7 +1312,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                 c = max(af_points[:, 0]) - min(af_points[:, 0])
                 af_points[:, :] /= c
 
-                coord_xy[i, :, :] = af_points
+                coord_xy_master[i, :, :] = af_points
 
                 if coordinates_only:
                     break
@@ -1387,7 +1390,8 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
             )
     
     # Assign to openmdao structure
-    wt_opt["airfoils.coord_xy"] = coord_xy
+    wt_opt["airfoils.coord_xy"] = coord_xy_master
+    wt_opt["airfoils.rthick_master"] = rthick_master
     if coordinates_only == False:
         wt_opt["airfoils.aoa"] = aoa
         wt_opt["airfoils.ac"] = ac_master
