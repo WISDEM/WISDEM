@@ -153,6 +153,7 @@ class ComputePowerCurve(ExplicitComponent):
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
+        self.fix_pitch_regI12 = modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"]
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
 
@@ -171,7 +172,6 @@ class ComputePowerCurve(ExplicitComponent):
             desc="pitch angle in region 2 (and region 3 for fixed pitch machines)",
         )
         self.add_input("ps_percent", val=1.0, desc="Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.")
-        self.add_discrete_input("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         self.add_discrete_input("drivetrainType", val="GEARED")
         self.add_input("gearbox_efficiency", val=1.0)
@@ -665,7 +665,7 @@ class ComputePowerCurve(ExplicitComponent):
             if (
                 ((Omega[i] == Omega_tsr[i]) and not peak_thrust_shaving)
                 or ((Omega[i] == Omega_tsr[i]) and peak_thrust_shaving and (T[i]/max_T <= 1.04))
-                or ((Omega[i] == Omega_min) and discrete_inputs["fix_pitch_regI12"])
+                or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
                 or (found_rated and (i == i_rated))
             ):
                 continue

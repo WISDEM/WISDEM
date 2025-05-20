@@ -161,7 +161,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="deg", desc="Constant pitch angle in region II.")
             ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
-            ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
@@ -1195,7 +1194,6 @@ class Nacelle(om.Group):
         ivc.add_output("overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange")
         ivc.add_output("gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive")
         ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
-        ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
         ivc.add_output("gearbox_radius_user", val=0.0, units="m", desc="User override of gearbox radius (only used if gearbox_mass_user is > 0).")
         ivc.add_output("gearbox_length_user", val=0.0, units="m", desc="User override of gearbox length (only used if gearbox_mass_user is > 0).")
         ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
