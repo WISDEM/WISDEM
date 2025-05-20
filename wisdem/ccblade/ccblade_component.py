@@ -50,11 +50,11 @@ class CCBladeLoads(ExplicitComponent):
         Precurve at each section.
     precurveTip : float
         Precurve at tip.
-    airfoils_cl : numpy array[n_span, n_aoa, n_Re, n_tab]
+    airfoils_cl : numpy array[n_span, n_aoa, n_Re]
         Lift coefficients, spanwise.
-    airfoils_cd : numpy array[n_span, n_aoa, n_Re, n_tab]
+    airfoils_cd : numpy array[n_span, n_aoa, n_Re]
         Drag coefficients, spanwise.
-    airfoils_cm : numpy array[n_span, n_aoa, n_Re, n_tab]
+    airfoils_cm : numpy array[n_span, n_aoa, n_Re]
         Moment coefficients, spanwise.
     airfoils_aoa : numpy array[n_aoa]
         Angle of attack grid for polars.
@@ -99,9 +99,6 @@ class CCBladeLoads(ExplicitComponent):
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds
-        self.n_tab = n_tab = rotorse_options[
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
         # inputs
         self.add_input("V_load", val=20.0, units="m/s")
@@ -122,9 +119,9 @@ class CCBladeLoads(ExplicitComponent):
         self.add_input("precurveTip", val=0.0, units="m")
 
         # parameters
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
+        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re)))
+        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re)))
+        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re)))
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)))
 
@@ -224,9 +221,9 @@ class CCBladeLoads(ExplicitComponent):
             af[i] = CCAirfoil(
                 inputs["airfoils_aoa"],
                 inputs["airfoils_Re"],
-                inputs["airfoils_cl"][i, :, :, 0],
-                inputs["airfoils_cd"][i, :, :, 0],
-                inputs["airfoils_cm"][i, :, :, 0],
+                inputs["airfoils_cl"][i, :, :],
+                inputs["airfoils_cd"][i, :, :],
+                inputs["airfoils_cm"][i, :, :],
             )
 
         ccblade = CCBlade(
@@ -316,9 +313,6 @@ class CCBladeTwist(ExplicitComponent):
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         n_opt_chord = opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
         n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
@@ -357,9 +351,9 @@ class CCBladeTwist(ExplicitComponent):
             units="rad",
         )
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="drag coefficients, spanwise")
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
+        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re)), desc="lift coefficients, spanwise")
+        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re)), desc="drag coefficients, spanwise")
+        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
         self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
         self.add_input("Rtip", val=0.0, units="m", desc="Distance between rotor center and blade tip along z axis of blade root c.s.")
@@ -458,23 +452,13 @@ class CCBladeTwist(ExplicitComponent):
         # Create Airfoil class instances
         af = [None] * self.n_span
         for i in range(self.n_span):
-            if self.n_tab > 1:
-                ref_tab = int(np.floor(self.n_tab / 2))
-                af[i] = CCAirfoil(
-                    inputs["airfoils_aoa"],
-                    inputs["airfoils_Re"],
-                    inputs["airfoils_cl"][i, :, :, ref_tab],
-                    inputs["airfoils_cd"][i, :, :, ref_tab],
-                    inputs["airfoils_cm"][i, :, :, ref_tab],
-                )
-            else:
-                af[i] = CCAirfoil(
-                    inputs["airfoils_aoa"],
-                    inputs["airfoils_Re"],
-                    inputs["airfoils_cl"][i, :, :, 0],
-                    inputs["airfoils_cd"][i, :, :, 0],
-                    inputs["airfoils_cm"][i, :, :, 0],
-                )
+            af[i] = CCAirfoil(
+                inputs["airfoils_aoa"],
+                inputs["airfoils_Re"],
+                inputs["airfoils_cl"][i, :, :, 0],
+                inputs["airfoils_cd"][i, :, :, 0],
+                inputs["airfoils_cm"][i, :, :, 0],
+            )
 
         # Create the CCBlade class instance
         ccblade = CCBlade(
@@ -526,17 +510,17 @@ class CCBladeTwist(ExplicitComponent):
                 elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'stall_margin':
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
-                        inputs["airfoils_cl"][i, :, 0, 0],
-                        inputs["airfoils_cd"][i, :, 0, 0],
-                        inputs["airfoils_cm"][i, :, 0, 0],
+                        inputs["airfoils_cl"][i, :, 0],
+                        inputs["airfoils_cd"][i, :, 0],
+                        inputs["airfoils_cm"][i, :, 0],
                     )
                     alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
                 elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'max_efficiency':
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
-                        inputs["airfoils_cl"][i, :, 0, 0],
-                        inputs["airfoils_cd"][i, :, 0, 0],
-                        inputs["airfoils_cm"][i, :, 0, 0],
+                        inputs["airfoils_cl"][i, :, 0],
+                        inputs["airfoils_cd"][i, :, 0],
+                        inputs["airfoils_cm"][i, :, 0],
                     )
                     Emax[i], alpha[i], _, _ = af[i].max_eff(Re[i])
                 else:
@@ -643,9 +627,6 @@ class CCBladeEvaluate(ExplicitComponent):
         self.n_span = n_span = rotorse_init_options["n_span"]
         self.n_aoa = n_aoa = rotorse_init_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_init_options["n_Re"]  # Number of Reynolds
-        self.n_tab = n_tab = rotorse_init_options[
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
         # inputs
         self.add_input("V_load", val=20.0, units="m/s")
@@ -667,9 +648,9 @@ class CCBladeEvaluate(ExplicitComponent):
         self.add_input("presweepTip", val=0.0, units="m")
 
         # parameters
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
+        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re)))
+        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re)))
+        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re)))
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)))
 
@@ -732,9 +713,9 @@ class CCBladeEvaluate(ExplicitComponent):
             af[i] = CCAirfoil(
                 inputs["airfoils_aoa"],
                 inputs["airfoils_Re"],
-                inputs["airfoils_cl"][i, :, :, 0],
-                inputs["airfoils_cd"][i, :, :, 0],
-                inputs["airfoils_cm"][i, :, :, 0],
+                inputs["airfoils_cl"][i, :, :],
+                inputs["airfoils_cd"][i, :, :],
+                inputs["airfoils_cm"][i, :, :],
             )
 
         ccblade = CCBlade(
@@ -810,9 +791,9 @@ class CCBladeEvaluate(ExplicitComponent):
             af[i] = CCAirfoil(
                 inputs["airfoils_aoa"],
                 inputs["airfoils_Re"],
-                inputs["airfoils_cl"][i, :, :, 0],
-                inputs["airfoils_cd"][i, :, :, 0],
-                inputs["airfoils_cm"][i, :, :, 0],
+                inputs["airfoils_cl"][i, :, :],
+                inputs["airfoils_cd"][i, :, :],
+                inputs["airfoils_cm"][i, :, :],
             )
 
         ccblade = CCBlade(

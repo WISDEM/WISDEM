@@ -149,9 +149,6 @@ class ComputePowerCurve(ExplicitComponent):
         self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
         self.fix_pitch_regI12 = modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"]
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
@@ -212,9 +209,9 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input("presweepTip", val=0.0, units="m", desc="presweep at tip")
 
         # self.add_discrete_input('airfoils',  val=[0]*n_span,                      desc='CCAirfoil instances')
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="drag coefficients, spanwise")
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
+        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re)), desc="lift coefficients, spanwise")
+        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re)), desc="drag coefficients, spanwise")
+        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
         self.add_discrete_input("nBlades", val=0, desc="number of blades")
@@ -330,23 +327,13 @@ class ComputePowerCurve(ExplicitComponent):
         # Create Airfoil class instances
         af = [None] * self.n_span
         for i in range(self.n_span):
-            if self.n_tab > 1:
-                ref_tab = int(np.floor(self.n_tab / 2))
-                af[i] = CCAirfoil(
-                    inputs["airfoils_aoa"],
-                    inputs["airfoils_Re"],
-                    inputs["airfoils_cl"][i, :, :, ref_tab],
-                    inputs["airfoils_cd"][i, :, :, ref_tab],
-                    inputs["airfoils_cm"][i, :, :, ref_tab],
-                )
-            else:
-                af[i] = CCAirfoil(
-                    inputs["airfoils_aoa"],
-                    inputs["airfoils_Re"],
-                    inputs["airfoils_cl"][i, :, :, 0],
-                    inputs["airfoils_cd"][i, :, :, 0],
-                    inputs["airfoils_cm"][i, :, :, 0],
-                )
+            af[i] = CCAirfoil(
+                inputs["airfoils_aoa"],
+                inputs["airfoils_Re"],
+                inputs["airfoils_cl"][i, :, :],
+                inputs["airfoils_cd"][i, :, :],
+                inputs["airfoils_cm"][i, :, :],
+            )
 
         self.ccblade = CCBlade(
             inputs["r"],
@@ -908,9 +895,6 @@ class NoStallConstraint(ExplicitComponent):
         self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
         self.add_input(
             "s",
@@ -924,9 +908,9 @@ class NoStallConstraint(ExplicitComponent):
             val=0.25,
             desc="Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)",
         )
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="drag coefficients, spanwise")
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
+        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re)), desc="lift coefficients, spanwise")
+        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re)), desc="drag coefficients, spanwise")
+        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
 
         self.add_output(
@@ -945,9 +929,9 @@ class NoStallConstraint(ExplicitComponent):
         for i in range(n_span):
             unsteady = eval_unsteady(
                 inputs["airfoils_aoa"],
-                inputs["airfoils_cl"][i, :, 0, 0],
-                inputs["airfoils_cd"][i, :, 0, 0],
-                inputs["airfoils_cm"][i, :, 0, 0],
+                inputs["airfoils_cl"][i, :, 0],
+                inputs["airfoils_cd"][i, :, 0],
+                inputs["airfoils_cm"][i, :, 0],
             )
             outputs["stall_angle_along_span"][i] = unsteady["alpha1"]
             if outputs["stall_angle_along_span"][i] == 0:

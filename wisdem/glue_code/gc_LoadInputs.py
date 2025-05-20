@@ -144,7 +144,6 @@ class WindTurbineOntologyPython(object):
                     self.modeling_options["WISDEM"]["RotorSE"]["AFTabMod"] = 2
             self.modeling_options["WISDEM"]["RotorSE"]["n_Re"] = len(np.unique(Re_all))
             self.modeling_options["WISDEM"]["RotorSE"]["Re"] = np.unique(Re_all)
-            self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
             self.modeling_options["WISDEM"]["RotorSE"]["n_xy"] = self.modeling_options["WISDEM"]["RotorSE"]["n_xy"]
             n_af_master = len(self.wt_init["components"]["blade"][
                 "outer_shape"

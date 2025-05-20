@@ -64,9 +64,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             n_af_master = rotorse_options["n_af_master"]  # Number of airfoils
             n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
             n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-            n_tab = rotorse_options[
-                "n_tab"
-            ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
             n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
             airfoils.add_output("ac", val=np.zeros(n_af_master), desc="1D array of the aerodynamic centers of each airfoil used along span.")
             airfoils.add_output(
@@ -85,17 +82,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             airfoils.add_output(
                 "cl",
-                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re)),
                 desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             airfoils.add_output(
                 "cd",
-                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re)),
                 desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             airfoils.add_output(
                 "cm",
-                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re)),
                 desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             # Airfoil coordinates
@@ -677,9 +674,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = rotorse_options[
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.af_master = rotorse_options["af_master"]  # Names of the airfoils adopted along blade span
 
@@ -714,18 +708,18 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
         self.add_input(
             "cl",
-            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
-            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_af_master, n_aoa, n_Re)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_input(
             "cd",
-            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
-            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_af_master, n_aoa, n_Re)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_input(
             "cm",
-            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
-            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_af_master, n_aoa, n_Re)),
+            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
 
         # Airfoil coordinates
@@ -753,18 +747,18 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
         self.add_output(
             "cl_interp",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_output(
             "cd_interp",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_output(
             "cm_interp",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_output(
             "coord_xy_interp",
@@ -788,7 +782,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Spanwise interpolation of the profile coordinates with a pchip
         # Is this unique an issue? Does it assume no two airfoils have the same relative thickness?
-        rthick_unique, indices = np.unique(outputs["rthick_interp"] , return_index=True)
+        rthick_unique, indices = np.unique(inputs["rthick_master"] , return_index=True)
         profile_spline = spline(rthick_unique, inputs["coord_xy"][indices, :, :])
         coord_xy_interp = np.flip(profile_spline(np.flip(outputs["rthick_interp"])), axis=0)
 
@@ -805,11 +799,11 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
 
         # Spanwise interpolation of the airfoil polars with a pchip
-        cl_spline = spline(rthick_unique, inputs["cl"][indices, :, :, :])
+        cl_spline = spline(rthick_unique, inputs["cl"][indices, :, :])
         cl_interp = np.flip(cl_spline(np.flip(outputs["rthick_interp"])), axis=0)
-        cd_spline = spline(rthick_unique, inputs["cd"][indices, :, :, :])
+        cd_spline = spline(rthick_unique, inputs["cd"][indices, :, :])
         cd_interp = np.flip(cd_spline(np.flip(outputs["rthick_interp"])), axis=0)
-        cm_spline = spline(rthick_unique, inputs["cm"][indices, :, :, :])
+        cm_spline = spline(rthick_unique, inputs["cm"][indices, :, :])
         cm_interp = np.flip(cm_spline(np.flip(outputs["rthick_interp"])), axis=0)
 
         outputs["coord_xy_interp"] = coord_xy_interp
@@ -2369,9 +2363,6 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = rotorse_options[
-            "n_tab"
-        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
@@ -2385,18 +2376,18 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         )
         self.add_input(
             "cl",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_input(
             "cd",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_input(
             "cm",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
-            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+            val=np.zeros((n_span, n_aoa, n_Re)),
+            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number.",
         )
         self.add_input("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
         self.add_input(
@@ -2422,56 +2413,55 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         # Outputs
         self.add_output(
             "cl_corrected",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_span, n_aoa, n_Re)),
             desc="Lift coefficient corrected with CCBlade.Polar.",
         )
         self.add_output(
             "cd_corrected",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_span, n_aoa, n_Re)),
             desc="Drag coefficient corrected with CCBlade.Polar.",
         )
         self.add_output(
             "cm_corrected",
-            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_span, n_aoa, n_Re)),
             desc="Moment coefficient corrected with CCblade.Polar.",
         )
 
     def compute(self, inputs, outputs):
-        cl_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        cl_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re))
+        cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re))
+        cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re))
         for i in range(self.n_span):
             if (
                 inputs["rthick"][i] < 0.7 and self.af_correction
             ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
                 logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):
-                    for k in range(self.n_tab):
-                        inn_polar = Polar(
-                            Re=inputs["Re"][j],
-                            alpha=np.degrees(inputs["aoa"]),
-                            cl=inputs["cl"][i, :, j, k],
-                            cd=inputs["cd"][i, :, j, k],
-                            cm=inputs["cm"][i, :, j, k],
-                        )
-                        polar3d = inn_polar.correction3D(
-                            inputs["r_blade"][i] / (inputs["rotor_diameter"][0] / 2),
-                            inputs["chord"][i] / inputs["r_blade"][i],
-                            inputs["rated_TSR"],
-                        )
-                        cl_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cl)(
-                            np.degrees(inputs["aoa"])
-                        )
-                        cd_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cd)(
-                            np.degrees(inputs["aoa"])
-                        )
-                        cm_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cm)(
-                            np.degrees(inputs["aoa"])
-                        )
+                    inn_polar = Polar(
+                        Re=inputs["Re"][j],
+                        alpha=inputs["aoa"],
+                        cl=inputs["cl"][i, :, j],
+                        cd=inputs["cd"][i, :, j],
+                        cm=inputs["cm"][i, :, j],
+                    )
+                    polar3d = inn_polar.correction3D(
+                        inputs["r_blade"][i] / (inputs["rotor_diameter"][0] / 2),
+                        inputs["chord"][i] / inputs["r_blade"][i],
+                        inputs["rated_TSR"],
+                    )
+                    cl_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cl)(
+                        inputs["aoa"]
+                    )
+                    cd_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cd)(
+                        inputs["aoa"]
+                    )
+                    cm_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cm)(
+                        inputs["aoa"]
+                    )
             else:
-                cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
-                cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
-                cm_corrected[i, :, :, :] = inputs["cm"][i, :, :, :]
+                cl_corrected[i, :, :] = inputs["cl"][i, :, :]
+                cd_corrected[i, :, :] = inputs["cd"][i, :, :]
+                cm_corrected[i, :, :] = inputs["cm"][i, :, :]
         outputs["cl_corrected"] = cl_corrected
         outputs["cd_corrected"] = cd_corrected
         outputs["cm_corrected"] = cm_corrected
