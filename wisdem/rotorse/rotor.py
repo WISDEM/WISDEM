@@ -185,7 +185,7 @@ class RotorSEPerf(om.Group):
             promotes=promoteGeom + promoteCC + promoteRS,
         )
 
-        if not modeling_options["user_elastic"]["blade"]:
+        if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] > 0 and not modeling_options["user_elastic"]["blade"]:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
             n_span_out = (
