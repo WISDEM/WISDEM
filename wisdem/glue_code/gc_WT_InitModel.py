@@ -1346,7 +1346,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                                             re_config, cm_used_i[j, :]
                                         )(Re)
                             
-            break
+                break
 
 
     

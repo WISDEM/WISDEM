@@ -120,7 +120,7 @@ class WindTurbineOntologyPython(object):
                                 int(self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] / 2.0),
                             ),
                             np.linspace(
-                                180. / 6.0, np.pi, int(self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] / 4.0 + 1)
+                                180. / 6.0, 180., int(self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] / 4.0 + 1)
                             ),
                         ]
                     )
