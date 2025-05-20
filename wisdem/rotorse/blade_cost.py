@@ -3041,11 +3041,6 @@ class BladeCost(om.ExplicitComponent):
             val=np.zeros((n_webs, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
-        self.add_input(
-            "layer_web",
-            val=np.zeros(n_layers),
-            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
-        )
         self.add_discrete_input(
             "definition_layer",
             val=np.zeros(n_layers),

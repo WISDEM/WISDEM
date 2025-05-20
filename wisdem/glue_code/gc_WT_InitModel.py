@@ -213,7 +213,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.web_start_nd"][:, i] = web_start_nd
+        wt_opt["blade.structure.web_start_nd"][i, :] = web_start_nd
 
         # web_end_nd
         if "grid" in web_i["end_nd_arc"] and "values" in web_i["end_nd_arc"]:
@@ -239,7 +239,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.web_end_nd"][:, i] = web_end_nd
+        wt_opt["blade.structure.web_end_nd"][i, :] = web_end_nd
 
     return wt_opt
 
@@ -277,7 +277,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_start_nd"][:, i] = layer_start_nd
+        wt_opt["blade.structure.layer_start_nd"][i, :] = layer_start_nd
 
         # layer_end_nd
         if "grid" in layer_i["end_nd_arc"] and "values" in layer_i["end_nd_arc"]:
@@ -303,7 +303,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_end_nd"][:, i] = layer_end_nd
+        wt_opt["blade.structure.layer_end_nd"][i, :] = layer_end_nd
         
         # thickness
         if "thickness" in layer_i:
@@ -317,7 +317,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_thickness"][:, i] = layer_thickness
+        wt_opt["blade.structure.layer_thickness"][i, :] = layer_thickness
         
         # fiber_orientation
         if "fiber_orientation" in layer_i:
@@ -331,7 +331,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_fiber_orientation"][:, i] = layer_fiber_orientation
+        wt_opt["blade.structure.layer_fiber_orientation"][i, :] = layer_fiber_orientation
 
     return wt_opt
 

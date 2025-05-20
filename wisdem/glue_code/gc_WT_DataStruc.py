@@ -706,11 +706,13 @@ class Compute_Blade_Outer_Shape(om.ExplicitComponent):
         self.add_input(
             "section_offset_x_yaml",
             val=np.zeros(n_span),
+            units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         self.add_input(
             "section_offset_y_yaml",
             val=np.zeros(n_span),
+            units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
         )
         self.add_input(
@@ -1106,38 +1108,36 @@ class Blade_Structure(om.Group):
 
         ivc.add_output(
             "web_start_nd",
-            val=np.zeros((n_span, n_webs)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each entry along blade span, the second dimension represents each web.",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
         ivc.add_output(
             "web_end_nd",
-            val=np.zeros((n_span, n_webs)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1.  The first dimension represents each entry along blade span, the second dimension represents each web.",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
         
         ivc.add_output(
             "layer_thickness",
-            val=np.zeros((n_span, n_layers)),
+            val=np.zeros((n_layers, n_span)),
             units="m",
-            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
             "layer_start_nd",
-            val=np.zeros((n_span, n_layers)),
-            units="deg",
-            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
             "layer_end_nd",
-            val=np.zeros((n_span, n_layers)),
-            units="deg",
-            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
             "layer_fiber_orientation",
-            val=np.zeros((n_span, n_layers)),
+            val=np.zeros((n_layers, n_span)),
             units="deg",
-            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
+            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents span.",
         )
 
 
