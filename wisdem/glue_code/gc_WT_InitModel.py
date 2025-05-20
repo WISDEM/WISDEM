@@ -152,7 +152,7 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
         wt_opt["blade.outer_shape.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
         wt_opt["blade.opt_var.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
 
-    wt_opt["blade.outer_shape.s_default"] = nd_span
+    wt_opt["blade.outer_shape.s"] = nd_span
     wt_opt["blade.outer_shape.chord"] = PchipInterpolator(
         outer_shape["chord"]["grid"], outer_shape["chord"]["values"]
     )(nd_span)
@@ -185,7 +185,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
 
     n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
     n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
-    nd_span = wt_opt["blade.outer_shape.s_default"]
+    nd_span = wt_opt["blade.outer_shape.s"]
     anchors = structure["anchors"]
     for i in range(n_webs):
         web_i = structure["webs"][i]
@@ -249,7 +249,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
     # Function to assign values to the openmdao component Blade_Structure
     n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
     n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
-    nd_span = wt_opt["blade.outer_shape.s_default"]
+    nd_span = wt_opt["blade.outer_shape.s"]
     anchors = structure["anchors"]
     for i in range(n_layers):
         layer_i = structure["layers"][i]
@@ -349,7 +349,7 @@ def assign_blade_root_joint_values(wt_opt, structure):
 
 def assign_user_elastic(wt_opt, user_elastic_properties):
 
-    nd_span = wt_opt["blade.outer_shape.s_default"]
+    nd_span = wt_opt["blade.outer_shape.s"]
 
     stiff_grid = user_elastic_properties["stiffness_matrix"]["grid"]
     stiffness_matrix = user_elastic_properties["stiffness_matrix"]

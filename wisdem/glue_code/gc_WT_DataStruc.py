@@ -550,13 +550,13 @@ class Blade(om.Group):
 
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape.s", "interp_airfoils.s")
-        self.connect("outer_shape.rthick_yaml_interp", "interp_airfoils.rthick_yaml")
+        self.connect("outer_shape.rthick_yaml", "interp_airfoils.rthick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
         self.connect("outer_shape.section_offset_x", ["interp_airfoils.section_offset_x", "compute_coord_xy_dim.section_offset_x"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
-        self.connect("outer_shape.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("ref_axis", "high_level_blade_props.blade_ref_axis_user")
         self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
@@ -636,7 +636,7 @@ class Blade_Outer_Shape(om.Group):
             desc="1D array of the non dimensional positions of the airfoils af_master defined along blade span.",
         )
         ivc.add_output(
-            "s_default",
+            "s",
             val=np.zeros(n_span),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
@@ -2293,7 +2293,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
-        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
+        outputs['blade_solidity'] = np.trapezoid(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
         outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
