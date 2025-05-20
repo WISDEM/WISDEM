@@ -11,12 +11,6 @@ from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing
 
-try:
-    from INN_interface.INN import INN
-
-    INN_loaded = True
-except:
-    INN_loaded = False
 logger = logging.getLogger("wisdem/weis")
 
 
@@ -878,8 +872,8 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         coord_xy_twist = copy.copy(coord_xy_interp)
         x = coord_xy_dim[:, :, 0]
         y = coord_xy_dim[:, :, 1]
-        coord_xy_twist[:, :, 0] = x * np.cos(twist[:,np.newaxis]) - y * np.sin(twist[:,np.newaxis])
-        coord_xy_twist[:, :, 1] = y * np.cos(twist[:,np.newaxis]) + x * np.sin(twist[:,np.newaxis])
+        coord_xy_twist[:, :, 0] = x * np.cos(np.deg2rad(twist[:,np.newaxis])) - y * np.sin(np.deg2rad(twist[:,np.newaxis]))
+        coord_xy_twist[:, :, 1] = y * np.cos(np.deg2rad(twist[:,np.newaxis])) + x * np.sin(np.deg2rad(twist[:,np.newaxis]))
         outputs["coord_xy_dim_twisted"] = coord_xy_twist
 
         # Integrate along span for surface area
@@ -1668,8 +1662,8 @@ class AggregateJoints(om.ExplicitComponent):
         # Handle cylindrical coordinate joints
         icyl = floating_init_options["joints"]["cylindrical"]
         locations_xyz = locations.copy()
-        locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(locations[icyl, 1])
-        locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
+        locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(np.deg2rad(locations[icyl, 1]))
+        locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(np.deg2rad(locations[icyl, 1]))
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node
@@ -2270,11 +2264,11 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["blade_ref_axis"][:, 2] = (
                 inputs["blade_ref_axis_user"][:, 2]
                 * inputs["rotor_diameter_user"]
-                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(inputs["cone"][0]))
+                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(np.deg2rad(inputs["cone"][0])))
             )
         # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
         else:
-            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(inputs["cone"][0])
+            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0 * np.cos(np.deg2rad(inputs["cone"][0]))
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["Rtip"] = outputs["r_blade"][-1]
@@ -2437,14 +2431,14 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
                 logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):
-                    inn_polar = Polar(
+                    polar = Polar(
                         Re=inputs["Re"][j],
                         alpha=inputs["aoa"],
                         cl=inputs["cl"][i, :, j],
                         cd=inputs["cd"][i, :, j],
                         cm=inputs["cm"][i, :, j],
                     )
-                    polar3d = inn_polar.correction3D(
+                    polar3d = polar.correction3D(
                         inputs["r_blade"][i] / (inputs["rotor_diameter"][0] / 2),
                         inputs["chord"][i] / inputs["r_blade"][i],
                         inputs["rated_TSR"],

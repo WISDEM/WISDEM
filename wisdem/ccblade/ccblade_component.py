@@ -5,9 +5,6 @@ from scipy.interpolate import PchipInterpolator
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
 
-cosd = lambda x: np.cos(np.deg2rad(x))
-sind = lambda x: np.sin(np.deg2rad(x))
-
 class CCBladeLoads(ExplicitComponent):
     """
     Compute the aerodynamic forces along the blade span given a rotor speed,
@@ -455,9 +452,9 @@ class CCBladeTwist(ExplicitComponent):
             af[i] = CCAirfoil(
                 inputs["airfoils_aoa"],
                 inputs["airfoils_Re"],
-                inputs["airfoils_cl"][i, :, :, 0],
-                inputs["airfoils_cd"][i, :, :, 0],
-                inputs["airfoils_cm"][i, :, :, 0],
+                inputs["airfoils_cl"][i, :, :],
+                inputs["airfoils_cd"][i, :, :],
+                inputs["airfoils_cm"][i, :, :],
             )
 
         # Create the CCBlade class instance
