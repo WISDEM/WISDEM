@@ -102,7 +102,7 @@ class WindTurbineOntologyPython(object):
 
         # Airfoils
         if self.modeling_options["flags"]["airfoils"]:
-            self.modeling_options["WISDEM"]["RotorSE"]["n_af"] = len(self.wt_init["airfoils"])
+            self.modeling_options["WISDEM"]["RotorSE"]["n_af_database"] = len(self.wt_init["airfoils"])
             self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"]
             if self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] / 4.0 == int(
                 self.modeling_options["WISDEM"]["RotorSE"]["n_aoa"] / 4.0
@@ -136,7 +136,7 @@ class WindTurbineOntologyPython(object):
                 )
             Re_all = []
             self.modeling_options["WISDEM"]["RotorSE"]["AFTabMod"] = 1
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af"]):
+            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af_database"]):
                 for j in range(len(self.wt_init["airfoils"][i]["polars"])):
                     for k in range(len(self.wt_init["airfoils"][i]["polars"][j]['re_sets'])):
                         Re_all.append(self.wt_init["airfoils"][i]["polars"][j]["re_sets"][k]['re'])
@@ -146,12 +146,12 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["RotorSE"]["Re"] = np.unique(Re_all)
             self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
             self.modeling_options["WISDEM"]["RotorSE"]["n_xy"] = self.modeling_options["WISDEM"]["RotorSE"]["n_xy"]
-            n_af_used = len(self.wt_init["components"]["blade"][
+            n_af_master = len(self.wt_init["components"]["blade"][
                 "outer_shape"
             ]["airfoils"])
-            self.modeling_options["WISDEM"]["RotorSE"]["af_used"] = [''] * n_af_used
-            for i in range(n_af_used):
-                self.modeling_options["WISDEM"]["RotorSE"]["af_used"][i] = self.wt_init["components"]["blade"][
+            self.modeling_options["WISDEM"]["RotorSE"]["af_master"] = [''] * n_af_master
+            for i in range(n_af_master):
+                self.modeling_options["WISDEM"]["RotorSE"]["af_master"][i] = self.wt_init["components"]["blade"][
                     "outer_shape"
                 ]["airfoils"][i]["name"]
 
@@ -160,7 +160,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             )  # Equally spaced non-dimensional spanwise grid
-            self.modeling_options["WISDEM"]["RotorSE"]["n_af_used"] = n_af_used
+            self.modeling_options["WISDEM"]["RotorSE"]["n_af_master"] = n_af_master
 
             self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False # Is this always false? It is not in the schema and not changed anywhere else.
             self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed, this should be common so moved out of the conditional

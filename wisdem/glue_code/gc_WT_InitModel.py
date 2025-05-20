@@ -38,8 +38,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["airfoils"]:
         airfoils = wt_init["airfoils"]
-        airfoils_used = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
-        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils)
+        airfoils_master = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
+        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils)
     else:
         airfoils = {}
 
@@ -119,13 +119,13 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic)
     # Function to assign values to the openmdao group Blade
     
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
-    wt_opt["blade.ref_axis_yaml"][:, 0] = PchipInterpolator(
+    wt_opt["blade.ref_axis"][:, 0] = PchipInterpolator(
     blade["reference_axis"]["x"]["grid"], blade["reference_axis"]["x"]["values"]
     )(nd_span)
-    wt_opt["blade.ref_axis_yaml"][:, 1] = PchipInterpolator(
+    wt_opt["blade.ref_axis"][:, 1] = PchipInterpolator(
         blade["reference_axis"]["y"]["grid"], blade["reference_axis"]["y"]["values"]
     )(nd_span)
-    wt_opt["blade.ref_axis_yaml"][:, 2] = PchipInterpolator(
+    wt_opt["blade.ref_axis"][:, 2] = PchipInterpolator(
         blade["reference_axis"]["z"]["grid"], blade["reference_axis"]["z"]["values"]
     )(nd_span)
 
@@ -146,24 +146,24 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
-    n_af_used = modeling_options["WISDEM"]["RotorSE"]["n_af_used"]
+    n_af_master = modeling_options["WISDEM"]["RotorSE"]["n_af_master"]
 
-    for i in range(n_af_used):
+    for i in range(n_af_master):
         wt_opt["blade.outer_shape.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
         wt_opt["blade.opt_var.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
 
     wt_opt["blade.outer_shape.s_default"] = nd_span
-    wt_opt["blade.outer_shape.chord_yaml"] = PchipInterpolator(
+    wt_opt["blade.outer_shape.chord"] = PchipInterpolator(
         outer_shape["chord"]["grid"], outer_shape["chord"]["values"]
     )(nd_span)
-    wt_opt["blade.outer_shape.twist_yaml"] = PchipInterpolator(
+    wt_opt["blade.outer_shape.twist"] = PchipInterpolator(
         outer_shape["twist"]["grid"], outer_shape["twist"]["values"]
     )(nd_span)
-    wt_opt["blade.outer_shape.section_offset_x_yaml"] = PchipInterpolator(
+    wt_opt["blade.outer_shape.section_offset_x"] = PchipInterpolator(
         outer_shape["section_offset_x"]["grid"], outer_shape["section_offset_x"]["values"]
     )(nd_span)
     if "section_offset_y" in outer_shape:
-        wt_opt["blade.outer_shape.section_offset_y_yaml"] = PchipInterpolator(
+        wt_opt["blade.outer_shape.section_offset_y"] = PchipInterpolator(
             outer_shape["section_offset_y"]["grid"], outer_shape["section_offset_y"]["values"]
         )(nd_span)
     af_opt_flag = blade_DV_aero["af_positions"]["flag"]
@@ -1265,33 +1265,33 @@ def assign_costs_values(wt_opt, costs):
     return wt_opt
 
 
-def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coordinates_only=False):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
 
     
-    n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
-    n_af_used = modeling_options["WISDEM"]["RotorSE"]["n_af_used"]
-    af_used = modeling_options["WISDEM"]["RotorSE"]["af_used"]
+    n_af_database = modeling_options["WISDEM"]["RotorSE"]["n_af_database"]
+    n_af_master = modeling_options["WISDEM"]["RotorSE"]["n_af_master"]
+    af_master = modeling_options["WISDEM"]["RotorSE"]["af_master"]
     n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]
     aoa = modeling_options["WISDEM"]["RotorSE"]["aoa"]
     n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]
     Re = modeling_options["WISDEM"]["RotorSE"]["Re"]
     n_xy = modeling_options["WISDEM"]["RotorSE"]["n_xy"]
 
-    coord_xy = np.zeros((n_af_used, n_xy, 2))
+    coord_xy = np.zeros((n_af_master, n_xy, 2))
 
-    ac_used = np.zeros(n_af_used)
-    cl_used = np.zeros((n_af_used, n_aoa, n_Re))
-    cd_used = np.zeros((n_af_used, n_aoa, n_Re))
-    cm_used = np.zeros((n_af_used, n_aoa, n_Re))
+    ac_master = np.zeros(n_af_master)
+    cl_master = np.zeros((n_af_master, n_aoa, n_Re))
+    cd_master = np.zeros((n_af_master, n_aoa, n_Re))
+    cm_master = np.zeros((n_af_master, n_aoa, n_Re))
     
     
-    for i in range(n_af_used):
+    for i in range(n_af_master):
         airfoil_exists = False
-        for j in range(n_af):
-            if af_used[i] == airfoils[j]["name"]:
+        for j in range(n_af_database):
+            if af_master[i] == airfoils[j]["name"]:
                 airfoil_exists = True
-                ac_used[i] = airfoils[j]["aerodynamic_center"]
+                ac_master[i] = airfoils[j]["aerodynamic_center"]
                 points = np.column_stack((airfoils[j]["coordinates"]["x"], airfoils[j]["coordinates"]["y"]))
                 # Check that airfoil points are declared from the TE suction side to TE pressure side
                 idx_le = np.argmin(points[:, 0])
@@ -1315,12 +1315,12 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                     break
                 
                 # now move on to the polars, first combining polars across configurations
-                n_configs = len(airfoils_used[i]["configuration"])
+                n_configs = len(airfoils_master[i]["configuration"])
                 configuration = [''] * n_configs
                 weights = np.zeros(n_configs)
                 for k in range(n_configs):
-                    configuration[k] = airfoils_used[i]["configuration"][k]
-                    weights[k] = airfoils_used[i]["weight"][k]
+                    configuration[k] = airfoils_master[i]["configuration"][k]
+                    weights[k] = airfoils_master[i]["weight"][k]
                     config_exist = False
                     for l in range(len(airfoils[j]["polars"])):
                         if configuration[k] == airfoils[j]["polars"][l]["configuration"]:
@@ -1348,53 +1348,53 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                     # Check if the configuration exists
                     if not config_exist:
                         raise ValueError(
-                            f"Configuration {configuration[k]} not found for airfoil {af_used[i]}. Please check the configuration names for airfoil polars."
+                            f"Configuration {configuration[k]} not found for airfoil {af_master[i]}. Please check the configuration names for airfoil polars."
                         )
 
                 # Perform weighted average across configurations
                 if abs(sum(weights) - 1.0) > 1e-6:
                     raise ValueError(
-                        f"Configuration weights for airfoil {af_used[i]} do not sum to 1.0. Please check the configuration weights."
+                        f"Configuration weights for airfoil {af_master[i]} do not sum to 1.0. Please check the configuration weights."
                     )
 
-                cl_used_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
-                cd_used_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
-                cm_used_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
+                cl_master_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
+                cd_master_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
+                cm_master_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
 
                 # Interpolate across Re sets
                 if n_re_config == 1:
                     for j in range(n_Re):
-                        cl_used[i, :, j] = cl_used_i[:, 0]
-                        cd_used[i, :, j] = cd_used_i[:, 0]
-                        cm_used[i, :, j] = cm_used_i[:, 0]
+                        cl_master[i, :, j] = cl_master_i[:, 0]
+                        cd_master[i, :, j] = cd_master_i[:, 0]
+                        cm_master[i, :, j] = cm_master_i[:, 0]
                 else:
                     for j in range(n_aoa):
-                        cl_used[i, j, :] = PchipInterpolator(
-                                            re_config, cl_used_i[j, :]
+                        cl_master[i, j, :] = PchipInterpolator(
+                                            re_config, cl_master_i[j, :]
                                         )(Re)
-                        cd_used[i, j, :] = PchipInterpolator(
-                                            re_config, cd_used_i[j, :]
+                        cd_master[i, j, :] = PchipInterpolator(
+                                            re_config, cd_master_i[j, :]
                                         )(Re)
-                        cm_used[i, j, :] = PchipInterpolator(
-                                            re_config, cm_used_i[j, :]
+                        cm_master[i, j, :] = PchipInterpolator(
+                                            re_config, cm_master_i[j, :]
                                         )(Re)
                             
                 break
 
         if not airfoil_exists:
             raise ValueError(
-                f"Airfoil {af_used[i]} not found in airfoil database. Please check the airfoil names."
+                f"Airfoil {af_master[i]} not found in airfoil database. Please check the airfoil names."
             )
     
     # Assign to openmdao structure
     wt_opt["airfoils.coord_xy"] = coord_xy
     if coordinates_only == False:
         wt_opt["airfoils.aoa"] = aoa
-        wt_opt["airfoils.ac"] = ac_used
+        wt_opt["airfoils.ac"] = ac_master
         wt_opt["airfoils.Re"] = Re
-        wt_opt["airfoils.cl"] = cl_used
-        wt_opt["airfoils.cd"] = cd_used
-        wt_opt["airfoils.cm"] = cm_used
+        wt_opt["airfoils.cl"] = cl_master
+        wt_opt["airfoils.cd"] = cd_master
+        wt_opt["airfoils.cm"] = cm_master
 
 
     return wt_opt

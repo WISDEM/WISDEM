@@ -61,17 +61,16 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
             rotorse_options = modeling_options["WISDEM"]["RotorSE"]
-            n_af = rotorse_options["n_af"]  # Number of airfoils
+            n_af_master = rotorse_options["n_af_master"]  # Number of airfoils
             n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
             n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
             n_tab = rotorse_options[
                 "n_tab"
             ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
             n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-            airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
-            airfoils.add_output("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
+            airfoils.add_output("ac", val=np.zeros(n_af_master), desc="1D array of the aerodynamic centers of each airfoil used along span.")
             airfoils.add_output(
-                "r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil."
+                "r_thick", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil used along span."
             )
             airfoils.add_output(
                 "aoa",
@@ -86,24 +85,24 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             airfoils.add_output(
                 "cl",
-                val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
                 desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             airfoils.add_output(
                 "cd",
-                val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
                 desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             airfoils.add_output(
                 "cm",
-                val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+                val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
                 desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
             )
             # Airfoil coordinates
             airfoils.add_output(
                 "coord_xy",
-                val=np.zeros((n_af, n_xy, 2)),
-                desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
+                val=np.zeros((n_af_master, n_xy, 2)),
+                desc="3D array of the x and y airfoil coordinates of the n_af_master airfoils used along blade span.",
             )
             self.add_subsystem("airfoils", airfoils)
 
@@ -172,7 +171,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     user_elastic=modeling_options["user_elastic"]["blade"],
                 ),
             )
-            self.connect("airfoils.name", "blade.interp_airfoils.name")
             self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
             self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
@@ -409,7 +407,7 @@ class Blade(om.Group):
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
-        opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_used"]))
+        opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_master"]))
 
         if not user_elastic:
             for i in range(rotorse_options["n_layers"]):
@@ -525,7 +523,7 @@ class Blade(om.Group):
 
         ivc = self.add_subsystem("blade_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
-            "ref_axis_yaml",
+            "ref_axis",
             val=np.zeros((rotorse_options["n_span"], 3)),
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
@@ -628,14 +626,14 @@ class Blade_Outer_Shape(om.Group):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        n_af_used = rotorse_options["n_af_used"]
+        n_af_master = rotorse_options["n_af_master"]
         self.n_span = n_span = rotorse_options["n_span"]
 
         ivc = self.add_subsystem("blade_outer_shape_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
             "af_position",
-            val=np.zeros(n_af_used),
-            desc="1D array of the non dimensional positions of the airfoils af_used defined along blade span.",
+            val=np.zeros(n_af_master),
+            desc="1D array of the non dimensional positions of the airfoils af_master defined along blade span.",
         )
         ivc.add_output(
             "s_default",
@@ -643,22 +641,22 @@ class Blade_Outer_Shape(om.Group):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         ivc.add_output(
-            "chord_yaml", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         ivc.add_output(
-            "twist_yaml",
+            "twist",
             val=np.zeros(n_span),
             units="deg",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         ivc.add_output(
-            "section_offset_x_yaml",
+            "section_offset_x",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         ivc.add_output(
-            "section_offset_y_yaml",
+            "section_offset_y",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
@@ -667,171 +665,28 @@ class Blade_Outer_Shape(om.Group):
             "rthick_yaml", val=np.zeros(n_span), desc="1D array of the relative thickness values defined along blade span."
         )
 
-        self.add_subsystem(
-            "compute_blade_outer_shape",
-            Compute_Blade_Outer_Shape(rotorse_options=rotorse_options),
-            promotes=["*"],
-        )
-
-
-class Compute_Blade_Outer_Shape(om.ExplicitComponent):
-    # Openmdao group with the blade outer shape data coming from the input yaml file.
-    def initialize(self):
-        self.options.declare("rotorse_options")
-
-    def setup(self):
-        rotorse_options = self.options["rotorse_options"]
-        n_af_used = rotorse_options["n_af_used"]
-        self.n_span = n_span = rotorse_options["n_span"]
-
-        self.add_input(
-            "s_default",
-            val=np.zeros(n_span),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
-        )
-        self.add_input(
-            "chord_yaml", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
-        )
-        self.add_input(
-            "twist_yaml",
-            val=np.zeros(n_span),
-            units="deg",
-            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        )
-        self.add_input(
-            "rthick_yaml",
-            val=np.zeros(n_span),
-            desc="1D array of the relative thickness values defined along blade span.",
-        )
-        self.add_input(
-            "section_offset_x_yaml",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
-        )
-        self.add_input(
-            "section_offset_y_yaml",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
-        )
-        self.add_input(
-            "ref_axis_yaml",
-            val=np.zeros((n_span, 3)),
-            units="m",
-            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
-        )
-
-        self.add_output(
-            "s",
-            val=np.zeros(n_span),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
-        )
-        self.add_output(
-            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
-        )
-        self.add_output(
-            "twist",
-            val=np.zeros(n_span),
-            units="deg",
-            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        )
-        self.add_output(
-            "section_offset_x",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
-        )
-        self.add_output(
-            "section_offset_y",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
-        )
-        self.add_output(
-            "rthick_yaml_interp",
-            val=np.zeros(n_span),
-            desc="1D array of the relative thickness values defined along blade span.",
-        )
-        self.add_output(
-            "ref_axis",
-            val=np.zeros((n_span, 3)),
-            units="m",
-            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
-        )
-
-    def compute(self, inputs, outputs):
-        # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
-        if len(inputs["span_end"]) > 0:
-            nd_span_orig = np.linspace(0.0, 1.0, self.n_span)
-
-            chord_orig = PchipInterpolator(inputs["s_default"], inputs["chord_yaml"])(nd_span_orig)
-            twist_orig = PchipInterpolator(inputs["s_default"], inputs["twist_yaml"])(nd_span_orig)
-            section_offset_x_orig = PchipInterpolator(inputs["s_default"], inputs["section_offset_x_yaml"])(nd_span_orig)
-            r_thick_orig = PchipInterpolator(inputs["s_default"], inputs["rthick_yaml"])(nd_span_orig)
-            ref_axis_orig = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 0])(nd_span_orig)
-            ref_axis_orig[:, 1] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 1])(nd_span_orig)
-            ref_axis_orig[:, 2] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 2])(nd_span_orig)
-
-            outputs["s"] = copy.copy(nd_span_orig)
-
-            # Account for start and end positions
-            if inputs["span_end"] >= 0.98:
-                flap_start = 0.98 - inputs["span_ext"]
-                flap_end = 0.98
-                # print("WARNING: span_end point reached limits and was set to r/R = 0.98")
-            else:
-                flap_start = inputs["span_end"] - inputs["span_ext"]
-                flap_end = inputs["span_end"]
-
-            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[
-                0
-            ][0]
-            idx_flap_end = np.where(np.abs(nd_span_orig - flap_end) == (np.abs(nd_span_orig - flap_end)).min())[0][0]
-            if idx_flap_start == idx_flap_end:
-                idx_flap_end += 1
-            outputs["s"][idx_flap_start] = flap_start
-            outputs["s"][idx_flap_end] = flap_end
-            outputs["chord"] = PchipInterpolator(nd_span_orig, chord_orig)(outputs["s"])
-            outputs["twist"] = PchipInterpolator(nd_span_orig, twist_orig)(outputs["s"])
-            outputs["section_offset_x"] = PchipInterpolator(nd_span_orig, section_offset_x_orig)(outputs["s"])
-            outputs["rthick_yaml_interp"] = PchipInterpolator(nd_span_orig, r_thick_orig)(outputs["s"])
-            outputs["ref_axis"][:, 0] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 0])(outputs["s"])
-            outputs["ref_axis"][:, 1] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 1])(outputs["s"])
-            outputs["ref_axis"][:, 2] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 2])(outputs["s"])
-        else:
-            outputs["s"] = inputs["s_default"]
-            outputs["chord"] = inputs["chord_yaml"]
-            outputs["twist"] = inputs["twist_yaml"]
-            outputs["section_offset_x"] = inputs["section_offset_x_yaml"]
-            outputs["rthick_yaml_interp"] = inputs["rthick_yaml"]
-            outputs["ref_axis"] = inputs["ref_axis_yaml"]
-
 
 class Blade_Interp_Airfoils(om.ExplicitComponent):
     # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
-    # JPJ: can split this up into multiple components to ease derivative computation
     def initialize(self):
         self.options.declare("rotorse_options")
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        self.n_af_used = n_af_used = rotorse_options["n_af_used"]
+        self.n_af_master = n_af_master = rotorse_options["n_af_master"]
         self.n_span = n_span = rotorse_options["n_span"]
-        self.n_af = n_af = rotorse_options["n_af"]  # Number of airfoils
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
         self.n_tab = n_tab = rotorse_options[
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-        self.af_used = rotorse_options["af_used"]  # Names of the airfoils adopted along blade span
+        self.af_master = rotorse_options["af_master"]  # Names of the airfoils adopted along blade span
 
         self.add_input(
             "af_position",
-            val=np.zeros(n_af_used),
-            desc="1D array of the non dimensional positions of the airfoils af_used defined along blade span.",
+            val=np.zeros(n_af_master),
+            desc="1D array of the non dimensional positions of the airfoils af_master defined along blade span.",
         )
         self.add_input(
             "s",
@@ -849,9 +704,8 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
 
         # Airfoil properties
-        self.add_discrete_input("name", val=n_af * [""], desc="1D array of names of airfoils.")
-        self.add_input("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
-        self.add_input("r_thick_discrete", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        self.add_input("ac", val=np.zeros(n_af_master), desc="1D array of the aerodynamic centers of each airfoil.")
+        self.add_input("r_thick_discrete", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil.")
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
@@ -860,25 +714,25 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
         self.add_input(
             "cl",
-            val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
             desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
         )
         self.add_input(
             "cd",
-            val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
             desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
         )
         self.add_input(
             "cm",
-            val=np.zeros((n_af, n_aoa, n_Re, n_tab)),
+            val=np.zeros((n_af_master, n_aoa, n_Re, n_tab)),
             desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
         )
 
         # Airfoil coordinates
         self.add_input(
             "coord_xy",
-            val=np.zeros((n_af, n_xy, 2)),
-            desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
+            val=np.zeros((n_af_master, n_xy, 2)),
+            desc="3D array of the x and y airfoil coordinates of the n_af_master airfoils used along span.",
         )
         self.add_input(
             "rthick_yaml",
@@ -918,7 +772,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
         )
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Pchip does have an associated derivative method built-in:
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative

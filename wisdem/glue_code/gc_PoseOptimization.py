@@ -432,12 +432,12 @@ class PoseOptimization(object):
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
-            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
+            n_af_master = self.modeling["WISDEM"]["RotorSE"]["n_af_master"]
+            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af_master - 1)
             af_pos_init = wt_init["components"]["blade"]["outer_shape"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
-            lb_af = np.zeros(n_af)
-            ub_af = np.zeros(n_af)
+            lb_af = np.zeros(n_af_master)
+            ub_af = np.zeros(n_af_master)
             for i in range(1, indices_af[0]):
                 lb_af[i] = ub_af[i] = af_pos_init[i]
             for i in indices_af:
