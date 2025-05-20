@@ -1231,20 +1231,22 @@ environment:
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
-    commissioning_pct: 0.01
-    decommissioning_pct: 0.15
+    commissioning_cost_kW: 44.0
+    decommissioning_cost_kW: 58.0
     distance_to_substation: 1.0
     distance_to_interconnection: 8.5
-    interconnect_voltage: 130.0
-    distance_to_site: 115.0
-    distance_to_landfall: 50.0
-    port_cost_per_month: 2000000.0
-    site_auction_price: 100000000.0
-    site_assessment_plan_cost: 1000000.0
-    site_assessment_cost: 25000000.0
-    construction_operations_plan_cost: 2500000.0
+    interconnect_voltage: 130.
+    distance_to_site: 115.
+    distance_to_landfall: 50.
+    port_cost_per_month: 2e6
     boem_review_cost: 0.0
-    design_install_plan_cost: 2500000.0
+    construction_insurance: 44.0
+    construction_financing: 183.0
+    contingency: 316.0
+    site_auction_price: 100e6
+    site_assessment_cost: 50e6
+    construction_plan_cost: 2.5e5
+    installation_plan_cost: 1e6
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.056

@@ -191,19 +191,19 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["blade"]):
             self.add_subsystem("hub", Hub(flags=modeling_options["flags"]))
 
-        # Nacelle inputs
-        if (modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"] or
-            modeling_options["user_elastic"]["nacelle"] or modeling_options["user_elastic"]["blade"]):
-            self.add_subsystem("nacelle", Nacelle(flags=modeling_options["flags"],
+        # Drivetrain inputs
+        if (modeling_options["flags"]["drivetrain"] or modeling_options["flags"]["blade"] or
+            modeling_options["user_elastic"]["drivetrain"] or modeling_options["user_elastic"]["blade"]):
+            self.add_subsystem("drivetrain", Drivetrain(flags=modeling_options["flags"],
                                                   direct_drive=modeling_options["WISDEM"]["DriveSE"]["direct"]))
 
         # Generator inputs
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["drivetrain"]:
             self.add_subsystem("generator", Generator(flags=modeling_options["flags"],
                                                       gentype=modeling_options["WISDEM"]["DriveSE"]["generator"]["type"],
                                                       n_pc=modeling_options["WISDEM"]["RotorSE"]["n_pc"]))
 
-        if modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["nacelle"]:
+        if modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["drivetrain"]:
             # User wants to bypass all of DrivetrainSE with elastic summary properties
             drivese_ivc = om.IndepVarComp()
             drivese_ivc.add_output('hub_system_mass', val=0, units='kg')
@@ -374,8 +374,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
             self.connect("high_level_tower_props.tower_ref_axis", "tower_grid.ref_axis")
-        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
-            self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
+        if modeling_options["flags"]["drivetrain"] or modeling_options["flags"]["blade"]:
+            self.connect("drivetrain.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
 
 
 class Blade(om.Group):
@@ -1179,7 +1179,7 @@ class Hub(om.Group):
             ivc.add_output('hub_system_cm_user', val=0.0, units='m')
 
 
-class Nacelle(om.Group):
+class Drivetrain(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
     def initialize(self):
         self.options.declare("flags")
@@ -1189,7 +1189,7 @@ class Nacelle(om.Group):
         ivc = self.add_subsystem("nac_indep_vars", om.IndepVarComp(), promotes=["*"])
 
         # Common direct and geared
-        ivc.add_output("uptilt", val=0.0, units="deg", desc="Nacelle uptilt angle. A standard machine has positive values.")
+        ivc.add_output("uptilt", val=0.0, units="deg", desc="Shaft uptilt angle. A standard machine has positive values.")
         ivc.add_output("distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top plane to hub flange")
         ivc.add_output("overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange")
         ivc.add_output("gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive")
@@ -1198,7 +1198,7 @@ class Nacelle(om.Group):
         ivc.add_output("gearbox_length_user", val=0.0, units="m", desc="User override of gearbox length (only used if gearbox_mass_user is > 0).")
         ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
 
-        if self.options["flags"]["nacelle"]:
+        if self.options["flags"]["drivetrain"]:
             ivc.add_output("distance_hub_mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft")
             ivc.add_output("distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft")
             ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")

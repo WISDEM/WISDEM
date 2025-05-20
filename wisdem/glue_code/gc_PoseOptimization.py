@@ -398,8 +398,8 @@ class PoseOptimization(object):
             indices_twist = range(twist_options["index_start"], twist_options["index_end"])
             s_opt_twist = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
             twist_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["values"],
             )
             init_twist_opt = twist_interpolator(s_opt_twist)
             wt_opt.model.add_design_var(
@@ -420,8 +420,8 @@ class PoseOptimization(object):
             indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             s_opt_chord = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
             chord_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["values"],
             )
             init_chord_opt = chord_interpolator(s_opt_chord)
             wt_opt.model.add_design_var(
@@ -434,7 +434,7 @@ class PoseOptimization(object):
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
             n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
             indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
-            af_pos_init = wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"]
+            af_pos_init = wt_init["components"]["blade"]["outer_shape"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
             lb_af = np.zeros(n_af)
             ub_af = np.zeros(n_af)
@@ -451,7 +451,7 @@ class PoseOptimization(object):
         if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             if self.modeling["user_elastic"]["blade"]:
                 raise Exception("Blade structural design variables not available for user-defined blade elastic model. Please modify the modeling or optimization options.")
-            layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+            layers = wt_init["components"]["blade"]["structure"]["layers"]
             for i in range(len(blade_opt["structure"])):
                 k = blade_opt["layer_index_opt"][i]
                 layer_interp = PchipInterpolator(
@@ -607,7 +607,7 @@ class PoseOptimization(object):
             )
         if drive_opt["uptilt"]["flag"]:
             wt_opt.model.add_design_var(
-                "nacelle.uptilt",
+                "drivetrain.uptilt",
                 lower=drive_opt["uptilt"]["lower_bound"],
                 upper=drive_opt["uptilt"]["upper_bound"],
                 ref=1e-2,
@@ -615,7 +615,7 @@ class PoseOptimization(object):
 
         if drive_opt["generator_length"]["flag"]:
             wt_opt.model.add_design_var(
-                "nacelle.L_generator",
+                "drivetrain.L_generator",
                 lower=drive_opt["generator_length"]["lower_bound"],
                 upper=drive_opt["generator_length"]["upper_bound"],
             )
@@ -633,7 +633,7 @@ class PoseOptimization(object):
         ]:
             if drive_opt[k]["flag"]:
                 wt_opt.model.add_design_var(
-                    "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"]
+                    "drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"]
                 )
 
         for k in [
@@ -646,7 +646,7 @@ class PoseOptimization(object):
         ]:
             if drive_opt[k]["flag"]:
                 wt_opt.model.add_design_var(
-                    "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
+                    "drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
                 )
 
         # -- Floating --
@@ -1296,22 +1296,22 @@ class PoseOptimization(object):
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
             twist_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["values"],
             )
             init_twist_opt = twist_interpolator(wt_opt["blade.opt_var.s_opt_twist"])
             wt_opt["blade.opt_var.twist_opt"] = init_twist_opt
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
             chord_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["values"],
             )
             init_chord_opt = chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
             
             if not self.modeling["user_elastic"]["blade"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
-                layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+                layers = wt_init["components"]["blade"]["structure"]["layers"]
                 for i in range(self.modeling["WISDEM"]["RotorSE"]["n_layers"]):
                     wt_opt["blade.opt_var.s_opt_layer_%d"%i] = np.linspace(
                         0.0, 1.0, blade_opt["n_opt_struct"][i]
@@ -1338,7 +1338,7 @@ class PoseOptimization(object):
                     if self.modeling["flags"]["tower"]:
                         wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
-        if self.modeling["flags"]["nacelle"]:
+        if self.modeling["flags"]["drivetrain"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
 
             wt_opt["drivese.shaft_deflection_allowable"] = drive_constr["shaft_deflection"]["upper_bound"]

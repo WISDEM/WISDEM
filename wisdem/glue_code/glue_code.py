@@ -62,7 +62,7 @@ class WT_RNA(om.Group):
         modeling_options = self.options["modeling_options"]
         opt_options = self.options["opt_options"]
 
-        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["blade"] and modeling_options["flags"]["drivetrain"]:
             self.linear_solver = lbgs = om.LinearBlockGS()
             self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
             nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
@@ -73,7 +73,7 @@ class WT_RNA(om.Group):
         if modeling_options["flags"]["blade"]:
             self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
 
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["drivetrain"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
 
 
@@ -92,7 +92,7 @@ class WT_RNTA(om.Group):
         # Analysis components
         self.add_subsystem("wt_prop", WT_RNTA_Prop(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
-        if modeling_options["flags"]["blade"] or modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["blade"] or modeling_options["flags"]["drivetrain"]:
             self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
         if modeling_options["flags"]["tower"]:
@@ -167,7 +167,7 @@ class WT_RNTA(om.Group):
             self.connect("control.max_TS", "rotorse.rp.control_maxTS")
             self.connect("configuration.gearbox_type", "rotorse.rp.drivetrainType")
             self.connect("drivetrain.gearbox_efficiency", "rotorse.rp.powercurve.gearbox_efficiency")
-            if modeling_options["flags"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"]:
                 self.connect("drivese.lss_rpm", "rotorse.rp.powercurve.lss_rpm")
                 self.connect("drivese.generator_efficiency", "rotorse.rp.powercurve.generator_efficiency")
             self.connect("env.weibull_k", "rotorse.rp.cdf.k")
@@ -272,7 +272,7 @@ class WT_RNTA(om.Group):
 
 
         # Connections to DriveSE
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["drivetrain"]:
             self.connect("hub.diameter", "drivese.hub_diameter")
             self.connect("hub.hub_in2out_circ", "drivese.hub_in2out_circ")
             self.connect("hub.flange_t2shell_t", "drivese.flange_t2shell_t")
@@ -477,11 +477,11 @@ class WT_RNTA(om.Group):
 
         # Connections to TowerSE
         if modeling_options["flags"]["tower"]:
-            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"] or modeling_options["user_elastic"]["drivetrain"]:
                 self.connect("drivese.rna_I_TT", "towerse.rna_I")
                 self.connect("drivese.rna_cm", "towerse.rna_cg")
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
-            if modeling_options["flags"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"]:
                 self.connect("drivese.base_F", "towerse.tower.rna_F")
                 self.connect("drivese.base_M", "towerse.tower.rna_M")
             if modeling_options["flags"]["blade"]:
@@ -575,10 +575,10 @@ class WT_RNTA(om.Group):
                     self.connect(f"towerse.section_{var}", f"fixedse.tower_{var}")
                 for var in ["Px", "Py", "Pz"]:
                     self.connect(f"towerse.{var}", f"fixedse.tower_{var}")
-            if modeling_options["flags"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"]:
                 self.connect("drivese.base_F", "fixedse.monopile.rna_F")
                 self.connect("drivese.base_M", "fixedse.monopile.rna_M")
-            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"] or modeling_options["user_elastic"]["drivetrain"]:
                 self.connect("drivese.rna_I_TT", "fixedse.rna_I")
                 self.connect("drivese.rna_cm", "fixedse.rna_cg")
                 self.connect("drivese.rna_mass", "fixedse.rna_mass")
@@ -638,7 +638,7 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
-            if modeling_options["flags"]["nacelle"] or modeling_options["user_elastic"]["nacelle"]:
+            if modeling_options["flags"]["drivetrain"] or modeling_options["user_elastic"]["drivetrain"]:
                 self.connect("drivese.rna_I_TT", "floatingse.rna_I")
                 self.connect("drivese.rna_cm", "floatingse.rna_cg")
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
@@ -755,7 +755,7 @@ class WT_RNTA(om.Group):
             self.connect("rotorse.blade_mass", "tcc.blade_mass")
             self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
 
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["drivetrain"]:
             self.connect("drivese.hub_mass", "tcc.hub_mass")
             self.connect("drivese.pitch_mass", "tcc.pitch_system_mass")
             self.connect("drivese.spinner_mass", "tcc.spinner_mass")
@@ -950,7 +950,7 @@ class WindPark(om.Group):
                     self.connect("floating.transition_piece_mass", "orbit.transition_piece_mass")
                     self.connect("floating.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("floatingse.platform_cost", "orbit.floating_substructure_cost")
-                if modeling_options["flags"]["nacelle"]:
+                if modeling_options["flags"]["drivetrain"]:
                     self.connect("drivese.nacelle_mass", "orbit.nacelle_mass")
                 self.connect("rotorse.blade_mass", "orbit.blade_mass")
                 self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
@@ -987,7 +987,7 @@ class WindPark(om.Group):
                     self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
                     self.connect("blade.compute_coord_xy_dim.projected_area", "landbosse.blade_surface_area")
                 self.connect("towerse.tower_mass", "landbosse.tower_mass")
-                if modeling_options["flags"]["nacelle"]:
+                if modeling_options["flags"]["drivetrain"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")
                     self.connect("drivese.hub_system_mass", "landbosse.hub_mass")
                 self.connect("rotorse.blade_mass", "landbosse.blade_mass")

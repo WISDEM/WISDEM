@@ -486,10 +486,6 @@ def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, flags, user_e
             wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass_user"]
         if "transformer_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass_user"]
-        if "mass_user" in drivetrain["yaw"]:
-            wt_opt["drivetrain.yaw_mass_user"]          = drivetrain["yaw"]["mass_user"]
-        if "above_yaw_mass_user" in drivetrain:
-            wt_opt["drivetrain.above_yaw_mass_user"]    = drivetrain["above_yaw_mass_user"]
         if "spring_constant_user" in drivetrain:
             wt_opt["drivetrain.drivetrain_spring_constant_user"]     = drivetrain["spring_constant_user"]
         if "damping_coefficient_user" in drivetrain:
@@ -566,24 +562,27 @@ def assign_generator_values(wt_opt, modeling_options, drivetrain, flags, user_el
         #MoI_setter(wt_opt, "drivese.generator_rotor_I", drivetrain["generator"]["elastic_properties"]["rotor_inertia"])
         MoI_setter(wt_opt, "drivese.generator_rotor_I", drivetrain["generator"]["elastic_properties_mb"]["rotor_inertia"])
     else:
-        wt_opt["generator.L_generator"] = drivetrain["generator"]["generator_length"]
-        wt_opt["generator.generator_mass_user"] = drivetrain["generator"]["generator_mass_user"]
+        wt_opt["generator.L_generator"] = drivetrain["generator"]["length"]
+        if "mass_user" in drivetrain["generator"]:
+            wt_opt["generator.generator_mass_user"] = drivetrain["generator"]["mass_user"]
 
         if not flags["generator"]:
-            wt_opt["generator.generator_radius_user"] = drivetrain["generator"]["generator_radius_user"]
+            if "radius_user" in drivetrain["generator"]:
+                wt_opt["generator.generator_radius_user"] = drivetrain["generator"]["radius_user"]
 
-            eff_user = np.c_[
-                drivetrain["generator"]["generator_rpm_efficiency_user"]["grid"],
-                drivetrain["generator"]["generator_rpm_efficiency_user"]["values"],
-            ]
-            n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
-            if np.any(eff_user):
-                newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
-                neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
-                myeff = np.c_[newrpm, neweff]
-            else:
-                myeff = np.zeros((n_pc, 2))
-            wt_opt["generator.generator_efficiency_user"] = myeff
+            if "rpm_efficiency_user" in drivetrain["generator"]:
+                eff_user = np.c_[
+                    drivetrain["generator"]["rpm_efficiency_user"]["grid"],
+                    drivetrain["generator"]["rpm_efficiency_user"]["values"],
+                ]
+                n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+                if np.any(eff_user):
+                    newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
+                    neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
+                    myeff = np.c_[newrpm, neweff]
+                else:
+                    myeff = np.zeros((n_pc, 2))
+                wt_opt["generator.generator_efficiency_user"] = myeff
 
         else:
             wt_opt["generator.B_r"] = drivetrain["generator"]["B_r"]
@@ -680,9 +679,9 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     svec = np.unique(
         np.r_[
             tower["outer_shape"]["outer_diameter"]["grid"],
-            tower["outer_shape"]["reference_axis"]["x"]["grid"],
-            tower["outer_shape"]["reference_axis"]["y"]["grid"],
-            tower["outer_shape"]["reference_axis"]["z"]["grid"],
+            tower["reference_axis"]["x"]["grid"],
+            tower["reference_axis"]["y"]["grid"],
+            tower["reference_axis"]["z"]["grid"],
         ]
     )
 
@@ -691,21 +690,21 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         tower["outer_shape"]["outer_diameter"]["grid"], tower["outer_shape"]["outer_diameter"]["values"]
     )(svec)
     wt_opt["tower.cd"] = PchipInterpolator(
-        tower["outer_shape"]["drag_coefficient"]["grid"],
-        tower["outer_shape"]["drag_coefficient"]["values"],
+        tower["outer_shape"]["cd"]["grid"],
+        tower["outer_shape"]["cd"]["values"],
     )(svec)
 
     wt_opt["tower.ref_axis"][:, 0] = PchipInterpolator(
-        tower["outer_shape"]["reference_axis"]["x"]["grid"],
-        tower["outer_shape"]["reference_axis"]["x"]["values"],
+        tower["reference_axis"]["x"]["grid"],
+        tower["reference_axis"]["x"]["values"],
     )(svec)
     wt_opt["tower.ref_axis"][:, 1] = PchipInterpolator(
-        tower["outer_shape"]["reference_axis"]["y"]["grid"],
-        tower["outer_shape"]["reference_axis"]["y"]["values"],
+        tower["reference_axis"]["y"]["grid"],
+        tower["reference_axis"]["y"]["values"],
     )(svec)
     wt_opt["tower.ref_axis"][:, 2] = PchipInterpolator(
-        tower["outer_shape"]["reference_axis"]["z"]["grid"],
-        tower["outer_shape"]["reference_axis"]["z"]["values"],
+        tower["reference_axis"]["z"]["grid"],
+        tower["reference_axis"]["z"]["values"],
     )(svec)
 
     layer_name = n_layers * [""]
@@ -724,7 +723,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.layer_thickness"] = thickness
 
     wt_opt["tower.outfitting_factor"] = tower["structure"]["outfitting_factor"]
-    wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    if "tower_mass_user" in tower:
+        wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []
@@ -766,9 +766,9 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     svec = np.unique(
         np.r_[
             monopile["outer_shape"]["outer_diameter"]["grid"],
-            monopile["outer_shape"]["reference_axis"]["x"]["grid"],
-            monopile["outer_shape"]["reference_axis"]["y"]["grid"],
-            monopile["outer_shape"]["reference_axis"]["z"]["grid"],
+            monopile["reference_axis"]["x"]["grid"],
+            monopile["reference_axis"]["y"]["grid"],
+            monopile["reference_axis"]["z"]["grid"],
         ]
     )
 
@@ -779,16 +779,16 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     )(svec)
 
     wt_opt["monopile.ref_axis"][:, 0] = PchipInterpolator(
-        monopile["outer_shape"]["reference_axis"]["x"]["grid"],
-        monopile["outer_shape"]["reference_axis"]["x"]["values"],
+        monopile["reference_axis"]["x"]["grid"],
+        monopile["reference_axis"]["x"]["values"],
     )(svec)
     wt_opt["monopile.ref_axis"][:, 1] = PchipInterpolator(
-        monopile["outer_shape"]["reference_axis"]["y"]["grid"],
-        monopile["outer_shape"]["reference_axis"]["y"]["values"],
+        monopile["reference_axis"]["y"]["grid"],
+        monopile["reference_axis"]["y"]["values"],
     )(svec)
     wt_opt["monopile.ref_axis"][:, 2] = PchipInterpolator(
-        monopile["outer_shape"]["reference_axis"]["z"]["grid"],
-        monopile["outer_shape"]["reference_axis"]["z"]["values"],
+        monopile["reference_axis"]["z"]["grid"],
+        monopile["reference_axis"]["z"]["values"],
     )(svec)
 
     layer_name = n_layers * [""]
@@ -810,7 +810,8 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
-    wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
+    if "monopile_mass_user" in monopile:
+        wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
 
     return wt_opt
 
