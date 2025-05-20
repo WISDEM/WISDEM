@@ -99,6 +99,11 @@ class RunPreComp(ExplicitComponent):
             units="deg",
             desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
+        self.add_discrete_input(
+            "layer_location",
+            val=-np.ones(n_layers),
+            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
+        )
 
         # Materials
         self.add_discrete_input("mat_name", val=n_mat * [""], desc="1D array of names of materials.")
@@ -489,7 +494,7 @@ class RunPreComp(ExplicitComponent):
             profile_i_rot_precomp = profile_i_rot_precomp / max(profile_i_rot_precomp[:, 0])
 
             if profile_i_rot_precomp[-1, 0] != 1.0:
-                profile_i_rot_precomp = np.row_stack((profile_i_rot_precomp, profile_i_rot_precomp[0, :]))
+                profile_i_rot_precomp = np.vstack((profile_i_rot_precomp, profile_i_rot_precomp[0, :]))
 
             # 'web' at trailing edge needed for flatback airfoils
             if (
@@ -536,7 +541,7 @@ class RunPreComp(ExplicitComponent):
 
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
-                if discrete_inputs["definition_layer"][idx_sec] != 10:
+                if discrete_inputs["layer_location"][idx_sec] == 0:
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         area[i] += arc_L_m * (inputs["layer_end_nd"][idx_sec, i] - 
                                               inputs["layer_start_nd"][idx_sec, i]) * (
@@ -611,7 +616,7 @@ class RunPreComp(ExplicitComponent):
                             else:
                                 ps_start_nd_arc.append(float(spline_arc2xnd(inputs["layer_start_nd"][idx_sec, i])))
                 else:
-                    target_idx = inputs["layer_web"][idx_sec] - 1
+                    target_idx = discrete_inputs["layer_location"][idx_sec] - 1
 
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)
@@ -846,9 +851,9 @@ class TotalBladeProperties(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         rhoA_joint = inputs["rhoA"]
-        blade_mass = np.trapz(rhoA_joint, inputs["r"])
-        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
-        blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
+        blade_mass = np.trapezoid(rhoA_joint, inputs["r"])
+        blade_span_cg = np.trapezoid(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
+        blade_moment_of_inertia = np.trapezoid(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
         # tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
         mass_all_blades = n_blades * blade_mass

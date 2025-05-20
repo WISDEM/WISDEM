@@ -878,10 +878,10 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
 
         # Integrate along span for surface area
         wetted_chord = coord_xy_dim[:,:,1].max(axis=1) - coord_xy_dim[:,:,1].min(axis=1)
-        outputs["wetted_area"] = np.trapz(wetted_chord, inputs["ref_axis"][:,2])
+        outputs["wetted_area"] = np.trapezoid(wetted_chord, inputs["ref_axis"][:,2])
 
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
-        outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
+        outputs["projected_area"] = np.trapezoid(projected_chord, inputs["ref_axis"][:,2])
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
@@ -964,12 +964,17 @@ class Blade_Structure(om.Group):
         ivc.add_output(
             "layer_start_nd",
             val=np.zeros((n_layers, n_span)),
-            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each layer, the second dimension represents span.",
+            desc="2D array of the start_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
             "layer_end_nd",
             val=np.zeros((n_layers, n_span)),
-            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each layer, the second dimension represents span.",
+            desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        ivc.add_discrete_output(
+            "layer_location",
+            val=-np.ones(n_layers),
+            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
         )
         ivc.add_output(
             "layer_fiber_orientation",

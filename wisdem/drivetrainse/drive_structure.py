@@ -398,7 +398,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         outputs["constr_shaft_angle"] = gamma * outputs["torq_angle"] / torq_angle_allow
 
         # Load->stress conversion for fatigue
-        cross_section_xy = 2.0 * np.trapz(t_lss, s_lss)
+        cross_section_xy = 2.0 * np.trapezoid(t_lss, s_lss)
         ax_load2stress = np.zeros(6)
         ax_load2stress[0] = 1.0 / Ax[0]
         ax_load2stress[1] = 1.0 / cross_section_xy

@@ -170,15 +170,9 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] = len(
                     self.wt_init["components"]["blade"]["structure"]["layers"]
                 )
-                self.modeling_options["WISDEM"]["RotorSE"]["n_anchors"] = len(
-                    self.wt_init["components"]["blade"]["structure"]["anchors"]
-                )
 
-                self.modeling_options["WISDEM"]["RotorSE"]["anchor_name"] = self.modeling_options["WISDEM"]["RotorSE"]["n_anchors"] * [""]
                 self.modeling_options["WISDEM"]["RotorSE"]["layer_name"] = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] * [""]
                 self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"] = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] * [""]
-                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_anchors"]):
-                    self.modeling_options["WISDEM"]["RotorSE"]["anchor_name"][i] = self.wt_init["components"]["blade"]["structure"]["anchors"][i]["name"]
                 for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
                     self.modeling_options["WISDEM"]["RotorSE"]["layer_name"][i] = self.wt_init["components"]["blade"]["structure"]["layers"][i]["name"]
                     self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i] = self.wt_init["components"]["blade"]["structure"]["layers"][i]["material"]

@@ -183,10 +183,10 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
 def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
     # Function to assign values to the openmdao component Blade_Structure
 
-    n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
     n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
     nd_span = wt_opt["blade.outer_shape.s"]
     anchors = structure["anchors"]
+    n_anchors = len(anchors)
     for i in range(n_webs):
         web_i = structure["webs"][i]
         # web_start_nd
@@ -247,10 +247,13 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
 
 def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
     # Function to assign values to the openmdao component Blade_Structure
-    n_anchors = modeling_options["WISDEM"]["RotorSE"]["n_anchors"]
     n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+    n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
     nd_span = wt_opt["blade.outer_shape.s"]
     anchors = structure["anchors"]
+    webs = structure["webs"]
+    n_anchors = len(anchors)
+    layer_location = -np.ones(n_layers)
     for i in range(n_layers):
         layer_i = structure["layers"][i]
         # layer_start_nd
@@ -260,11 +263,31 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         elif "anchor" in layer_i["start_nd_arc"]:
             anchor_name = layer_i["start_nd_arc"]["anchor"]["name"]
             anchor_handle = layer_i["start_nd_arc"]["anchor"]["handle"]
+            anchor_start_found = False
             for j in range(n_anchors):
-                if anchors[j]["name"] == anchor_name:
+                if anchor_name == anchors[j]["name"]:
+                    anchor_start_found = True
                     layer_start_nd_grid = anchors[j][anchor_handle]["grid"]
                     layer_start_nd_values = anchors[j][anchor_handle]["values"]
+                    layer_location[i] = 0
                     break
+            if not anchor_start_found:
+                for j in range(n_webs):
+                    if len(webs[j]["anchors"]) > 1:
+                        raise Exception(
+                            f"WISDEM does not support multiple anchors per web yet. Please contact the NREL developers."
+                        )
+                    if anchor_name == webs[j]["anchors"][0]["name"]:
+                        anchor_start_found = True
+                        layer_location[i] = j + 1
+                        layer_start_nd_grid = np.linspace(0., 1., len(nd_span))
+                        layer_start_nd_values = np.zeros(len(nd_span))
+                        break
+
+            if not anchor_start_found:
+                raise Exception(
+                    f"Blade structure layer {i} start_nd_arc anchor {anchor_name} not found in anchors list"
+                )
         else:
             raise Exception(
                 "Blade structure layer start_nd_arc must be defined by either grid/values or anchor"
@@ -287,11 +310,30 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         elif "anchor" in layer_i["end_nd_arc"]:
             anchor_name = layer_i["end_nd_arc"]["anchor"]["name"]
             anchor_handle = layer_i["end_nd_arc"]["anchor"]["handle"]
+            anchor_end_found = False
             for j in range(n_anchors):
                 if anchors[j]["name"] == anchor_name:
+                    anchor_end_found = True
                     layer_end_nd_grid = anchors[j][anchor_handle]["grid"]
                     layer_end_nd_values = anchors[j][anchor_handle]["values"]
                     break
+            if not anchor_end_found:
+                for j in range(n_webs):
+                    if len(webs[j]["anchors"]) > 1:
+                        raise Exception(
+                            f"WISDEM does not support multiple anchors per web yet. Please contact the NREL developers."
+                        )
+                    if anchor_name == webs[j]["anchors"][0]["name"]:
+                        anchor_end_found = True
+                        layer_location[i] = j + 1
+                        layer_end_nd_grid = np.linspace(0., 1., len(nd_span))
+                        layer_end_nd_values = np.zeros(len(nd_span))
+                        break
+
+            if not anchor_end_found:
+                raise Exception(
+                    f"Blade structure layer {i} end_nd_arc anchor {anchor_name} not found in anchors list"
+                )
         else:
             raise Exception(
                 "Blade structure layer end_nd_arc must be defined by either grid/values or anchor"
@@ -333,6 +375,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                     )(nd_span)
                 )
         wt_opt["blade.structure.layer_fiber_orientation"][i, :] = layer_fiber_orientation
+    wt_opt["blade.structure.layer_location"] = layer_location
 
     return wt_opt
 
