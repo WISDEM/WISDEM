@@ -918,49 +918,27 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        # Reconstruct the blade relative thickness along span with a pchip
-        r_thick_used = np.zeros(self.n_af_used)
-        ac_used = np.zeros(self.n_af_used)
-        coord_xy_used = np.zeros((self.n_af_used, self.n_xy, 2))
-        coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
-        cl_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
-        cl_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cd_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
-        cd_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-        cm_used = np.zeros((self.n_af_used, self.n_aoa, self.n_Re, self.n_tab))
-        cm_interp = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
-
-        for i in range(self.n_af_used):
-            for j in range(self.n_af):
-                if self.af_used[i] == discrete_inputs["name"][j]:
-                    r_thick_used[i] = inputs["r_thick_discrete"][j]
-                    ac_used[i] = inputs["ac"][j]
-                    coord_xy_used[i, :, :] = inputs["coord_xy"][j]
-                    cl_used[i, :, :, :] = inputs["cl"][j, :, :, :]
-                    cd_used[i, :, :, :] = inputs["cd"][j, :, :, :]
-                    cm_used[i, :, :, :] = inputs["cm"][j, :, :, :]
-                    break
 
         # Pchip does have an associated derivative method built-in:
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline = PchipInterpolator
-        rthick_spline = spline(inputs["af_position"], r_thick_used)
-        ac_spline = spline(inputs["af_position"], ac_used)
+        rthick_spline = spline(inputs["af_position"], inputs["rthick_yaml"])
+        ac_spline = spline(inputs["af_position"], inputs["ac"])
         if np.max(inputs["rthick_yaml"]) < 1.e-6:
-            rthick_spline = spline(inputs["af_position"], r_thick_used)
+            rthick_spline = spline(inputs["af_position"], inputs["rthick_yaml"])
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
             outputs["r_thick_interp"] = inputs["rthick_yaml"]
-            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+            if np.min(outputs["r_thick_interp"]) < np.min(inputs["rthick_yaml"]):
                 raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
 
-        ac_spline = spline(inputs["af_position"], ac_used)
+        ac_spline = spline(inputs["af_position"], inputs["ac"])
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
         # Is this unique an issue? Does it assume no two airfoils have the same relative thickness?
-        r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
-        profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
+        r_thick_unique, indices = np.unique(inputs["rthick_yaml"], return_index=True)
+        profile_spline = spline(r_thick_unique, inputs["coord_xy"][indices, :, :])
         coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
         for i in range(self.n_span):
@@ -976,11 +954,11 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
 
         # Spanwise interpolation of the airfoil polars with a pchip
-        cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
+        cl_spline = spline(r_thick_unique, inputs["cl"][indices, :, :, :])
         cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])
+        cd_spline = spline(r_thick_unique, inputs["cd"][indices, :, :, :])
         cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
+        cm_spline = spline(r_thick_unique, inputs["cm"][indices, :, :, :])
         cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
         outputs["coord_xy_interp"] = coord_xy_interp
