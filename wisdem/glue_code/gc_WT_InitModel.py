@@ -1268,8 +1268,10 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
     
     
     for i in range(n_af_used):
+        airfoil_exists = False
         for j in range(n_af):
             if af_used[i] == airfoils[j]["name"]:
+                airfoil_exists = True
                 ac_used[i] = airfoils[j]["aerodynamic_center"]
                 points = np.column_stack((airfoils[j]["coordinates"]["x"], airfoils[j]["coordinates"]["y"]))
                 # Check that airfoil points are declared from the TE suction side to TE pressure side
@@ -1300,8 +1302,10 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                 for k in range(n_configs):
                     configuration[k] = airfoils_used[i]["configuration"][k]
                     weights[k] = airfoils_used[i]["weight"][k]
+                    config_exist = False
                     for l in range(len(airfoils[j]["polars"])):
                         if configuration[k] == airfoils[j]["polars"][l]["configuration"]:
+                            config_exist = True
                             n_re_config = len(airfoils[j]["polars"][l]["re_sets"])
                             re_config = np.zeros(n_re_config)
                             cl_config = np.zeros((n_aoa, n_re_config, n_configs))
@@ -1322,8 +1326,18 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                                 re_config = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
 
                                 break
-                            
+                    # Check if the configuration exists
+                    if not config_exist:
+                        raise ValueError(
+                            f"Configuration {configuration[k]} not found for airfoil {af_used[i]}. Please check the configuration names for airfoil polars."
+                        )
+
                 # Perform weighted average across configurations
+                if abs(sum(weights) - 1.0) > 1e-6:
+                    raise ValueError(
+                        f"Configuration weights for airfoil {af_used[i]} do not sum to 1.0. Please check the configuration weights."
+                    )
+
                 cl_used_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
                 cd_used_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
                 cm_used_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
@@ -1348,8 +1362,10 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_used, airfoils, coo
                             
                 break
 
-
-    
+        if not airfoil_exists:
+            raise ValueError(
+                f"Airfoil {af_used[i]} not found in airfoil database. Please check the airfoil names."
+            )
     
     # Assign to openmdao structure
     wt_opt["airfoils.coord_xy"] = coord_xy
