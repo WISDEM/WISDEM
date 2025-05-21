@@ -222,15 +222,6 @@ def load_analysis_yaml(finput):
     return _validate(finput, fschema_opt)
 
 
-def write_geometry_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_geom, defaults=False, rank_0=True)
-    # Ensure the file output has a .yaml suffix
-    if not foutput.endswith(".yaml"):
-        foutput += ".yaml"
-    write_yaml(instance, foutput)
-    return foutput
-
-
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
     _validate(instance, fschema_model, defaults=False, rank_0=True)
 

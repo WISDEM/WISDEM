@@ -764,17 +764,17 @@ class WindTurbineOntologyPython(object):
         # Update blade
         if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             # Update blade outer shape
-            # for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af_master"]):
-            self.wt_init["components"]["blade"]["outer_shape"]["airfoils"]["grid"] = wt_opt["blade.opt_var.af_position"].tolist()
+            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af_master"]):
+                self.wt_init["components"]["blade"]["outer_shape"]["airfoils"][i]["spanwise_position"] = float(wt_opt["blade.opt_var.af_position"][i])
             self.wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["chord"]["values"] = wt_opt["blade.pa.chord_param"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape"]["twist"]["values"] = wt_opt["rotorse.theta"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape"]["pitch_axis"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape"]["pitch_axis"]["values"] = wt_opt["blade.outer_shape.pitch_axis"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape"]["twist"]["values"] = np.rad2deg(wt_opt["rotorse.theta"]).tolist()
+            self.wt_init["components"]["blade"]["outer_shape"]["section_offset_x"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape"]["section_offset_x"]["values"] = wt_opt["blade.outer_shape.section_offset_x"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["rthick"] = {}
             self.wt_init["components"]["blade"]["outer_shape"]["rthick"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape"]["rthick"]["values"] = wt_opt["blade.interp_airfoils.r_thick_interp"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape"]["rthick"]["values"] = wt_opt["blade.interp_airfoils.rthick_interp"].tolist()
             self.wt_init["components"]["blade"]["reference_axis"]["x"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["reference_axis"]["y"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["reference_axis"]["z"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
@@ -783,135 +783,17 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["reference_axis"]["z"]["values"] = wt_opt["blade.high_level_blade_props.blade_ref_axis"][:, 2].tolist()
 
             # Update blade structure
-            # TODO_YL: conditional?
             # Reference axis from blade outer shape
             if not self.modeling_options["user_elastic"]["blade"]:
-                self.wt_init["components"]["blade"]["structure"]["reference_axis"] = self.wt_init[
-                    "components"
-                ]["blade"]["reference_axis"]
-                # Webs positions
-                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                    if "rotation" in self.wt_init["components"]["blade"]["structure"]["webs"]:
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["rotation"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["rotation"][
-                            "values"
-                        ] = wt_opt["blade.structure.web_rotation"][i, :].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["offset_y_pa"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["offset_y_pa"][
-                            "values"
-                        ] = wt_opt["blade.structure.web_offset_y_pa"][i, :].tolist()
-                    if "start_nd_arc" not in self.wt_init["components"]["blade"]["structure"]["webs"][i]:
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["start_nd_arc"] = {}
-                    if "end_nd_arc" not in self.wt_init["components"]["blade"]["structure"]["webs"][i]:
-                        self.wt_init["components"]["blade"]["structure"]["webs"][i]["end_nd_arc"] = {}
-                    self.wt_init["components"]["blade"]["structure"]["webs"][i]["start_nd_arc"][
-                        "grid"
-                    ] = wt_opt["blade.structure.s"].tolist()
-                    self.wt_init["components"]["blade"]["structure"]["webs"][i]["start_nd_arc"][
-                        "values"
-                    ] = wt_opt["blade.structure.web_start_nd"][i, :].tolist()
-                    self.wt_init["components"]["blade"]["structure"]["webs"][i]["end_nd_arc"][
-                        "grid"
-                    ] = wt_opt["blade.structure.s"].tolist()
-                    self.wt_init["components"]["blade"]["structure"]["webs"][i]["end_nd_arc"][
-                        "values"
-                    ] = wt_opt["blade.structure.web_end_nd"][i, :].tolist()
-
+                # Webs positions TBD
                 # Structural layers
                 for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
                     self.wt_init["components"]["blade"]["structure"]["layers"][i]["thickness"][
                         "grid"
-                    ] = wt_opt["blade.structure.s"].tolist()
+                    ] = wt_opt["blade.outer_shape.s"].tolist()
                     self.wt_init["components"]["blade"]["structure"]["layers"][i]["thickness"][
                         "values"
                     ] = wt_opt["blade.ps.layer_thickness_param"][i, :].tolist()
-                    if wt_opt["blade.structure.definition_layer"][i] != 10:
-                        if (
-                            "start_nd_arc"
-                            not in self.wt_init["components"]["blade"]["structure"]["layers"][i]
-                        ):
-                            self.wt_init["components"]["blade"]["structure"]["layers"][i][
-                                "start_nd_arc"
-                            ] = {}
-                        if (
-                            "end_nd_arc"
-                            not in self.wt_init["components"]["blade"]["structure"]["layers"][i]
-                        ):
-                            self.wt_init["components"]["blade"]["structure"]["layers"][i]["end_nd_arc"] = {}
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["start_nd_arc"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["start_nd_arc"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_start_nd"][i, :].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["end_nd_arc"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["end_nd_arc"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_end_nd"][i, :].tolist()
-
-                        # Check for start and end nd layers outside the 0 to 1 range
-                        for j in range(len(self.wt_init["components"]["blade"]["structure"][
-                            "layers"][i]["start_nd_arc"]["grid"])):
-                            if self.wt_init["components"]["blade"]["structure"][
-                                    "layers"][i]["start_nd_arc"]["values"][j] < 0.:
-                                self.wt_init["components"]["blade"]["structure"][
-                                    "layers"][i]["start_nd_arc"]["values"][j] = 0.
-                            if self.wt_init["components"]["blade"]["structure"][
-                                    "layers"][i]["end_nd_arc"]["values"][j] > 1.:
-                                self.wt_init["components"]["blade"]["structure"][
-                                    "layers"][i]["end_nd_arc"]["values"][j] = 1.
-
-                    if (
-                        wt_opt["blade.structure.definition_layer"][i] > 1
-                        and wt_opt["blade.structure.definition_layer"][i] < 6
-                    ):
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["width"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["width"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_width"][i, :].tolist()
-                    if (
-                        wt_opt["blade.structure.definition_layer"][i] == 2
-                        or wt_opt["blade.structure.definition_layer"][i] == 3
-                    ):
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["rotation"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["rotation"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_rotation"][i, :].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["offset_y_pa"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["offset_y_pa"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_offset_y_pa"][i, :].tolist()
-                    if (
-                        wt_opt["blade.structure.definition_layer"][i] == 4
-                        or wt_opt["blade.structure.definition_layer"][i] == 5
-                    ):
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["midpoint_nd_arc"][
-                            "grid"
-                        ] = wt_opt["blade.structure.s"].tolist()
-                        self.wt_init["components"]["blade"]["structure"]["layers"][i]["midpoint_nd_arc"][
-                            "values"
-                        ] = wt_opt["blade.structure.layer_midpoint_nd"][i, :].tolist()
-
-                    self.wt_init["components"]["blade"]["structure"]["layers"][i]["fiber_orientation"] = {}
-
-                    self.wt_init["components"]["blade"]["structure"]["layers"][i]["fiber_orientation"][
-                        "grid"
-                    ] = wt_opt["blade.structure.s"].tolist()
-                    self.wt_init["components"]["blade"]["structure"]["layers"][i]["fiber_orientation"][
-                        "values"
-                    ] = np.zeros(len(wt_opt["blade.structure.s"])).tolist()
 
             self.wt_init["components"]["blade"]["structure"]["elastic_properties"] = {}
             self.wt_init["components"]["blade"]["structure"]["elastic_properties"]["stiffness_matrix"] = {}
@@ -940,7 +822,7 @@ class WindTurbineOntologyPython(object):
         # Update hub
         if self.modeling_options["flags"]["hub"]:
             # Update hub
-            self.wt_init["components"]["hub"]["cone_angle"] = float(wt_opt["hub.cone"][0])
+            self.wt_init["components"]["hub"]["cone_angle"] = float(np.rad2deg(wt_opt["hub.cone"][0]))
             self.wt_init["components"]["hub"]["flange_t2shell_t"] = float(wt_opt["hub.flange_t2shell_t"][0])
             self.wt_init["components"]["hub"]["flange_OD2hub_D"] = float(wt_opt["hub.flange_OD2hub_D"][0])
             self.wt_init["components"]["hub"]["flange_ID2OD"] = float(wt_opt["hub.flange_ID2flange_OD"][0])
@@ -955,199 +837,198 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["hub"]["pitch_system_scaling_factor"] = float(
                 wt_opt["hub.pitch_system_scaling_factor"][0]
             )
-            # WindIO v1
-            self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
-            self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
-            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
-            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_center_mass'] = wt_opt["drivese.hub_system_cm"].tolist()
-            # WindIO v2
-            #self.wt_init["components"]["hub"]["elastic_properties"]['mass'] = float(wt_opt["drivese.hub_system_mass"][0])
-            #self.wt_init["components"]["hub"]["elastic_properties"]['inertia'] = wt_opt["drivese.hub_system_I"].tolist()
-            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
-            # self.wt_init["components"]["hub"]["elastic_properties"]['location'] = wt_opt["drivese.hub_system_cm"].tolist()
+            self.wt_init["components"]["hub"]["elastic_properties"] = {}
+            self.wt_init["components"]["hub"]["elastic_properties"]['mass'] = float(wt_opt["drivese.hub_system_mass"][0])
+            self.wt_init["components"]["hub"]["elastic_properties"]['inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # windIO and OpenFAST center of mass is measured from rotor apex.  WISDEM center of mass is measured from hub flange.
+            cm_rotor_apex = 0.5 * wt_opt["drivese.hub_diameter"][0] - wt_opt["drivese.hub_system_cm"][0]
+            self.wt_init["components"]["hub"]["elastic_properties"]['location'] = [float(cm_rotor_apex), 0., 0.]
 
         # Update drivetrain
         if self.modeling_options["flags"]["drivetrain"]:
             # Common direct and geared
-            self.wt_init["components"]["drivetrain"]["uptilt"] = float(wt_opt["drivese.uptilt"][0])
-            self.wt_init["components"]["drivetrain"]["distance_tt_hub"] = float(
-                wt_opt["drivese.distance_tt_hub"][0]
+            self.wt_init["components"]["drivetrain"]["outer_shape"]["uptilt"] = float(wt_opt["drivetrain.uptilt"][0])
+            self.wt_init["components"]["drivetrain"]["outer_shape"]["distance_tt_hub"] = float(
+                wt_opt["drivetrain.distance_tt_hub"][0]
             )
-            self.wt_init["components"]["drivetrain"]["overhang"] = float(wt_opt["drivese.overhang"][0])
-            self.wt_init["components"]["drivetrain"]["distance_hub_mb"] = float(
-                wt_opt["nacelle.distance_hub_mb"][0]
+            self.wt_init["components"]["drivetrain"]["outer_shape"]["overhang"] = float(wt_opt["drivetrain.overhang"][0])
+            self.wt_init["components"]["drivetrain"]["outer_shape"]["distance_hub_mb"] = float(
+                wt_opt["drivetrain.distance_hub_mb"][0]
             )
-            self.wt_init["components"]["drivetrain"]["distance_mb_mb"] = float(
-                wt_opt["nacelle.distance_mb_mb"][0]
+            self.wt_init["components"]["drivetrain"]["outer_shape"]["distance_mb_mb"] = float(
+                wt_opt["drivetrain.distance_mb_mb"][0]
             )
-            s_lss = np.linspace(0.0, 1.0, len(wt_opt["drivetrain"]["lss"]["diameter"])).tolist()
-            self.wt_init["components"]["drivetrain"]["lss_diameter"] = wt_opt[
-                "nacelle.lss_diameter"
+            self.wt_init["components"]["drivetrain"]["lss"]["diameter"] = wt_opt[
+                "drivetrain.lss_diameter"
             ].tolist()
-            self.wt_init["components"]["drivetrain"]["lss_wall_thickness"] = wt_opt[
-                "nacelle.lss_wall_thickness"
+            self.wt_init["components"]["drivetrain"]["lss"]["wall_thickness"] = wt_opt[
+                "drivetrain.lss_wall_thickness"
             ].tolist()
-            self.wt_init["components"]["drivetrain"]["gear_ratio"] = float(wt_opt["nacelle.gear_ratio"][0])
-            self.wt_init["components"]["drivetrain"]["gearbox_efficiency"] = float(
-                wt_opt["nacelle.gearbox_efficiency"][0]
+            self.wt_init["components"]["drivetrain"]["gearbox"]["gear_ratio"] = float(wt_opt["drivetrain.gear_ratio"][0])
+            self.wt_init["components"]["drivetrain"]["gearbox"]["efficiency"] = float(
+                wt_opt["drivetrain.gearbox_efficiency"][0]
             )
-            self.wt_init["components"]["drivetrain"]["mb1Type"] = wt_opt["nacelle.mb1Type"]
-            self.wt_init["components"]["drivetrain"]["mb2Type"] = wt_opt["nacelle.mb2Type"]
-            self.wt_init["components"]["drivetrain"]["uptower"] = wt_opt["nacelle.uptower"]
-            self.wt_init["components"]["drivetrain"]["lss_material"] = wt_opt["nacelle.lss_material"]
-            self.wt_init["components"]["drivetrain"]["bedplate_material"] = wt_opt[
-                "nacelle.bedplate_material"
+            self.wt_init["components"]["drivetrain"]["other_components"]["mb1Type"] = wt_opt["drivetrain.mb1Type"]
+            self.wt_init["components"]["drivetrain"]["other_components"]["mb2Type"] = wt_opt["drivetrain.mb2Type"]
+            self.wt_init["components"]["drivetrain"]["other_components"]["uptower"] = wt_opt["drivetrain.uptower"]
+            self.wt_init["components"]["drivetrain"]["lss"]["material"] = wt_opt["drivetrain.lss_material"]
+            self.wt_init["components"]["drivetrain"]["bedplate"]["material"] = wt_opt[
+                "drivetrain.bedplate_material"
             ]
             # WindIO v2
+            self.wt_init["components"]["drivetrain"]["elastic_properties"] = {}
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["mass"] = float(wt_opt["drivese.above_yaw_mass"][0])
-            self.wt_init["components"]["drivetrain"]["yaw"]["elastic_properties"]["mass"] = float(wt_opt["drivese.yaw_mass"][0])
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["location"] = wt_opt["drivese.above_yaw_cm"].tolist()
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["spring_constant"] = float(wt_opt["drivese.drivetrain_spring_constant"][0])
             self.wt_init["components"]["drivetrain"]["elastic_properties"]["damping_coefficient"] = float(wt_opt["drivese.drivetrain_damping_coefficient"][0])
+            
+            if "yaw" not in self.wt_init["components"]:
+                self.wt_init["components"]["yaw"] = {}
+            self.wt_init["components"]["yaw"]["elastic_properties"] = {}
+            self.wt_init["components"]["yaw"]["elastic_properties"]["mass"] = float(wt_opt["drivese.yaw_mass"][0])
 
             if self.modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only
-                s_bed = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"])).tolist()
-                self.wt_init["components"]["drivetrain"]["nose_diameter"] = wt_opt[
-                    "nacelle.nose_diameter"
+                s_bed = np.linspace(0.0, 1.0, len(wt_opt["drivetrain.bedplate_wall_thickness"])).tolist()
+                self.wt_init["components"]["drivetrain"]["nose"]["diameter"] = wt_opt[
+                    "drivetrain.nose_diameter"
                 ].tolist()
-                self.wt_init["components"]["drivetrain"]["nose_wall_thickness"] = wt_opt[
-                    "nacelle.nose_wall_thickness"
+                self.wt_init["components"]["drivetrain"]["nose"]["wall_thickness"] = wt_opt[
+                    "drivetrain.nose_wall_thickness"
                 ].tolist()
-                self.wt_init["components"]["drivetrain"]["bedplate_wall_thickness"]["grid"] = s_bed
-                self.wt_init["components"]["drivetrain"]["bedplate_wall_thickness"]["values"] = wt_opt[
-                    "nacelle.bedplate_wall_thickness"
+                self.wt_init["components"]["drivetrain"]["bedplate"]["wall_thickness"]["grid"] = s_bed
+                self.wt_init["components"]["drivetrain"]["bedplate"]["wall_thickness"]["values"] = wt_opt[
+                    "drivetrain.bedplate_wall_thickness"
                 ].tolist()
             else:
                 # Geared only
-                s_hss = np.linspace(0.0, 1.0, len(wt_opt["drivetrain"]["hss_diameter"])).tolist()
-                self.wt_init["components"]["drivetrain"]["hss_length"] = float(wt_opt["nacelle.hss_length"][0])
-                self.wt_init["components"]["drivetrain"]["hss_diameter"] = wt_opt[
-                    "nacelle.hss_diameter"
+                s_hss = np.linspace(0.0, 1.0, len(wt_opt["drivetrain"]["hss"]["diameter"])).tolist()
+                self.wt_init["components"]["drivetrain"]["hss"]["length"] = float(wt_opt["drivetrain.hss_length"][0])
+                self.wt_init["components"]["drivetrain"]["hss"]["diameter"] = wt_opt[
+                    "drivetrain.hss_diameter"
                 ].tolist()
-                self.wt_init["components"]["drivetrain"]["hss_wall_thickness"] = wt_opt[
-                    "nacelle.hss_wall_thickness"
+                self.wt_init["components"]["drivetrain"]["hss"]["wall_thickness"] = wt_opt[
+                    "drivetrain.hss_wall_thickness"
                 ].tolist()
-                self.wt_init["components"]["drivetrain"]["bedplate_flange_width"] = float(
-                    wt_opt["nacelle.bedplate_flange_width"][0]
+                self.wt_init["components"]["drivetrain"]["bedplate"]["flange_width"] = float(
+                    wt_opt["drivetrain.bedplate_flange_width"][0]
                 )
-                self.wt_init["components"]["drivetrain"]["bedplate_flange_thickness"] = float(
-                    wt_opt["nacelle.bedplate_flange_thickness"][0]
+                self.wt_init["components"]["drivetrain"]["bedplate"]["flange_thickness"] = float(
+                    wt_opt["drivetrain.bedplate_flange_thickness"][0]
                 )
-                self.wt_init["components"]["drivetrain"]["bedplate_web_thickness"] = float(
-                    wt_opt["nacelle.bedplate_web_thickness"][0]
+                self.wt_init["components"]["drivetrain"]["bedplate"]["web_thickness"] = float(
+                    wt_opt["drivetrain.bedplate_web_thickness"][0]
                 )
-                self.wt_init["components"]["drivetrain"]["gear_configuration"] = wt_opt[
-                    "nacelle.gear_configuration"
+                self.wt_init["components"]["drivetrain"]["gearbox"]["gear_configuration"] = wt_opt[
+                    "drivetrain.gear_configuration"
                 ]
-                self.wt_init["components"]["drivetrain"]["gearbox_torque_density"] = float(
-                    wt_opt["drivese.rated_torque"][0]/wt_opt["drivese.gearbox_mass"][0]
-                )
-                self.wt_init["components"]["drivetrain"]["planet_numbers"] = wt_opt["nacelle.planet_numbers"]
-                self.wt_init["components"]["drivetrain"]["hss_material"] = wt_opt["nacelle.hss_material"]
+                self.wt_init["components"]["drivetrain"]["gearbox"]["planet_numbers"] = wt_opt["drivetrain.planet_numbers"]
+                self.wt_init["components"]["drivetrain"]["hss"]["material"] = wt_opt["drivetrain.hss_material"]
 
         # Update generator
-        if self.modeling_options["flags"]["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]:
-            self.wt_init["components"]["nacelle"]["generator"]["generator_length"] = float(wt_opt["generator.L_generator"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["generator_mass_user"] = float(wt_opt["generator.generator_mass_user"][0])
+        if self.modeling_options["flags"]["drivetrain"] and "generator" in self.wt_init["components"]["drivetrain"]:
+            self.wt_init["components"]["drivetrain"]["generator"]["length"] = float(wt_opt["generator.L_generator"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["mass"] = float(wt_opt["generator.generator_mass_user"][0])
             if not self.modeling_options["flags"]["generator"]:
-                self.wt_init["components"]["nacelle"]["generator"]["generator_radius_user"] = float(wt_opt["generator.generator_radius_user"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["grid"] = wt_opt["generator.generator_efficiency_user"][:, 0].tolist()
-                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["values"] = wt_opt["generator.generator_efficiency_user"][:, 1].tolist()
-            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.generator_mass"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["rotor_inertia"] = wt_opt["drivese.generator_rotor_I"].tolist()
+                self.wt_init["components"]["drivetrain"]["generator"]["radius"] = float(wt_opt["generator.generator_radius_user"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["rpm_efficiency"]["grid"] = wt_opt["generator.generator_efficiency_user"][:, 0].tolist()
+                self.wt_init["components"]["drivetrain"]["generator"]["rpm_efficiency"]["values"] = wt_opt["generator.generator_efficiency_user"][:, 1].tolist()
+            
+            self.wt_init["components"]["drivetrain"]["generator"]["elastic_properties"] = {}
+            self.wt_init["components"]["drivetrain"]["generator"]["elastic_properties"]["system_mass"] = float(wt_opt["drivese.generator_mass"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["elastic_properties"]["rotor_inertia"] = wt_opt["drivese.generator_rotor_I"].tolist()
 
         if self.modeling_options["flags"]["generator"]:
-            self.wt_init["components"]["nacelle"]["generator"]["B_r"] = float(wt_opt["generator.B_r"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["P_Fe0e"] = float(wt_opt["generator.P_Fe0e"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["P_Fe0h"] = float(wt_opt["generator.P_Fe0h"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["S_N"] = float(wt_opt["generator.S_N"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["alpha_p"] = float(wt_opt["generator.alpha_p"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["b_r_tau_r"] = float(wt_opt["generator.b_r_tau_r"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["b_ro"] = float(wt_opt["generator.b_ro"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["b_s_tau_s"] = float(wt_opt["generator.b_s_tau_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["b_so"] = float(wt_opt["generator.b_so"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["cofi"] = float(wt_opt["generator.cofi"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["freq"] = float(wt_opt["generator.freq"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_i"] = float(wt_opt["generator.h_i"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_sy0"] = float(wt_opt["generator.h_sy0"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_w"] = float(wt_opt["generator.h_w"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["k_fes"] = float(wt_opt["generator.k_fes"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["k_fillr"] = float(wt_opt["generator.k_fillr"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["k_fills"] = float(wt_opt["generator.k_fills"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["k_s"] = float(wt_opt["generator.k_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["m"] = wt_opt["generator.m"]
-            self.wt_init["components"]["nacelle"]["generator"]["mu_0"] = float(wt_opt["generator.mu_0"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["mu_r"] = float(wt_opt["generator.mu_r"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["p"] = float(wt_opt["generator.p"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["phi"] = float(wt_opt["generator.phi"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["q1"] = wt_opt["generator.q1"]
-            self.wt_init["components"]["nacelle"]["generator"]["q2"] = wt_opt["generator.q2"]
-            self.wt_init["components"]["nacelle"]["generator"]["ratio_mw2pp"] = float(wt_opt["generator.ratio_mw2pp"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["resist_Cu"] = float(wt_opt["generator.resist_Cu"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["sigma"] = float(wt_opt["generator.sigma"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["y_tau_p"] = float(wt_opt["generator.y_tau_p"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["y_tau_pr"] = float(wt_opt["generator.y_tau_pr"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["B_r"] = float(wt_opt["generator.B_r"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["P_Fe0e"] = float(wt_opt["generator.P_Fe0e"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["P_Fe0h"] = float(wt_opt["generator.P_Fe0h"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["S_N"] = float(wt_opt["generator.S_N"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["alpha_p"] = float(wt_opt["generator.alpha_p"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["b_r_tau_r"] = float(wt_opt["generator.b_r_tau_r"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["b_ro"] = float(wt_opt["generator.b_ro"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["b_s_tau_s"] = float(wt_opt["generator.b_s_tau_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["b_so"] = float(wt_opt["generator.b_so"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["cofi"] = float(wt_opt["generator.cofi"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["freq"] = float(wt_opt["generator.freq"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_i"] = float(wt_opt["generator.h_i"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_sy0"] = float(wt_opt["generator.h_sy0"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_w"] = float(wt_opt["generator.h_w"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["k_fes"] = float(wt_opt["generator.k_fes"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["k_fillr"] = float(wt_opt["generator.k_fillr"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["k_fills"] = float(wt_opt["generator.k_fills"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["k_s"] = float(wt_opt["generator.k_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["m"] = wt_opt["generator.m"]
+            self.wt_init["components"]["drivetrain"]["generator"]["mu_0"] = float(wt_opt["generator.mu_0"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["mu_r"] = float(wt_opt["generator.mu_r"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["p"] = float(wt_opt["generator.p"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["phi"] = float(wt_opt["generator.phi"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["q1"] = wt_opt["generator.q1"]
+            self.wt_init["components"]["drivetrain"]["generator"]["q2"] = wt_opt["generator.q2"]
+            self.wt_init["components"]["drivetrain"]["generator"]["ratio_mw2pp"] = float(wt_opt["generator.ratio_mw2pp"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["resist_Cu"] = float(wt_opt["generator.resist_Cu"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["sigma"] = float(wt_opt["generator.sigma"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["y_tau_p"] = float(wt_opt["generator.y_tau_p"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["y_tau_pr"] = float(wt_opt["generator.y_tau_pr"][0])
 
-            self.wt_init["components"]["nacelle"]["generator"]["I_0"] = float(wt_opt["generator.I_0"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["d_r"] = float(wt_opt["generator.d_r"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_m"] = float(wt_opt["generator.h_m"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_0"] = float(wt_opt["generator.h_0"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["h_s"] = float(wt_opt["generator.h_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["len_s"] = float(wt_opt["generator.len_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["n_r"] = float(wt_opt["generator.n_r"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["rad_ag"] = float(wt_opt["generator.rad_ag"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["t_wr"] = float(wt_opt["generator.t_wr"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["I_0"] = float(wt_opt["generator.I_0"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["d_r"] = float(wt_opt["generator.d_r"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_m"] = float(wt_opt["generator.h_m"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_0"] = float(wt_opt["generator.h_0"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["h_s"] = float(wt_opt["generator.h_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["len_s"] = float(wt_opt["generator.len_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["n_r"] = float(wt_opt["generator.n_r"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["rad_ag"] = float(wt_opt["generator.rad_ag"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["t_wr"] = float(wt_opt["generator.t_wr"][0])
 
-            self.wt_init["components"]["nacelle"]["generator"]["n_s"] = float(wt_opt["generator.n_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["b_st"] = float(wt_opt["generator.b_st"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["d_s"] = float(wt_opt["generator.d_s"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["t_ws"] = float(wt_opt["generator.t_ws"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["n_s"] = float(wt_opt["generator.n_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["b_st"] = float(wt_opt["generator.b_st"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["d_s"] = float(wt_opt["generator.d_s"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["t_ws"] = float(wt_opt["generator.t_ws"][0])
 
-            self.wt_init["components"]["nacelle"]["generator"]["rho_Copper"] = float(wt_opt["generator.rho_Copper"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["rho_Fe"] = float(wt_opt["generator.rho_Fe"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["rho_Fes"] = float(wt_opt["generator.rho_Fes"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["rho_PM"] = float(wt_opt["generator.rho_PM"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["rho_Copper"] = float(wt_opt["generator.rho_Copper"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["rho_Fe"] = float(wt_opt["generator.rho_Fe"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["rho_Fes"] = float(wt_opt["generator.rho_Fes"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["rho_PM"] = float(wt_opt["generator.rho_PM"][0])
 
-            self.wt_init["components"]["nacelle"]["generator"]["C_Cu"] = float(wt_opt["generator.C_Cu"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["C_Fe"] = float(wt_opt["generator.C_Fe"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["C_Fes"] = float(wt_opt["generator.C_Fes"][0])
-            self.wt_init["components"]["nacelle"]["generator"]["C_PM"] = float(wt_opt["generator.C_PM"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["C_Cu"] = float(wt_opt["generator.C_Cu"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["C_Fe"] = float(wt_opt["generator.C_Fe"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["C_Fes"] = float(wt_opt["generator.C_Fes"][0])
+            self.wt_init["components"]["drivetrain"]["generator"]["C_PM"] = float(wt_opt["generator.C_PM"][0])
 
             if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
-                self.wt_init["components"]["nacelle"]["generator"]["N_c"] = float(wt_opt["generator.N_c"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["b"] = float(wt_opt["generator.b"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["c"] = float(wt_opt["generator.c"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["E_p"] = float(wt_opt["generator.E_p"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_sr"] = float(wt_opt["generator.h_sr"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_ss"] = float(wt_opt["generator.h_ss"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["t_r"] = float(wt_opt["generator.t_r"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["t_s"] = float(wt_opt["generator.t_s"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["N_c"] = float(wt_opt["generator.N_c"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["b"] = float(wt_opt["generator.b"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["c"] = float(wt_opt["generator.c"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["E_p"] = float(wt_opt["generator.E_p"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_sr"] = float(wt_opt["generator.h_sr"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_ss"] = float(wt_opt["generator.h_ss"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["t_r"] = float(wt_opt["generator.t_r"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["t_s"] = float(wt_opt["generator.t_s"][0])
 
-                self.wt_init["components"]["nacelle"]["generator"]["u_allow_pcent"] = float(
+                self.wt_init["components"]["drivetrain"]["generator"]["u_allow_pcent"] = float(
                     wt_opt["generator.u_allow_pcent"][0]
                 )
-                self.wt_init["components"]["nacelle"]["generator"]["y_allow_pcent"] = float(
+                self.wt_init["components"]["drivetrain"]["generator"]["y_allow_pcent"] = float(
                     wt_opt["generator.y_allow_pcent"][0]
                 )
-                self.wt_init["components"]["nacelle"]["generator"]["z_allow_deg"] = float(
+                self.wt_init["components"]["drivetrain"]["generator"]["z_allow_deg"] = float(
                     wt_opt["generator.z_allow_deg"][0]
                 )
-                self.wt_init["components"]["nacelle"]["generator"]["B_tmax"] = float(wt_opt["generator.B_tmax"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["B_tmax"] = float(wt_opt["generator.B_tmax"][0])
 
             if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
-                self.wt_init["components"]["nacelle"]["generator"]["tau_p"] = float(wt_opt["generator.tau_p"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["b_arm"] = float(wt_opt["generator.b_arm"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["tau_p"] = float(wt_opt["generator.tau_p"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["b_arm"] = float(wt_opt["generator.b_arm"][0])
 
             elif self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
-                self.wt_init["components"]["nacelle"]["generator"]["B_symax"] = float(wt_opt["generator.B_symax"][0])
-                self.wt_init["components"]["nacelle"]["generator"]["S_Nmax"] = float(wt_opt["generator.S_Nmax"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["B_symax"] = float(wt_opt["generator.B_symax"][0])
+                self.wt_init["components"]["drivetrain"]["generator"]["S_Nmax"] = float(wt_opt["generator.S_Nmax"][0])
 
         # Update tower
         if self.modeling_options["flags"]["tower"]:
@@ -1347,10 +1228,10 @@ class WindTurbineOntologyPython(object):
         # Update rotor nacelle assembly
         if self.modeling_options["flags"]["RNA"]:
             self.wt_init["components"]["RNA"] = {}
-            self.wt_init["components"]["RNA"]["elastic_properties_mb"] = {}
-            self.wt_init["components"]["RNA"]["elastic_properties_mb"]["mass"] = float(wt_opt["drivese.rna_mass"][0])
-            self.wt_init["components"]["RNA"]["elastic_properties_mb"]["inertia"] = wt_opt["drivese.rna_I_TT"].tolist()
-            self.wt_init["components"]["RNA"]["elastic_properties_mb"]["center_mass"] = wt_opt[
+            self.wt_init["components"]["RNA"]["elastic_properties"] = {}
+            self.wt_init["components"]["RNA"]["elastic_properties"]["mass"] = float(wt_opt["drivese.rna_mass"][0])
+            self.wt_init["components"]["RNA"]["elastic_properties"]["inertia"] = wt_opt["drivese.rna_I_TT"].tolist()
+            self.wt_init["components"]["RNA"]["elastic_properties"]["center_mass"] = wt_opt[
                 "drivese.rna_cm"
             ].tolist()
 
@@ -1367,65 +1248,65 @@ class WindTurbineOntologyPython(object):
         # Update cost coefficients
         if self.modeling_options["flags"]["costs"]:
             if float(wt_opt["tcc.blade_mass"][0]) > 0.0:
-                self.wt_init["costs"]["blade_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["blade_mass_cost_coeff"] = float(
                     (wt_opt["tcc.blade_cost"] / wt_opt["tcc.blade_mass"])[0]
                 )
             if float(wt_opt["tcc.hub_mass"][0]) > 0.0:
-                self.wt_init["costs"]["hub_mass_cost_coeff"] = float((wt_opt["tcc.hub_cost"] / wt_opt["tcc.hub_mass"])[0])
+                self.modeling_options["WISDEM"]["LCOE"]["hub_mass_cost_coeff"] = float((wt_opt["tcc.hub_cost"] / wt_opt["tcc.hub_mass"])[0])
             if float(wt_opt["tcc.pitch_system_mass"][0]) > 0.0:
-                self.wt_init["costs"]["pitch_system_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["pitch_system_mass_cost_coeff"] = float(
                     (wt_opt["tcc.pitch_system_cost"] / wt_opt["tcc.pitch_system_mass"])[0]
                 )
             if float(wt_opt["tcc.spinner_mass"][0]) > 0.0:
-                self.wt_init["costs"]["spinner_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["spinner_mass_cost_coeff"] = float(
                     (wt_opt["tcc.spinner_cost"] / wt_opt["tcc.spinner_mass"])[0]
                 )
             if float(wt_opt["tcc.lss_mass"][0]) > 0.0:
-                self.wt_init["costs"]["lss_mass_cost_coeff"] = float((wt_opt["tcc.lss_cost"] / wt_opt["tcc.lss_mass"])[0])
+                self.modeling_options["WISDEM"]["LCOE"]["lss_mass_cost_coeff"] = float((wt_opt["tcc.lss_cost"] / wt_opt["tcc.lss_mass"])[0])
             if float(wt_opt["tcc.main_bearing_mass"][0]) > 0.0:
-                self.wt_init["costs"]["bearing_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["bearing_mass_cost_coeff"] = float(
                     (wt_opt["tcc.main_bearing_cost"] / wt_opt["tcc.main_bearing_mass"])[0]
                 )
-            if self.modeling_options["flags"]["nacelle"]:
+            if self.modeling_options["flags"]["drivetrain"]:
                 if float(wt_opt["drivese.gearbox_mass"][0]) > 0.:
-                    self.wt_init["costs"]["gearbox_torque_cost"] = float(
+                    self.modeling_options["WISDEM"]["LCOE"]["gearbox_torque_cost"] = float(
                         (wt_opt["tcc.gearbox_cost"]/wt_opt["drivese.rated_torque"])[0]*1.e+3
                     )
             if float(wt_opt["tcc.hss_mass"][0]) > 0.0:
-                self.wt_init["costs"]["hss_mass_cost_coeff"] = float((wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])[0])
+                self.modeling_options["WISDEM"]["LCOE"]["hss_mass_cost_coeff"] = float((wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])[0])
             if float(wt_opt["tcc.generator_mass"][0]) > 0.0:
-                self.wt_init["costs"]["generator_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["generator_mass_cost_coeff"] = float(
                     (wt_opt["tcc.generator_cost"] / wt_opt["tcc.generator_mass"])[0]
                 )
             if float(wt_opt["tcc.bedplate_mass"][0]) > 0.0:
-                self.wt_init["costs"]["bedplate_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["bedplate_mass_cost_coeff"] = float(
                     (wt_opt["tcc.bedplate_cost"] / wt_opt["tcc.bedplate_mass"])[0]
                 )
             if float(wt_opt["tcc.yaw_mass"][0]) > 0.0:
-                self.wt_init["costs"]["yaw_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["yaw_mass_cost_coeff"] = float(
                     (wt_opt["tcc.yaw_system_cost"] / wt_opt["tcc.yaw_mass"])[0]
                 )
             if float(wt_opt["tcc.converter_mass"][0]) > 0.0:
-                self.wt_init["costs"]["converter_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["converter_mass_cost_coeff"] = float(
                     (wt_opt["tcc.converter_cost"] / wt_opt["tcc.converter_mass"])[0]
                 )
             if float(wt_opt["tcc.transformer_mass"][0]) > 0.0:
-                self.wt_init["costs"]["transformer_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["transformer_mass_cost_coeff"] = float(
                     (wt_opt["tcc.transformer_cost"] / wt_opt["tcc.transformer_mass"])[0]
                 )
             if float(wt_opt["tcc.hvac_mass"][0]) > 0.0:
-                self.wt_init["costs"]["hvac_mass_cost_coeff"] = float((wt_opt["tcc.hvac_cost"] / wt_opt["tcc.hvac_mass"])[0])
+                self.modeling_options["WISDEM"]["LCOE"]["hvac_mass_cost_coeff"] = float((wt_opt["tcc.hvac_cost"] / wt_opt["tcc.hvac_mass"])[0])
             if float(wt_opt["tcc.cover_mass"][0]) > 0.0:
-                self.wt_init["costs"]["cover_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["cover_mass_cost_coeff"] = float(
                     (wt_opt["tcc.cover_cost"] / wt_opt["tcc.cover_mass"])[0]
                 )
             if float(wt_opt["tcc.tower_mass"][0]) > 0.0:
-                self.wt_init["costs"]["tower_mass_cost_coeff"] = float(
+                self.modeling_options["WISDEM"]["LCOE"]["tower_mass_cost_coeff"] = float(
                     (wt_opt["tcc.tower_cost"] / wt_opt["tcc.tower_mass"])[0]
                 )
 
         # Write yamls with updated values
-        sch.write_geometry_yaml(self.wt_init, fname_output)
+        windIO.yaml.write_yaml(self.wt_init, fname_output)
 
     def write_options(self, fname_output):
         sch.write_modeling_yaml(self.modeling_options, fname_output)
