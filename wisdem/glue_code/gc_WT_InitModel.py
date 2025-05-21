@@ -23,7 +23,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
-        environment = wt_init["environment"]
+        environment = modeling_options["WISDEM"]["Environment"]
         blade_flag = modeling_options["flags"]["blade"]
         wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
@@ -91,13 +91,13 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options["flags"]["bos"]:
-        bos = wt_init["bos"]
+        bos = modeling_options["WISDEM"]["BOS"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
         bos = {}
 
     if modeling_options["flags"]["costs"]:
-        costs = wt_init["costs"]
+        costs = modeling_options["WISDEM"]["LCOE"]
         wt_opt = assign_costs_values(wt_opt, costs)
     else:
         costs = {}

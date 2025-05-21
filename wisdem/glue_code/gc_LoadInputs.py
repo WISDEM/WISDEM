@@ -10,7 +10,7 @@ class WindTurbineOntologyPython(object):
         if fname_input_wt is None:
             self.wt_init = None
         else:
-            self.wt_init = windIO.validate(fname_input_wt, schema_type="turbine/turbine_schema")
+            self.wt_init = windIO.validate(fname_input_wt, schema_type="turbine/turbine_schema", defaults = True)
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_opt_flags()
@@ -23,7 +23,7 @@ class WindTurbineOntologyPython(object):
         flags = self.modeling_options["flags"] = {}
 
         # Backwards compatibility
-        modules = ["RotorSE", "DriveSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
+        modules = ["RotorSE", "DriveSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "Environment", "BOS", "LCOE"]
         for m in modules:
             if m in self.modeling_options:
                 self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
@@ -31,7 +31,7 @@ class WindTurbineOntologyPython(object):
         for k in ["blade", "hub", "drivetrain", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA"]:
             flags[k] = k in self.wt_init["components"]
 
-        for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
+        for k in ["assembly", "components", "airfoils", "materials", "control"]:
             flags[k] = k in self.wt_init
 
         # Generator flag
@@ -47,7 +47,7 @@ class WindTurbineOntologyPython(object):
         # Even if the block is in the inputs, the user can turn off via modeling options
         # The "flags" here should come in as a string, not Boolean, to allow for the user_elastic option
         self.modeling_options["user_elastic"] = {m:False for m in flags.keys()}
-        flag_pairings = [("bos","BOS"), ("blade","RotorSE"), ("tower","TowerSE"),
+        flag_pairings = [("blade","RotorSE"), ("tower","TowerSE"),
             ("monopile","FixedBottomSE"), ("jacket","FixedBottomSE"),
             ("hub","DriveSE"), ("drivetrain","DriveSE"), ("generator","DriveSE")]
         for i,j in flag_pairings:
@@ -58,6 +58,9 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["user_elastic"][i] = True
                 flags[i] = False
         flags["hub"] = flags["drivetrain"] = flags["hub"] or flags["drivetrain"]  # Hub and drivetrain have to go together
+        flags["bos"] = self.modeling_options["WISDEM"]["BOS"]["flag"]
+        flags["environment"] = self.modeling_options["WISDEM"]["Environment"]["flag"]
+        flags["costs"] = self.modeling_options["WISDEM"]["LCOE"]["flag"]
 
         # Blades and airfoils
         if flags["blade"] and not flags["airfoils"]:
@@ -66,31 +69,16 @@ class WindTurbineOntologyPython(object):
             print("WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated")
 
         # Blades, tower, monopile and environment
-        if flags["blade"] and not flags["environment"]:
-            raise ValueError("Blades/rotor analysis is requested but no environment input found")
-        if flags["tower"] and not flags["environment"]:
-            raise ValueError("Tower analysis is requested but no environment input found")
-        if flags["monopile"] and not flags["environment"]:
-            raise ValueError("Monopile analysis is requested but no environment input found")
-        if flags["jacket"] and not flags["environment"]:
-            raise ValueError("Jacket analysis is requested but no environment input found")
         if flags["jacket"] and flags["monopile"]:
             raise ValueError("Cannot specify both monopile and jacket support structures")
-        if flags["floating_platform"] and not flags["environment"]:
-            raise ValueError("Floating analysis is requested but no environment input found")
-        if flags["environment"] and not (
-            flags["blade"] or flags["tower"] or flags["monopile"] or flags["jacket"] or flags["floating_platform"]
-        ):
-            print("WARNING: Environment provided but no related component found found")
 
         # Floating/monopile
         if flags["floating_platform"] and (flags["monopile"] or flags["jacket"]):
             raise ValueError("Cannot have both floating and fixed-bottom components")
 
         # Water depth check
-        if "water_depth" in self.wt_init["environment"]:
-            if self.wt_init["environment"]["water_depth"] <= 0.0 and flags["offshore"]:
-                raise ValueError("Water depth must be > 0 to do fixed-bottom or floating analysis")
+        if self.modeling_options["WISDEM"]["Environment"]["water_depth"] <= 0.0 and flags["offshore"]:
+            raise ValueError("Water depth must be > 0 to do fixed-bottom or floating analysis")
 
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
@@ -776,7 +764,8 @@ class WindTurbineOntologyPython(object):
         # Update blade
         if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             # Update blade outer shape
-            self.wt_init["components"]["blade"]["outer_shape"]["airfoil_position"]["grid"] = wt_opt["blade.opt_var.af_position"].tolist()
+            # for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af_master"]):
+            self.wt_init["components"]["blade"]["outer_shape"]["airfoils"]["grid"] = wt_opt["blade.opt_var.af_position"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["chord"]["values"] = wt_opt["blade.pa.chord_param"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
