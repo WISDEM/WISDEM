@@ -1583,7 +1583,7 @@ bos:
     distance_to_site: 115.
     distance_to_landfall: 50.
     port_cost_per_month: 2e6
-    boem_review_cost: 0.0
+    review_cost: 0.0
     construction_insurance: 44.0
     construction_financing: 183.0
     contingency: 316.0

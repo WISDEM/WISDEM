@@ -1262,7 +1262,7 @@ def assign_bos_values(wt_opt, bos, offshore):
         wt_opt["bos.contingency"] = bos["contingency"]
         wt_opt["bos.construction_plan_cost"] = bos["construction_plan_cost"]
         wt_opt["bos.installation_plan_cost"] = bos["installation_plan_cost"]
-        wt_opt["bos.boem_review_cost"] = bos["boem_review_cost"]
+        wt_opt["bos.boem_review_cost"] = bos["review_cost"]
     else:
         wt_opt["bos.interconnect_voltage"] = bos["interconnect_voltage"]
 
