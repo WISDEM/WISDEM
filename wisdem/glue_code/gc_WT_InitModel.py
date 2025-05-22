@@ -285,8 +285,9 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         break
 
             if not anchor_start_found:
+                
                 raise Exception(
-                    f"Blade structure layer {i} start_nd_arc anchor {anchor_name} not found in anchors list"
+                    f"Blade structure layer {layer_i["name"]} start_nd_arc anchor {anchor_name} not found in anchors list"
                 )
         else:
             raise Exception(
@@ -332,7 +333,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
 
             if not anchor_end_found:
                 raise Exception(
-                    f"Blade structure layer {i} end_nd_arc anchor {anchor_name} not found in anchors list"
+                    f"Blade structure layer {layer_i["name"]} end_nd_arc anchor {anchor_name} not found in anchors list"
                 )
         else:
             raise Exception(
