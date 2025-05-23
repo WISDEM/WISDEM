@@ -1670,10 +1670,6 @@ properties:
                                             description: Coefficient of dynamic pressure
                                             type: number
                                             default: 0.0
-                                no_intersect:
-                                    description: This member is parallel to another and intersecting "ghost nodes" should not be calculated.  An example is a heave plate.
-                                    type: boolean
-                                    default: False
                                 reactions:
                                     # TODO: How to do carabiner type joints that only support tension and not compression?
                                     type: object
@@ -2023,6 +2019,10 @@ properties:
                                 Cdy:
                                     <<: *cd
                                     description: User-defined drag coefficient in y-direction
+                                no_intersect:
+                                    description: This member is parallel to another and intersecting "ghost nodes" should not be calculated.  An example is a heave plate.
+                                    type: boolean
+                                    default: False
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
