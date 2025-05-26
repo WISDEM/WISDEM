@@ -601,7 +601,8 @@ class GUI_Master(object):
                 #dpg.add_plot_legend()
                 dpg.add_plot_axis(dpg.mvXAxis, label="x", tag='xaxis')
                 with dpg.plot_axis(dpg.mvYAxis, label="y", tag='yaxis'):
-                    dpg.add_line_series(np.arange(10), np.arange(10), parent='yaxis', tag='lineseries')
+                    # GUI crashes if these are numpy arrays, but lists seem to work.  Don't know why.
+                    dpg.add_line_series(np.arange(10).tolist(), np.arange(10).tolist(), parent='yaxis', tag='lineseries')
 
 
 def run():
