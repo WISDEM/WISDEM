@@ -945,12 +945,24 @@ class Blade_Structure(om.Group):
         ivc = self.add_subsystem("blade_struct_indep_vars", om.IndepVarComp(), promotes=["*"])
 
         ivc.add_output(
-            "web_start_nd",
+            "web_start_nd_yaml",
             val=np.zeros((n_webs, n_span)),
             desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
         ivc.add_output(
-            "web_end_nd",
+            "web_offset",
+            val=np.zeros((n_webs, n_span)),
+            units = "m",
+            desc="2D array of the dimensional offset of a web with respect to the reference axis. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        ivc.add_output(
+            "web_rotation",
+            val=np.zeros(n_webs),
+            units = "deg",
+            desc="1D array of the dimensional rotation of a web with respect to the reference axis. The dimension represents each web.",
+        )
+        ivc.add_output(
+            "web_end_nd_yaml",
             val=np.zeros((n_webs, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
@@ -962,14 +974,32 @@ class Blade_Structure(om.Group):
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
-            "layer_start_nd",
+            "layer_start_nd_yaml",
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the start_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
         )
         ivc.add_output(
-            "layer_end_nd",
+            "layer_end_nd_yaml",
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        ivc.add_output(
+            "layer_width",
+            val=np.zeros((n_layers, n_span)),
+            units ="m",
+            desc="2D array of the width of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        ivc.add_output(
+            "layer_offset",
+            val=np.zeros((n_layers, n_span)),
+            units = "m",
+            desc="2D array of the dimensional offset of a layer with respect to the reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        ivc.add_output(
+            "layer_rotation",
+            val=np.zeros(n_layers),
+            units = "deg",
+            desc="1D array of the dimensional rotation of a layer with respect to the reference axis. The dimension represents each layer.",
         )
         ivc.add_discrete_output(
             "layer_location",
@@ -985,12 +1015,146 @@ class Blade_Structure(om.Group):
         ivc.add_output(
             "joint_position",
             val=0.0,
-            desc="Spanwise position of a blde segmentation joint.",
+            desc="Spanwise position of a blade segmentation joint.",
         )
         ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the blade spanwise joint.")
         ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the blade root fastener.")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on each blade root bolt.")
+
+        self.add_subsystem(
+            "compute_internal_structure_2d_fem",
+            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+            promotes=["*"],
+        )
+
+class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("rotorse_options")
+
+    def setup(self):
+        rotorse_options = self.options["rotorse_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+
+        
+        self.add_input(
+            "web_start_nd_yaml",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "web_end_nd_yaml",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "web_offset",
+            val=np.zeros((n_webs, n_span)),
+            units = "m",
+            desc="2D array of the dimensional offset of a web with respect to the reference axis. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "web_rotation",
+            val=np.zeros(n_webs),
+            units = "deg",
+            desc="1D array of the dimensional rotation of a web with respect to the reference axis. The dimension represents each web.",
+        )
+        self.add_input(
+            "layer_start_nd_yaml",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the start_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        self.add_input(
+            "layer_end_nd_yaml",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        self.add_output(
+            "layer_width",
+            val=np.zeros((n_layers, n_span)),
+            units ="m",
+            desc="2D array of the width of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        self.add_output(
+            "layer_offset",
+            val=np.zeros((n_layers, n_span)),
+            units = "m",
+            desc="2D array of the dimensional offset of a layer with respect to the reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_rotation",
+            val=np.zeros(n_layers),
+            units = "deg",
+            desc="1D array of the dimensional rotation of a layer with respect to the reference axis. The dimension represents each layer.",
+        )
+
+        # From blade outer shape
+        self.add_input(
+            "coord_xy_dim",
+            val=np.zeros((n_span, n_xy, 2)),
+            units="m",
+            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
+        )
+        self.add_input(
+            "twist",
+            val=np.zeros(n_span),
+            units="rad",
+            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
+        )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_input(
+            "section_offset_x",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
+        )
+
+        self.add_output(
+            "web_start_nd",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "web_end_nd",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_start_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the start_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        self.add_output(
+            "layer_end_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+
+    def compute(self, inputs, outputs):
+
+        # Compute the start and end points of the webs and layers
+        for i in range(self.n_webs):
+            for j in range(self.n_span):
+                if inputs["web_start_nd_yaml"][i, j] != 0.:
+                    outputs["web_start_nd"][i, j] = inputs["web_start_nd_yaml"][i, j]
+                else:
+                    pass
+                
+                if inputs["web_end_nd_yaml"][i, j] != 1.:
+                    pass
+                else:
+                    outputs["web_end_nd"][i, j] = inputs["web_end_nd_yaml"][i, j]
+
+        for i in range(self.n_layers):
+            for j in range(self.n_span):
+                outputs["layer_start_nd"][i, j] = inputs["layer_start_nd_yaml"][i, j]
+                outputs["layer_end_nd"][i, j] = inputs["layer_end_nd_yaml"][i, j]
+
 
 
 class Hub(om.Group):

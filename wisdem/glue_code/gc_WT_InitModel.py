@@ -187,20 +187,48 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
     nd_span = wt_opt["blade.outer_shape.s"]
     anchors = structure["anchors"]
     n_anchors = len(anchors)
+
+
     for i in range(n_webs):
         web_i = structure["webs"][i]
+        
+        offset_grid = np.zeros(len(nd_span))
+        offset_values = np.zeros(len(nd_span))
+        web_start_nd_grid = np.zeros(len(nd_span))
+        web_start_nd_values = np.zeros(len(nd_span))
+        web_end_nd_values = np.zeros(len(nd_span))
+        
         # web_start_nd
-        if "grid" in web_i["start_nd_arc"] and "values" in web_i["start_nd_arc"]:
-            web_start_nd_grid = web_i["start_nd_arc"]["grid"]
-            web_start_nd_values = web_i["start_nd_arc"]["values"]
-        elif "anchor" in web_i["start_nd_arc"]:
+        # if anchor is defined, use that. if not, look for hard-coded start and end nd grid
+        if "anchor" in web_i["start_nd_arc"]:
             anchor_name = web_i["start_nd_arc"]["anchor"]["name"]
             anchor_handle = web_i["start_nd_arc"]["anchor"]["handle"]
             for j in range(n_anchors):
                 if anchors[j]["name"] == anchor_name:
-                    web_start_nd_grid = anchors[j][anchor_handle]["grid"]
-                    web_start_nd_values = anchors[j][anchor_handle]["values"]
+                    if "plane_intersection" in anchors[j]:
+                        if "plane_type1" in anchors[j]["plane_intersection"]:
+                            if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
+                                web_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
+                            else: 
+                                raise Exception("in WISDEM plane_type1 requires a rotation to build web %s" % web_i["name"])
+                        else:
+                            raise Exception("in WISDEM plane_intersection requires plane_type1")
+                        
+                        if "offset" in anchors[j]["plane_intersection"]:
+                            offset_grid = anchors[j]["plane_intersection"]["offset"]["grid"]
+                            offset_values = anchors[j]["plane_intersection"]["offset"]["values"]
+
+                        if anchors[j]["plane_intersection"]["side"] != "both":
+                            raise Exception(
+                                "Blade structure anchor %s plane_intersection must be defined both start and end" % anchor_name
+                            )
+                    if anchor_handle in anchors[j]:    
+                        web_start_nd_grid = anchors[j][anchor_handle]["grid"]
+                        web_start_nd_values = anchors[j][anchor_handle]["values"]
                     break
+        elif "grid" in web_i["start_nd_arc"] and "values" in web_i["start_nd_arc"]:
+            web_start_nd_grid = web_i["start_nd_arc"]["grid"]
+            web_start_nd_values = web_i["start_nd_arc"]["values"]
         else:
             raise Exception(
                 "Blade structure web start_nd_arc must be defined by either grid/values or anchor"
@@ -214,7 +242,18 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.web_start_nd"][i, :] = web_start_nd
+        
+        web_offset = np.nan_to_num(
+                    PchipInterpolator(
+                        offset_grid,
+                        offset_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        
+        wt_opt["blade.structure.web_start_nd_yaml"][i, :] = web_start_nd
+        wt_opt["blade.structure.web_offset"][i, :] = web_offset
+        wt_opt["blade.structure.web_rotation"][i] = web_rotation
 
         # web_end_nd
         if "grid" in web_i["end_nd_arc"] and "values" in web_i["end_nd_arc"]:
@@ -240,7 +279,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.web_end_nd"][i, :] = web_end_nd
+        wt_opt["blade.structure.web_end_nd_yaml"][i, :] = web_end_nd
 
     return wt_opt
 
@@ -302,7 +341,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_start_nd"][i, :] = layer_start_nd
+        wt_opt["blade.structure.layer_start_nd_yaml"][i, :] = layer_start_nd
 
         # layer_end_nd
         if "grid" in layer_i["end_nd_arc"] and "values" in layer_i["end_nd_arc"]:
@@ -347,7 +386,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        wt_opt["blade.structure.layer_end_nd"][i, :] = layer_end_nd
+        wt_opt["blade.structure.layer_end_nd_yaml"][i, :] = layer_end_nd
         
         # thickness
         if "thickness" in layer_i:
