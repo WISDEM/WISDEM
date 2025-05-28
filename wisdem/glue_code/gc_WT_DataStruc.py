@@ -995,9 +995,13 @@ class Blade_Structure(om.Group):
         )
         ivc.add_discrete_output(
             "build_layer",
-            val=[False] * n_layers,
-            desc="1D array of boolean values indicating whether to build a layer from offset and rotation.",
+            val=np.zeros(n_layers),
+            desc="1D array of boolean values indicating how to build a layer.",
         )
+        ivc.add_discrete_output(
+            "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
+        )
+        ivc.add_discrete_output("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
         ivc.add_output(
             "layer_width",
             val=np.zeros((n_layers, n_span)),
@@ -1106,9 +1110,13 @@ class Compute_Blade_Structure(om.ExplicitComponent):
         )
         self.add_discrete_input(
             "build_layer",
-            val=[False] * n_webs,
-            desc="1D array of boolean values indicating whether to build a layer from offset and rotation.",
+            val=np.zeros(n_layers),
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer.",
         )
+        self.add_discrete_input(
+            "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
+        )
+        self.add_discrete_input("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
         self.add_input(
             "layer_rotation",
             val=np.zeros(n_layers),
