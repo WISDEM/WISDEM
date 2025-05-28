@@ -3,13 +3,13 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator
+from scipy.interpolate import PchipInterpolator, interp1d
 
 import moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
-from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing
+from wisdem.rotorse.geometry_tools.geometry import remap2grid,trailing_edge_smoothing
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -591,6 +591,11 @@ class Blade(om.Group):
                 self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
             self.connect("outer_shape.s", "ps.s")
+            # self.connect("outer_shape.s", "structure.s")
+            self.connect("pa.twist_param", "structure.twist")
+            self.connect("pa.chord_param", "structure.chord")
+            self.connect("outer_shape.section_offset_x", "structure.section_offset_x")
+            self.connect("compute_coord_xy_dim.coord_xy_dim", "structure.coord_xy_dim")
             self.connect("structure.layer_thickness", "ps.layer_thickness_original")
 
         # Fatigue specific parameters
@@ -955,6 +960,11 @@ class Blade_Structure(om.Group):
             units = "m",
             desc="2D array of the dimensional offset of a web with respect to the reference axis. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
+        ivc.add_discrete_output(
+            "build_web",
+            val=[False] * n_webs,
+            desc="1D array of boolean values indicating whether to build a web from offset and rotation.",
+        )
         ivc.add_output(
             "web_rotation",
             val=np.zeros(n_webs),
@@ -982,6 +992,11 @@ class Blade_Structure(om.Group):
             "layer_end_nd_yaml",
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
+        )
+        ivc.add_discrete_output(
+            "build_layer",
+            val=[False] * n_layers,
+            desc="1D array of boolean values indicating whether to build a layer from offset and rotation.",
         )
         ivc.add_output(
             "layer_width",
@@ -1023,12 +1038,12 @@ class Blade_Structure(om.Group):
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on each blade root bolt.")
 
         self.add_subsystem(
-            "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+            "compute_structure",
+            Compute_Blade_Structure(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
-class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
+class Compute_Blade_Structure(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("rotorse_options")
 
@@ -1062,6 +1077,11 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             units = "deg",
             desc="1D array of the dimensional rotation of a web with respect to the reference axis. The dimension represents each web.",
         )
+        self.add_discrete_input(
+            "build_web",
+            val=[False] * n_webs,
+            desc="1D array of boolean values indicating whether to build a web from offset and rotation.",
+        )
         self.add_input(
             "layer_start_nd_yaml",
             val=np.zeros((n_layers, n_span)),
@@ -1072,19 +1092,24 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
         )
-        self.add_output(
+        self.add_input(
             "layer_width",
             val=np.zeros((n_layers, n_span)),
             units ="m",
             desc="2D array of the width of the layers. The first dimension represents each layer, the second dimension represents span.",
         )
-        self.add_output(
+        self.add_input(
             "layer_offset",
             val=np.zeros((n_layers, n_span)),
             units = "m",
             desc="2D array of the dimensional offset of a layer with respect to the reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
-        self.add_output(
+        self.add_discrete_input(
+            "build_layer",
+            val=[False] * n_webs,
+            desc="1D array of boolean values indicating whether to build a layer from offset and rotation.",
+        )
+        self.add_input(
             "layer_rotation",
             val=np.zeros(n_layers),
             units = "deg",
@@ -1135,25 +1160,107 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             desc="2D array of the end_nd_arc of the layers. The first dimension represents each layer, the second dimension represents span.",
         )
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        # Compute the start and end points of the webs and layers
-        for i in range(self.n_webs):
-            for j in range(self.n_span):
-                if inputs["web_start_nd_yaml"][i, j] != 0.:
-                    outputs["web_start_nd"][i, j] = inputs["web_start_nd_yaml"][i, j]
-                else:
-                    pass
-                
-                if inputs["web_end_nd_yaml"][i, j] != 1.:
-                    pass
-                else:
-                    outputs["web_end_nd"][i, j] = inputs["web_end_nd_yaml"][i, j]
+        # Compute the start and end points of the webs
+        for j in range(self.n_webs):
+            if discrete_inputs["build_web"][j]:
+                for i in range(self.n_span):
+                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
+                            inputs["coord_xy_dim"][i, :, :],
+                            inputs["web_rotation"][j],
+                            inputs["web_offset"][j, i],
+                            inputs["section_offset_x"][i], 
+                            inputs["section_offset_y"][i], 
+                            ["suction", "pressure"],
+                        )
+            else:
+                web_start_nd[j, :] = inputs["web_start_nd_yaml"][j, :]
+                web_end_nd[j, :] = inputs["web_end_nd_yaml"][j, :]
+            
+        outputs["web_start_nd"] = web_start_nd
+        outputs["web_end_nd"] = web_end_nd
 
-        for i in range(self.n_layers):
-            for j in range(self.n_span):
-                outputs["layer_start_nd"][i, j] = inputs["layer_start_nd_yaml"][i, j]
-                outputs["layer_end_nd"][i, j] = inputs["layer_end_nd_yaml"][i, j]
+
+        # Compute the start and end points of the layers
+        for j in range(self.n_layers):
+            if discrete_inputs["build_layer"][j]:
+                for i in range(self.n_span):
+                    layer_start_nd[j, i], layer_end_nd[j, i] = calc_axis_intersection(
+                            inputs["coord_xy_dim"][i, :, :],
+                            inputs["layer_rotation"][j],
+                            inputs["layer_offset"][j, i],
+                            inputs["section_offset_x"][i], 
+                            inputs["section_offset_y"][i], 
+                            ["suction", "pressure"],
+                        )
+            else:
+                layer_start_nd[j, :] = inputs["layer_start_nd_yaml"][j, :]
+                layer_end_nd[j, :] = inputs["layer_end_nd_yaml"][j, :]
+            
+        outputs["layer_start_nd"] = layer_start_nd
+        outputs["layer_end_nd"] = layer_end_nd
+
+
+def calc_axis_intersection(xy_coord, rotation, offset, section_offset_x, section_offset_y, side, thk=0.0):
+    rot_rad = np.deg2rad(rotation)
+    offset_x = offset * np.cos(rot_rad) + section_offset_x
+    offset_y = offset * np.sin(rot_rad) + section_offset_y
+
+    m_rot = np.sin(rot_rad) / np.cos(rot_rad)  # slope of rotated axis
+    plane_rot = [m_rot, -1 * m_rot * section_offset_x + section_offset_y]  # coefficients for rotated axis line: a1*x + a0
+
+    m_intersection = np.sin(rot_rad + np.pi / 2.0) / np.cos(
+        rot_rad + np.pi / 2.0
+    )  # slope perpendicular to rotated axis
+    plane_intersection = [
+        m_intersection,
+        -1 * m_intersection * offset_x + offset_y,
+    ]  # coefficients for line perpendicular to rotated axis line at the offset: a1*x + a0
+
+    # intersection between airfoil surface and the line perpendicular to the rotated/offset axis
+    y_intersection = np.polyval(plane_intersection, xy_coord[:, 0])
+
+    idx_le = np.argmin(xy_coord[:, 0])
+    xy_coord_arc = arc_length(xy_coord)
+    arc_L = xy_coord_arc[-1]
+    xy_coord_arc /= arc_L
+
+    idx_inter = np.argwhere(
+        np.diff(np.sign(xy_coord[:, 1] - y_intersection))
+    ).flatten()  # find closest airfoil surface points to intersection
+
+    midpoint_arc = []
+    for sidei in side:
+        if sidei.lower() == "suction":
+            tangent_line = np.polyfit(
+                xy_coord[idx_inter[0] : idx_inter[0] + 2, 0], xy_coord[idx_inter[0] : idx_inter[0] + 2, 1], 1
+            )
+        elif sidei.lower() == "pressure":
+            tangent_line = np.polyfit(
+                xy_coord[idx_inter[1] : idx_inter[1] + 2, 0], xy_coord[idx_inter[1] : idx_inter[1] + 2, 1], 1
+            )
+
+        midpoint_x = (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
+        midpoint_y = (
+            plane_intersection[0]
+            * (tangent_line[1] - plane_intersection[1])
+            / (plane_intersection[0] - tangent_line[0])
+            + plane_intersection[1]
+        )
+
+        # convert to arc position
+        if sidei.lower() == "suction":
+            x_half = xy_coord[: idx_le + 1, 0]
+            arc_half = xy_coord_arc[: idx_le + 1]
+
+        elif sidei.lower() == "pressure":
+            x_half = xy_coord[idx_le:, 0]
+            arc_half = xy_coord_arc[idx_le:]
+
+        midpoint_arc.append(remap2grid(x_half, arc_half, midpoint_x, spline=interp1d))
+
+    return midpoint_arc
 
 
 
