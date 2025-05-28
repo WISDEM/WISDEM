@@ -904,7 +904,6 @@ class WindTurbineOntologyPython(object):
                 ].tolist()
             else:
                 # Geared only
-                s_hss = np.linspace(0.0, 1.0, len(wt_opt["drivetrain"]["hss"]["diameter"])).tolist()
                 self.wt_init["components"]["drivetrain"]["hss"]["length"] = float(wt_opt["drivetrain.hss_length"][0])
                 self.wt_init["components"]["drivetrain"]["hss"]["diameter"] = wt_opt[
                     "drivetrain.hss_diameter"

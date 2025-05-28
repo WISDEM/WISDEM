@@ -570,6 +570,7 @@ properties:
                                     unit: meter
             Environment:
                 type: object
+                default: {}
                 description: The field :code:`environment` includes the data characterizing air and water where the wind turbine operates.
                 required:
                     - flag

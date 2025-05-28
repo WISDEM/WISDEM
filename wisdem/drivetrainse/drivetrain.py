@@ -179,7 +179,7 @@ class DrivetrainSE(om.Group):
 
         # Need to do these first, before the layout
         self.add_subsystem("hub", Hub_System(modeling_options=opt["hub"]), promotes=["*"])
-        self.add_subsystem("gear", Gearbox(direct_drive=direct), promotes=["*"])
+        self.add_subsystem("gear", Gearbox(direct_drive=direct, gearbox_torque_density = opt["gearbox_torque_density"]), promotes=["*"])
 
         # Layout and mass for the big items
         if direct:
