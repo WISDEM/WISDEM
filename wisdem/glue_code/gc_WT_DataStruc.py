@@ -591,10 +591,6 @@ class Blade(om.Group):
                 self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
             self.connect("outer_shape.s", "ps.s")
-            # self.connect("outer_shape.s", "structure.s")
-            self.connect("pa.twist_param", "structure.twist")
-            self.connect("pa.chord_param", "structure.chord")
-            self.connect("outer_shape.section_offset_x", "structure.section_offset_x")
             self.connect("compute_coord_xy_dim.coord_xy_dim", "structure.coord_xy_dim")
             self.connect("structure.layer_thickness", "ps.layer_thickness_original")
 
@@ -1106,7 +1102,7 @@ class Compute_Blade_Structure(om.ExplicitComponent):
         self.add_discrete_input(
             "build_layer",
             val=np.zeros(n_layers),
-            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation suction side, 2 - from offset and rotation pressure side, 3 - LE and width, 4 - TE SS width, 5 - TE PS width, 6 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
         )
         self.add_discrete_input(
             "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
@@ -1118,30 +1114,14 @@ class Compute_Blade_Structure(om.ExplicitComponent):
             units = "deg",
             desc="1D array of the dimensional rotation of a layer with respect to the reference axis. The dimension represents each layer.",
         )
-
-        # From blade outer shape
         self.add_input(
             "coord_xy_dim",
             val=np.zeros((n_span, n_xy, 2)),
             units="m",
             desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
         )
-        self.add_input(
-            "twist",
-            val=np.zeros(n_span),
-            units="rad",
-            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        )
-        self.add_input(
-            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
-        )
-        self.add_input(
-            "section_offset_x",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
-        )
 
+        # Outputs
         self.add_output(
             "web_start_nd",
             val=np.zeros((n_webs, n_span)),
@@ -1170,18 +1150,23 @@ class Compute_Blade_Structure(om.ExplicitComponent):
         web_end_nd = np.zeros((self.n_webs, self.n_span))
         layer_start_nd = np.zeros((self.n_layers, self.n_span))
         layer_end_nd = np.zeros((self.n_layers, self.n_span))
+        import matplotlib.pyplot as plt
 
         # Compute the start and end points of the webs
         for j in range(self.n_webs):
             for i in range(self.n_span):
-                web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        inputs["web_rotation"][j],
-                        inputs["web_offset"][j, i],
-                        inputs["section_offset_x"][i], 
-                        0, 
-                        ["suction", "pressure"],
-                    )
+
+                xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                idx_le = np.argmin(xy_coord_i[:, 0])
+                theta = np.deg2rad(inputs["web_rotation"][j])
+                rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+                xy_coord_rotated = xy_coord_i @ rotation_matrix.T
+                web_offset = inputs["web_offset"][j, i]
+                idx_web_ss = np.argmin(abs(xy_coord_rotated[:idx_le,0] - web_offset))
+                idx_web_ps = np.argmin(abs(xy_coord_rotated[idx_le:,0] - web_offset)) + idx_le
+                xy_arc_i = arc_length(xy_coord_i)
+                web_start_nd[j, i] = xy_arc_i[idx_web_ss] /  xy_arc_i[-1]
+                web_end_nd[j, i] = xy_arc_i[idx_web_ps] /  xy_arc_i[-1]
             
         outputs["web_start_nd"] = web_start_nd
         outputs["web_end_nd"] = web_end_nd
@@ -1193,110 +1178,65 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                 layer_start_nd[j, :] = inputs["layer_start_nd_yaml"][j, :]
                 layer_end_nd[j, :] = inputs["layer_end_nd_yaml"][j, :]
             
-            elif discrete_inputs["build_layer"][j] == 1:
+            elif discrete_inputs["build_layer"][j] == 1 or discrete_inputs["build_layer"][j] == 2:
                 for i in range(self.n_span):
+                    
                     xy_coord_i = inputs["coord_xy_dim"][i, :, :]
-                    layer_start_nd[j, i], layer_end_nd[j, i] = calc_axis_intersection(
-                            xy_coord_i,
-                            inputs["layer_rotation"][j],
-                            inputs["layer_offset"][j, i],
-                            inputs["section_offset_x"][i], 
-                            0, 
-                            ["suction", "pressure"],
-                        )
-            
-            elif discrete_inputs["build_layer"][j] == 2:
-                for i in range(self.n_span):
-                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    idx_le = np.argmin(xy_coord_i[:, 0])
+                    theta = np.deg2rad(inputs["layer_rotation"][j])
+                    rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+                    xy_coord_rotated = xy_coord_i @ rotation_matrix.T
+                    layer_offset = inputs["layer_offset"][j, i]
+                    if discrete_inputs["build_layer"][j] == 1: # suction side
+                        idx_layer = np.argmin(abs(xy_coord_rotated[:idx_le,0] - layer_offset))
+                    else: # pressure side
+                        idx_layer = np.argmin(abs(xy_coord_rotated[idx_le:,0] - layer_offset)) + idx_le
                     xy_arc_i = arc_length(xy_coord_i)
                     arc_L_i = xy_arc_i[-1]
-                    idx_le = np.argmin(xy_coord_i[:, 0])
-                    LE_loc_i = xy_arc_i[idx_le]
-
-                    layer_start_nd[j, :] = LE_loc_i - 0.5 * inputs["layer_width"][j, i] / arc_L_i
-                    layer_end_nd[j, :] = LE_loc_i + 0.5 * inputs["layer_width"][j, i] / arc_L_i
+                    width_i = inputs["layer_width"][j, i]
+                    
+                    layer_start_nd[j, i] = xy_arc_i[idx_layer] /  xy_arc_i[-1] - 0.5 * width_i / arc_L_i
+                    layer_end_nd[j, i] = xy_arc_i[idx_layer] /  xy_arc_i[-1] + 0.5 * width_i / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 3:
                 for i in range(self.n_span):
                     xy_coord_i = inputs["coord_xy_dim"][i, :, :]
                     xy_arc_i = arc_length(xy_coord_i)
                     arc_L_i = xy_arc_i[-1]
+                    idx_le = np.argmin(xy_coord_i[:, 0])
+                    LE_loc_i = xy_arc_i[idx_le]
+                    width_i = inputs["layer_width"][j, i]
 
-                    layer_start_nd[j, :] = 0.
-                    layer_end_nd[j, :] = inputs["layer_width"][j, i] / arc_L_i
+                    layer_start_nd[j, :] = LE_loc_i - 0.5 * width_i / arc_L_i
+                    layer_end_nd[j, :] = LE_loc_i + 0.5 * width_i / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 4:
                 for i in range(self.n_span):
                     xy_coord_i = inputs["coord_xy_dim"][i, :, :]
                     xy_arc_i = arc_length(xy_coord_i)
                     arc_L_i = xy_arc_i[-1]
+                    width_i = inputs["layer_width"][j, i]
 
-                    layer_start_nd[j, :] = 1. - inputs["layer_width"][j, i] / arc_L_i
-                    layer_end_nd[j, :] = 1.
+                    layer_start_nd[j, :] = 0.
+                    layer_end_nd[j, :] = width_i / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 5:
-                layer_start_nd[j, :] = layer_start_nd[discrete_inputs["index_layer_start"][j], :]
-                layer_end_nd[j, :] = layer_end_nd[discrete_inputs["index_layer_end"][j], :]
+                for i in range(self.n_span):
+                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    xy_arc_i = arc_length(xy_coord_i)
+                    arc_L_i = xy_arc_i[-1]
+                    width_i = inputs["layer_width"][j, i]
+
+                    layer_start_nd[j, :] = 1. - width_i / arc_L_i
+                    layer_end_nd[j, :] = 1.
+            
+            elif discrete_inputs["build_layer"][j] == 6:
+                layer_start_nd[j, :] = layer_start_nd[int(discrete_inputs["index_layer_start"][j]), :]
+                layer_end_nd[j, :] = layer_end_nd[int(discrete_inputs["index_layer_end"][j]), :]
 
                  
         outputs["layer_start_nd"] = layer_start_nd
         outputs["layer_end_nd"] = layer_end_nd
-
-
-def calc_axis_intersection(xy_coord, rotation, offset, section_offset_x, section_offset_y, side, thk=0.0):
-    rot_rad = np.deg2rad(rotation)
-    offset_x = offset * np.cos(rot_rad) + section_offset_x
-    offset_y = offset * np.sin(rot_rad) + section_offset_y
-
-    m_rot = np.sin(rot_rad) / np.cos(rot_rad)  # slope of rotated axis
-    plane_rot = [m_rot, -1 * m_rot * section_offset_x + section_offset_y]  # coefficients for rotated axis line: a1*x + a0
-
-    m_intersection = np.sin(rot_rad + np.pi / 2.0) / np.cos(
-        rot_rad + np.pi / 2.0
-    )  # slope perpendicular to rotated axis
-    plane_intersection = [
-        m_intersection,
-        -1 * m_intersection * offset_x + offset_y,
-    ]  # coefficients for line perpendicular to rotated axis line at the offset: a1*x + a0
-
-    # intersection between airfoil surface and the line perpendicular to the rotated/offset axis
-    y_intersection = np.polyval(plane_intersection, xy_coord[:, 0])
-
-    idx_le = np.argmin(xy_coord[:, 0])
-    xy_coord_arc = arc_length(xy_coord)
-    arc_L = xy_coord_arc[-1]
-    xy_coord_arc /= arc_L
-
-    idx_inter = np.argwhere(
-        np.diff(np.sign(xy_coord[:, 1] - y_intersection))
-    ).flatten()  # find closest airfoil surface points to intersection
-
-    midpoint_arc = []
-    for sidei in side:
-        if sidei.lower() == "suction":
-            tangent_line = np.polyfit(
-                xy_coord[idx_inter[0] : idx_inter[0] + 2, 0], xy_coord[idx_inter[0] : idx_inter[0] + 2, 1], 1
-            )
-        elif sidei.lower() == "pressure":
-            tangent_line = np.polyfit(
-                xy_coord[idx_inter[1] : idx_inter[1] + 2, 0], xy_coord[idx_inter[1] : idx_inter[1] + 2, 1], 1
-            )
-
-        midpoint_x = (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
-
-        # convert to arc position
-        if sidei.lower() == "suction":
-            x_half = xy_coord[: idx_le + 1, 0]
-            arc_half = xy_coord_arc[: idx_le + 1]
-
-        elif sidei.lower() == "pressure":
-            x_half = xy_coord[idx_le:, 0]
-            arc_half = xy_coord_arc[idx_le:]
-
-        midpoint_arc.append(remap2grid(x_half, arc_half, midpoint_x, spline=interp1d))
-
-    return midpoint_arc
-
 
 
 class Hub(om.Group):

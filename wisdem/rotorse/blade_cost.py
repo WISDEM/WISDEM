@@ -3070,7 +3070,7 @@ class BladeCost(om.ExplicitComponent):
         self.add_discrete_input(
             "build_layer",
             val=-np.ones(n_layers),
-            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
+            desc="1D array of boolean values indicating how to build a layer.",
         )
 
         # Inputs - Materials

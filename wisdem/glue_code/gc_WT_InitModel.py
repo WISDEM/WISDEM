@@ -318,12 +318,19 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                 if anchors[j]["name"] == anchor_name:
                     anchor_start_found = True
                     if "plane_intersection" in anchors[j] and anchor_handle == "start_nd_arc":
-                        build_layer = 1
                         if "plane_type1" in anchors[j]["plane_intersection"]:
                             if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
                                 layer_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
                             else: 
                                 raise Exception("in WISDEM plane_type1 requires a rotation to build layer %s" % layer_i["name"])
+                            if anchors[j]["plane_intersection"]["side"] == "suction":
+                                build_layer = 1
+                            elif anchors[j]["plane_intersection"]["side"] == "pressure":
+                                build_layer = 2
+                            else:
+                                raise Exception(
+                                    "Blade structure anchor %s plane_intersection must be defined suction or pressure" % anchor_name
+                                )
                         else:
                             raise Exception("in WISDEM plane_intersection requires plane_type1, which is missing in layer %s" % layer_i["name"])
                         
@@ -342,7 +349,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                                 "Blade structure anchor %s plane_intersection must be defined with width" % anchor_name
                             )
                     elif "width" in anchors[j] and "midpoint_nd_arc" in anchors[j] and anchor_handle == "start_nd_arc":
-                        build_layer = 2
+                        build_layer = 3
                         width_grid = anchors[j]["width"]["grid"]
                         width_values = anchors[j]["width"]["values"]
                         if anchors[j]["midpoint_nd_arc"]["anchor"]["name"] != "LE":
@@ -355,14 +362,14 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         if build_layer == -100 and "end_nd_arc" in anchors[j]:
                             if "anchor" in anchors[j]["end_nd_arc"]:
                                 if anchors[j]["end_nd_arc"]["anchor"]["name"] == "TE" and layer_i["end_nd_arc"]["anchor"]["name"] == "TE":
-                                    build_layer = 4
+                                    build_layer = 5
                         # layers anchored to anchors that are anchored themselves
                         if build_layer == -100 and anchor_handle in anchors[j]:
                             index_layer_start = 0
                             for k in range(n_layers):
                                 if structure["layers"][k][anchor_handle]["anchor"]["name"] == anchors[j]["name"]:
                                     index_layer_start = k
-                                    build_layer = 5
+                                    build_layer = 6
                                     break
 
 
@@ -420,7 +427,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                 )
             wt_opt["blade.structure.layer_start_nd_yaml"][i, :] = layer_start_nd
         
-        if build_layer == 1:
+        if build_layer == 1 or build_layer == 2:
             layer_offset = np.nan_to_num(
                         PchipInterpolator(
                             offset_grid,
@@ -440,7 +447,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         )(nd_span)
                     )
             wt_opt["blade.structure.layer_width"][i, :] = layer_width
-        if build_layer == 5:
+        if build_layer == 6:
             wt_opt["blade.structure.index_layer_start"][i] = index_layer_start
 
         
@@ -452,7 +459,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
             for j in range(n_anchors):
                 if anchors[j]["name"] == anchor_name:
                     anchor_end_found = True
-                    if build_layer == 5:
+                    if build_layer == 6:
                         index_layer_end = 0
                         for k in range(n_layers):
                             if structure["layers"][k][anchor_handle]["anchor"]["name"] == anchors[j]["name"]:
@@ -465,13 +472,13 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         if "start_nd_arc" in anchors[j]:
                             if "anchor" in anchors[j]["start_nd_arc"]:
                                 if anchors[j]["start_nd_arc"]["anchor"]["name"] == "TE" and layer_i["start_nd_arc"]["anchor"]["name"] == "TE":
-                                    build_layer = 3                    
+                                    build_layer = 4                    
                     
                     elif anchor_handle in anchors[j]:    
                         layer_end_nd_grid = anchors[j][anchor_handle]["grid"]
                         layer_end_nd_values = anchors[j][anchor_handle]["values"]
                     
-                    elif build_layer != 1 and "plane_intersection" in anchors[j]:
+                    elif build_layer != 1 and build_layer != 2 and "plane_intersection" in anchors[j]:
                         raise Exception("WISDEM does not yet support an end anchor with plane_intersection or width defined where the start anchor is not defined this way. Please contact the NREL developers.")
                     
                     break
@@ -515,7 +522,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
             
             wt_opt["blade.structure.layer_end_nd_yaml"][i, :] = layer_end_nd
         
-        if build_layer == 5:
+        if build_layer == 6:
             wt_opt["blade.structure.index_layer_end"][i] = index_layer_end
         
         # thickness
