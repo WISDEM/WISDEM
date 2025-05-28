@@ -1020,11 +1020,6 @@ class Blade_Structure(om.Group):
             units = "deg",
             desc="1D array of the dimensional rotation of a layer with respect to the reference axis. The dimension represents each layer.",
         )
-        ivc.add_discrete_output(
-            "layer_location",
-            val=-np.ones(n_layers),
-            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
-        )
         ivc.add_output(
             "layer_fiber_orientation",
             val=np.zeros((n_layers, n_span)),
