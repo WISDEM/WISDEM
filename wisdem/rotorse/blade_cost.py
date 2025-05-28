@@ -2858,9 +2858,9 @@ class BladeSplit(om.ExplicitComponent):
             desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_discrete_input(
-            "layer_location",
+            "build_layer",
             val=-np.ones(n_layers),
-            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
         )
         self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.")
 
@@ -3068,9 +3068,9 @@ class BladeCost(om.ExplicitComponent):
             desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_discrete_input(
-            "layer_location",
+            "build_layer",
             val=-np.ones(n_layers),
-            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
         )
 
         # Inputs - Materials
@@ -3346,7 +3346,7 @@ class BladeCost(om.ExplicitComponent):
         component_id = discrete_inputs["component_id"]
         rho_mat = inputs["rho"]
         waste = inputs["waste"]
-        layer_location = discrete_inputs["layer_location"]
+        build_layer = discrete_inputs["build_layer"]
         ply_t = inputs["ply_t"]
         # When ply thickness is not defined or set to 0, set to high number to avoid inf laminate thickness later on
         ply_t[ply_t == 0] = 1.0e6
@@ -3463,7 +3463,7 @@ class BladeCost(om.ExplicitComponent):
 
                 width_ss = np.zeros(self.n_span)
                 width_ps = np.zeros(self.n_span)
-                if layer_location[i_lay] == 0:
+                if build_layer[i_lay] > 0:
                     # Determine on which of the two molds the layer should go
                     if (
                         layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
@@ -3508,16 +3508,17 @@ class BladeCost(om.ExplicitComponent):
                     layer_volume_span_ss[i_lay, :] = layer_thickness[i_lay, :] * width_ss
                     layer_volume_span_ps[i_lay, :] = layer_thickness[i_lay, :] * width_ps
                 else:
+                    web_id = int(- build_layer[i_lay] - 1)
                     SS = False
                     PS = False
                     # Compute the volume per unit meter for each layer
                     layer_volume_span_webs[i_lay, :] = (
-                        layer_thickness[i_lay, :] * web_height[int(layer_location[i_lay]) - 1, :]
+                        layer_thickness[i_lay, :] * web_height[web_id, :]
                     )
                     # Compute length of shear webs
-                    if web_length[int(layer_location[i_lay]) - 1] == 0:
-                        web_length[int(layer_location[i_lay]) - 1] = (s[imax] - s[imin]) * blade_length
-                        web_indices[int(layer_location[i_lay]) - 1, :] = [imin, imax]
+                    if web_length[web_id] == 0:
+                        web_length[web_id] = (s[imax] - s[imin]) * blade_length
+                        web_indices[web_id, :] = [imin, imax]
                 # Compute volume of layer
                 layer_volume_span = (
                     layer_volume_span_ss[i_lay, :] + layer_volume_span_ps[i_lay, :] + layer_volume_span_webs[i_lay, :]
@@ -3562,12 +3563,13 @@ class BladeCost(om.ExplicitComponent):
                     )
 
                 # Fabric shear webs
-                if layer_location[i_lay] > 0:
+                if build_layer[i_lay] < 0:
+                    web_id = int(- build_layer[i_lay] - 1)
                     add_volume = np.trapezoid(layer_volume_span_webs[i_lay, :], s * blade_length)
-                    mass_webs[int(layer_location[i_lay]) - 1] += add_volume * rho_mat[i_mat]
+                    mass_webs[web_id] += add_volume * rho_mat[i_mat]
                     if orth[i_mat]:
-                        volumeskin2lay_webs[int(layer_location[i_lay]) - 1] += add_volume
-                        fabric2lay_webs[int(layer_location[i_lay]) - 1] += add_volume / ply_t[i_mat]
+                        volumeskin2lay_webs[web_id] += add_volume
+                        fabric2lay_webs[web_id] += add_volume / ply_t[i_mat]
 
                 # Spar caps
                 elif self.layer_name[i_lay].lower() == self.spar_cap_ss:
@@ -3980,7 +3982,7 @@ class StandaloneBladeCost(om.Group):
                 "blade.structure.definition_layer",
                 ["rc_in.definition_layer", "rc_out.definition_layer"],
             )
-            self.connect("blade.structure.layer_location", ["rc_in.layer_location", "rc_out.layer_location"])
+            self.connect("blade.structure.build_layer", ["rc_in.build_layer", "rc_out.build_layer"])
 
             # Inner blade portion inputs
             self.connect("split.blade_length_inner", "rc_in.blade_length")
@@ -4015,7 +4017,7 @@ class StandaloneBladeCost(om.Group):
             self.connect("blade.structure.layer_thickness", "rc.layer_thickness")
             self.connect("blade.structure.layer_start_nd", "rc.layer_start_nd")
             self.connect("blade.structure.layer_end_nd", "rc.layer_end_nd")
-            self.connect("blade.structure.layer_location", "rc.layer_location")
+            self.connect("blade.structure.build_layer", "rc.build_layer")
             self.connect("blade.structure.definition_layer", "rc.definition_layer")
             self.connect("blade.structure.web_start_nd", "rc.web_start_nd")
             self.connect("blade.structure.web_end_nd", "rc.web_end_nd")

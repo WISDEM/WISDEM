@@ -1106,7 +1106,7 @@ class Compute_Blade_Structure(om.ExplicitComponent):
         self.add_discrete_input(
             "build_layer",
             val=np.zeros(n_layers),
-            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer.",
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
         )
         self.add_discrete_input(
             "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
@@ -1165,21 +1165,23 @@ class Compute_Blade_Structure(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        # Initialize arrays
+        web_start_nd = np.zeros((self.n_webs, self.n_span))
+        web_end_nd = np.zeros((self.n_webs, self.n_span))
+        layer_start_nd = np.zeros((self.n_layers, self.n_span))
+        layer_end_nd = np.zeros((self.n_layers, self.n_span))
+
         # Compute the start and end points of the webs
         for j in range(self.n_webs):
-            if discrete_inputs["build_web"][j]:
-                for i in range(self.n_span):
-                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
-                            inputs["coord_xy_dim"][i, :, :],
-                            inputs["web_rotation"][j],
-                            inputs["web_offset"][j, i],
-                            inputs["section_offset_x"][i], 
-                            inputs["section_offset_y"][i], 
-                            ["suction", "pressure"],
-                        )
-            else:
-                web_start_nd[j, :] = inputs["web_start_nd_yaml"][j, :]
-                web_end_nd[j, :] = inputs["web_end_nd_yaml"][j, :]
+            for i in range(self.n_span):
+                web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        inputs["web_rotation"][j],
+                        inputs["web_offset"][j, i],
+                        inputs["section_offset_x"][i], 
+                        0, 
+                        ["suction", "pressure"],
+                    )
             
         outputs["web_start_nd"] = web_start_nd
         outputs["web_end_nd"] = web_end_nd
@@ -1187,20 +1189,56 @@ class Compute_Blade_Structure(om.ExplicitComponent):
 
         # Compute the start and end points of the layers
         for j in range(self.n_layers):
-            if discrete_inputs["build_layer"][j]:
-                for i in range(self.n_span):
-                    layer_start_nd[j, i], layer_end_nd[j, i] = calc_axis_intersection(
-                            inputs["coord_xy_dim"][i, :, :],
-                            inputs["layer_rotation"][j],
-                            inputs["layer_offset"][j, i],
-                            inputs["section_offset_x"][i], 
-                            inputs["section_offset_y"][i], 
-                            ["suction", "pressure"],
-                        )
-            else:
+            if discrete_inputs["build_layer"][j] == 0:
                 layer_start_nd[j, :] = inputs["layer_start_nd_yaml"][j, :]
                 layer_end_nd[j, :] = inputs["layer_end_nd_yaml"][j, :]
             
+            elif discrete_inputs["build_layer"][j] == 1:
+                for i in range(self.n_span):
+                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    layer_start_nd[j, i], layer_end_nd[j, i] = calc_axis_intersection(
+                            xy_coord_i,
+                            inputs["layer_rotation"][j],
+                            inputs["layer_offset"][j, i],
+                            inputs["section_offset_x"][i], 
+                            0, 
+                            ["suction", "pressure"],
+                        )
+            
+            elif discrete_inputs["build_layer"][j] == 2:
+                for i in range(self.n_span):
+                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    xy_arc_i = arc_length(xy_coord_i)
+                    arc_L_i = xy_arc_i[-1]
+                    idx_le = np.argmin(xy_coord_i[:, 0])
+                    LE_loc_i = xy_arc_i[idx_le]
+
+                    layer_start_nd[j, :] = LE_loc_i - 0.5 * inputs["layer_width"][j, i] / arc_L_i
+                    layer_end_nd[j, :] = LE_loc_i + 0.5 * inputs["layer_width"][j, i] / arc_L_i
+            
+            elif discrete_inputs["build_layer"][j] == 3:
+                for i in range(self.n_span):
+                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    xy_arc_i = arc_length(xy_coord_i)
+                    arc_L_i = xy_arc_i[-1]
+
+                    layer_start_nd[j, :] = 0.
+                    layer_end_nd[j, :] = inputs["layer_width"][j, i] / arc_L_i
+            
+            elif discrete_inputs["build_layer"][j] == 4:
+                for i in range(self.n_span):
+                    xy_coord_i = inputs["coord_xy_dim"][i, :, :]
+                    xy_arc_i = arc_length(xy_coord_i)
+                    arc_L_i = xy_arc_i[-1]
+
+                    layer_start_nd[j, :] = 1. - inputs["layer_width"][j, i] / arc_L_i
+                    layer_end_nd[j, :] = 1.
+            
+            elif discrete_inputs["build_layer"][j] == 5:
+                layer_start_nd[j, :] = layer_start_nd[discrete_inputs["index_layer_start"][j], :]
+                layer_end_nd[j, :] = layer_end_nd[discrete_inputs["index_layer_end"][j], :]
+
+                 
         outputs["layer_start_nd"] = layer_start_nd
         outputs["layer_end_nd"] = layer_end_nd
 
@@ -1245,12 +1283,6 @@ def calc_axis_intersection(xy_coord, rotation, offset, section_offset_x, section
             )
 
         midpoint_x = (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
-        midpoint_y = (
-            plane_intersection[0]
-            * (tangent_line[1] - plane_intersection[1])
-            / (plane_intersection[0] - tangent_line[0])
-            + plane_intersection[1]
-        )
 
         # convert to arc position
         if sidei.lower() == "suction":

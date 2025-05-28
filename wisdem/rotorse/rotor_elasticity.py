@@ -100,9 +100,9 @@ class RunPreComp(ExplicitComponent):
             desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_discrete_input(
-            "layer_location",
+            "build_layer",
             val=-np.ones(n_layers),
-            desc="1D array indicating the location for each layer. 0 puts the layer on the outer shell, 1 on the first web, 2 on the second web, etc.",
+            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
         )
 
         # Materials
@@ -541,7 +541,7 @@ class RunPreComp(ExplicitComponent):
 
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
-                if discrete_inputs["layer_location"][idx_sec] == 0:
+                if discrete_inputs["build_layer"][idx_sec] >= 0:
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         area[i] += arc_L_m * (inputs["layer_end_nd"][idx_sec, i] - 
                                               inputs["layer_start_nd"][idx_sec, i]) * (
@@ -616,7 +616,7 @@ class RunPreComp(ExplicitComponent):
                             else:
                                 ps_start_nd_arc.append(float(spline_arc2xnd(inputs["layer_start_nd"][idx_sec, i])))
                 else:
-                    target_idx = discrete_inputs["layer_location"][idx_sec] - 1
+                    target_idx = - discrete_inputs["build_layer"][idx_sec] - 1
 
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)

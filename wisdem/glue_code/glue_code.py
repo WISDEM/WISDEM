@@ -189,7 +189,7 @@ class WT_RNTA(om.Group):
                 self.connect("blade.structure.web_start_nd", "rotorse.re.precomp.web_start_nd")
                 self.connect("blade.structure.web_end_nd", "rotorse.re.precomp.web_end_nd")
                 self.connect("blade.structure.joint_position", "rotorse.re.precomp.joint_position")
-                self.connect("blade.structure.layer_location", ["rotorse.re.precomp.layer_location", "rotorse.rc.layer_location"])
+                self.connect("blade.structure.build_layer", ["rotorse.re.precomp.build_layer", "rotorse.rc.build_layer"])
                 # joint mass as user input from yaml
                 self.connect("blade.structure.joint_mass", "rotorse.re.precomp.joint_mass")
                 self.connect("materials.name", "rotorse.re.precomp.mat_name")
