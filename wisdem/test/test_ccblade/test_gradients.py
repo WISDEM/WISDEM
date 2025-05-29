@@ -18,7 +18,7 @@ import unittest
 import numpy as np
 
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
-from wisdem.inputs.validation import load_geometry_yaml
+import windIO
 
 
 class TestGradients(unittest.TestCase):
@@ -97,7 +97,7 @@ class TestGradients(unittest.TestCase):
         self.mu = 1.81206e-5
 
         baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
-        data = load_geometry_yaml(baseyaml)
+        data = windIO.validate(baseyaml, schema_type="turbine/turbine_schema", defaults = True)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
         airfoil_types = [0] * len(af_names)
@@ -106,11 +106,11 @@ class TestGradients(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -3635,7 +3635,7 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.mu = 1.81206e-5
 
         baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
-        data = load_geometry_yaml(baseyaml)
+        data = windIO.validate(baseyaml, schema_type="turbine/turbine_schema", defaults = True)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
         airfoil_types = [0] * len(af_names)
@@ -3644,11 +3644,11 @@ class TestGradientsNotRotating(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -4582,7 +4582,7 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.mu = 1.81206e-5
 
         baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
-        data = load_geometry_yaml(baseyaml)
+        data = windIO.validate(baseyaml, schema_type="turbine/turbine_schema", defaults = True)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
         airfoil_types = [0] * len(af_names)
@@ -4591,11 +4591,11 @@ class TestGradientsFreestreamArray(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -5045,7 +5045,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.mu = 1.81206e-5
 
         baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
-        data = load_geometry_yaml(baseyaml)
+        data = windIO.validate(baseyaml, schema_type="turbine/turbine_schema", defaults = True)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
         airfoil_types = [0] * len(af_names)
@@ -5054,11 +5054,11 @@ class TestGradients_RHub_Tip(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
