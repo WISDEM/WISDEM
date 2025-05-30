@@ -55,7 +55,7 @@ class TestRE(unittest.TestCase):
         self.inputs["r"] = np.linspace(0.0, 10.0, nspan)
         self.inputs["theta"] = np.zeros(nspan)
         self.inputs["chord"] = 2 * np.ones(nspan)
-        self.inputs["pitch_axis"] = 0.5 * np.ones(nspan) # 0=LE, 1=TE
+        self.inputs["section_offset_x"] = 1. * np.ones(nspan) # 0=LE, 1=TE
         self.inputs["precurve"] = np.zeros(nspan)
         self.inputs["presweep"] = np.zeros(nspan)
         self.inputs["coord_xy_interp"] = np.zeros( (nspan, npts, 2) )
@@ -68,8 +68,7 @@ class TestRE(unittest.TestCase):
         self.inputs["uptilt"] = np.zeros(1)
         self.discrete_inputs["n_blades"] = 3
         self.inputs["web_start_nd"] = self.inputs["web_end_nd"] = np.zeros((nweb, nspan))
-        self.inputs["layer_web"] = np.zeros(nlay)
-        self.discrete_inputs["definition_layer"] = np.ones(nlay)
+        self.discrete_inputs["build_layer"] = np.zeros(nlay)
         self.inputs["layer_thickness"] = 0.01 * np.ones((nlay, nspan))
         self.inputs["layer_start_nd"] = np.zeros((nlay, nspan))
         self.inputs["layer_end_nd"] = np.ones((nlay, nspan))
@@ -181,7 +180,7 @@ class TestRE(unittest.TestCase):
         
         
     def test_with_le_pitch_axis(self):
-        self.inputs["pitch_axis"] = np.zeros(self.inputs["pitch_axis"].shape)
+        self.inputs["section_offset_x"] = np.zeros(self.inputs["section_offset_x"].shape)
         
         self.run_precomp()
         self.myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
