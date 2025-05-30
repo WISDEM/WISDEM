@@ -2857,11 +2857,6 @@ class BladeSplit(om.ExplicitComponent):
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
-        self.add_discrete_input(
-            "build_layer",
-            val=-np.ones(n_layers),
-            desc="1D array of boolean values indicating how to build a layer. 0 - start and end are set constant, 1 - from offset and rotation, 2 - LE and width, 3 - TE SS width, 4 - TE PS width, 5 - locked to another layer. Negative values place the layer on webs (-1 first web, -2 second web, etc.).",
-        )
         self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.")
 
         # Outputs

@@ -97,11 +97,9 @@ class RotorSEProp(om.Group):
                 "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
             )
 
-        if not modeling_options["user_elastic"]["blade"]:
-            self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
-        
-        if not modeling_options["user_elastic"]["blade"]:
-            self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
+            if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] == 0:
+                self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))        
+                self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
 

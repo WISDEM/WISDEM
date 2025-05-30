@@ -15,7 +15,7 @@ from scipy.interpolate import PchipInterpolator
 from wisdem.ccblade.Polar import Polar
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
-from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
+from wisdem.commonse.distribution import WeibullWithMeanCDF
 
 logger = logging.getLogger("wisdem/weis")
 TOL = 1e-3
