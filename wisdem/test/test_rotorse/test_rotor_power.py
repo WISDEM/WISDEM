@@ -8,7 +8,7 @@ import numpy.testing as npt
 import wisdem.rotorse.rotor_power as rp
 
 # Load in airfoil and blade shape inputs for NREL 5MW
-ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "regulation.npz"
+ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "debug.npz"
 NPZFILE = np.load(ARCHIVE)
 
 
@@ -88,7 +88,7 @@ class TestServo(unittest.TestCase):
 
         myobj = rp.NoStallConstraint()
 
-        (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
+        (n_span, n_aoa, n_Re) = NPZFILE["airfoils_cl"].shape
 
         inputs["airfoils_cl"] = NPZFILE["airfoils_cl"]
         inputs["airfoils_cd"] = NPZFILE["airfoils_cd"]
@@ -108,7 +108,6 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
-        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
 
         outputs["stall_angle_along_span"] = np.zeros(len(r))
         outputs["no_stall_constraint"] = np.zeros(len(r))
@@ -139,7 +138,7 @@ class TestServo(unittest.TestCase):
     def testRegulationTrajectory(self):
         prob = om.Problem(reports=False)
 
-        (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
+        (n_span, n_aoa, n_Re) = NPZFILE["airfoils_cl"].shape
         n_pc = 22
 
         modeling_options = {}
@@ -148,8 +147,8 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
-        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -346,7 +345,7 @@ class TestServo(unittest.TestCase):
         prob = om.Problem(reports=False)
 
         # Load in airfoil and blade shape inputs for NREL 5MW
-        (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
+        (n_span, n_aoa, n_Re) = NPZFILE["airfoils_cl"].shape
         n_pc = 22
 
         modeling_options = {}
@@ -355,8 +354,8 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
-        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = False
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -427,7 +426,7 @@ class TestServo(unittest.TestCase):
     def testRegulationTrajectory_PeakShaving(self):
         prob = om.Problem(reports=False)
 
-        (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
+        (n_span, n_aoa, n_Re) = NPZFILE["airfoils_cl"].shape
         n_pc = 22
 
         modeling_options = {}
@@ -436,8 +435,8 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
-        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -607,7 +606,7 @@ class TestServo(unittest.TestCase):
         debug_archive = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "debug.npz"
         debug_npz = np.load(debug_archive)
 
-        (n_span, n_aoa, n_Re, n_tab) = debug_npz["airfoils_cl"].shape
+        (n_span, n_aoa, n_Re) = debug_npz["airfoils_cl"].shape
         n_pc = 50
 
         modeling_options = {}
@@ -616,8 +615,8 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
-        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
