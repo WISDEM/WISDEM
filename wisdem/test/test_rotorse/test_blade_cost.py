@@ -24,7 +24,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["blade"] = True
-        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["drivetrain"] = False
         modeling_options["flags"]["tower"] = False
         modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
@@ -63,7 +63,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["blade"] = True
-        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["drivetrain"] = False
         modeling_options["flags"]["tower"] = False
         modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
@@ -102,7 +102,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["blade"] = True
-        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["drivetrain"] = False
         modeling_options["flags"]["tower"] = False
         modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
@@ -140,7 +140,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["blade"] = True
-        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["drivetrain"] = False
         modeling_options["flags"]["tower"] = False
         modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(

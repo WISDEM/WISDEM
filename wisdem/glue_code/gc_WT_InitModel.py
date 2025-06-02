@@ -1491,6 +1491,8 @@ def assign_costs_values(wt_opt, costs):
 
 def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
+    # airfoils_master are the airfoils used along blade span
+    # airfoils are the airfoils in the full database
 
     
     n_af_database = modeling_options["WISDEM"]["RotorSE"]["n_af_database"]

@@ -3041,11 +3041,6 @@ class BladeCost(om.ExplicitComponent):
             val=np.zeros((n_webs, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
-        self.add_discrete_input(
-            "definition_layer",
-            val=np.zeros(n_layers),
-            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
-        )
         self.add_input(
             "layer_thickness",
             val=np.zeros((n_layers, n_span)),
@@ -3905,14 +3900,16 @@ class StandaloneBladeCost(om.Group):
         # Airfoil dictionary inputs
         airfoils = om.IndepVarComp()
         rotorse_options = modeling_options["WISDEM"]["RotorSE"]
-        n_af = rotorse_options["n_af"]  # Number of airfoils
+        n_af_master = rotorse_options["n_af_master"]  # Number of airfoils
         n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-        airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
-        airfoils.add_output("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        airfoils.add_discrete_output("name", val=n_af_master * [""], desc="1D array of names of airfoils.")
+        airfoils.add_output(
+            "rthick_master", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil used along span."
+        )
         # Airfoil coordinates
         airfoils.add_output(
             "coord_xy",
-            val=np.zeros((n_af, n_xy, 2)),
+            val=np.zeros((n_af_master, n_xy, 2)),
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
         )
         self.add_subsystem("airfoils", airfoils)
@@ -3925,15 +3922,14 @@ class StandaloneBladeCost(om.Group):
                 user_elastic=modeling_options["user_elastic"]["blade"],
             ),
         )
-        self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
+        self.connect("airfoils.rthick_master", "blade.interp_airfoils.rthick_master")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
             "high_level_blade_props",
             ComputeHighLevelBladeProperties(rotorse_options=modeling_options["WISDEM"]["RotorSE"]),
         )
-        self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("blade.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
         if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] > 0:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
@@ -3952,7 +3948,7 @@ class StandaloneBladeCost(om.Group):
 
             # Inputs to be split between inner and outer blade portions
             self.connect("high_level_blade_props.blade_length", "split.blade_length")
-            self.connect("blade.outer_shape_bem.s", "split.s")
+            self.connect("blade.outer_shape.s", "split.s")
             self.connect("blade.pa.chord_param", "split.chord")
             self.connect("blade.interp_airfoils.coord_xy_interp", "split.coord_xy_interp")
             self.connect("blade.structure.layer_thickness", "split.layer_thickness")
@@ -3974,10 +3970,9 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.fwf", ["rc_in.fwf", "rc_out.fwf"])
             self.connect("materials.roll_mass", ["rc_in.roll_mass", "rc_out.roll_mass"])
             self.connect(
-                "blade.structure.definition_layer",
-                ["rc_in.definition_layer", "rc_out.definition_layer"],
+                "blade.structure.build_layer",
+                ["rc_in.build_layer", "rc_out.build_layer"],
             )
-            self.connect("blade.structure.build_layer", ["rc_in.build_layer", "rc_out.build_layer"])
 
             # Inner blade portion inputs
             self.connect("split.blade_length_inner", "rc_in.blade_length")
@@ -4006,14 +4001,13 @@ class StandaloneBladeCost(om.Group):
             )
 
             self.connect("high_level_blade_props.blade_length", "rc.blade_length")
-            self.connect("blade.outer_shape_bem.s", "rc.s")
+            self.connect("blade.outer_shape.s", "rc.s")
             self.connect("blade.pa.chord_param", "rc.chord")
             self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
             self.connect("blade.structure.layer_thickness", "rc.layer_thickness")
             self.connect("blade.structure.layer_start_nd", "rc.layer_start_nd")
             self.connect("blade.structure.layer_end_nd", "rc.layer_end_nd")
             self.connect("blade.structure.build_layer", "rc.build_layer")
-            self.connect("blade.structure.definition_layer", "rc.definition_layer")
             self.connect("blade.structure.web_start_nd", "rc.web_start_nd")
             self.connect("blade.structure.web_end_nd", "rc.web_end_nd")
             self.connect("materials.name", "rc.mat_name")
@@ -4031,7 +4025,7 @@ class StandaloneBladeCost(om.Group):
         if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] > 0:
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
-            self.connect("blade.structure.joint_nonmaterial_cost", "total_bc.joint_cost")
+            self.connect("blade.structure.joint_cost", "total_bc.joint_cost")
         else:
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
@@ -4045,7 +4039,8 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
     wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade, modeling_options["user_elastic"]["blade"])
 
     airfoils = wt_init["airfoils"]
-    wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
+    airfoils_master = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
+    wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, coordinates_only=True)
 
     return wt_opt
 
