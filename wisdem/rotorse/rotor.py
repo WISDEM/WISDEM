@@ -90,7 +90,8 @@ class RotorSEProp(om.Group):
             promotes=promoteGeom + re_promote_add,
         )
 
-        if not modeling_options["user_elastic"]["blade"]:
+        # If monolithic blades and not user defined elastic properties, add the blade cost component
+        if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] == 0 and not modeling_options["user_elastic"]["blade"]:
             # Can't estimate blade cost with user defined blade elastic properties
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.add_subsystem(
