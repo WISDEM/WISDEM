@@ -1195,8 +1195,8 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                     arc_L_i = xy_arc_i[-1]
                     width_i = inputs["layer_width"][j, i]
                     
-                    layer_start_nd[j, i] = xy_arc_i[idx_layer] /  xy_arc_i[-1] - 0.5 * width_i / arc_L_i
-                    layer_end_nd[j, i] = xy_arc_i[idx_layer] /  xy_arc_i[-1] + 0.5 * width_i / arc_L_i
+                    layer_start_nd[j, i] = (xy_arc_i[idx_layer] - 0.5 * width_i) / arc_L_i
+                    layer_end_nd[j, i] = (xy_arc_i[idx_layer] + 0.5 * width_i) / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 3:
                 for i in range(self.n_span):
@@ -1207,8 +1207,8 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                     LE_loc_i = xy_arc_i[idx_le]
                     width_i = inputs["layer_width"][j, i]
 
-                    layer_start_nd[j, :] = LE_loc_i - 0.5 * width_i / arc_L_i
-                    layer_end_nd[j, :] = LE_loc_i + 0.5 * width_i / arc_L_i
+                    layer_start_nd[j, i] = (LE_loc_i - 0.5 * width_i) / arc_L_i
+                    layer_end_nd[j, i] = (LE_loc_i + 0.5 * width_i) / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 4:
                 for i in range(self.n_span):
@@ -1217,8 +1217,8 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                     arc_L_i = xy_arc_i[-1]
                     width_i = inputs["layer_width"][j, i]
 
-                    layer_start_nd[j, :] = 0.
-                    layer_end_nd[j, :] = width_i / arc_L_i
+                    layer_start_nd[j, i] = 0.
+                    layer_end_nd[j, i] = width_i / arc_L_i
             
             elif discrete_inputs["build_layer"][j] == 5:
                 for i in range(self.n_span):
@@ -1227,14 +1227,19 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                     arc_L_i = xy_arc_i[-1]
                     width_i = inputs["layer_width"][j, i]
 
-                    layer_start_nd[j, :] = 1. - width_i / arc_L_i
-                    layer_end_nd[j, :] = 1.
+                    layer_start_nd[j, i] = 1. - width_i / arc_L_i
+                    layer_end_nd[j, i] = 1.
             
             elif discrete_inputs["build_layer"][j] == 6:
                 layer_start_nd[j, :] = layer_start_nd[int(discrete_inputs["index_layer_start"][j]), :]
                 layer_end_nd[j, :] = layer_end_nd[int(discrete_inputs["index_layer_end"][j]), :]
 
-                 
+        if np.any(layer_start_nd < 0) or np.any(layer_start_nd > 1):
+            raise ValueError("Layer start points must be between 0 and 1.")
+        if np.any(layer_end_nd < 0) or np.any(layer_end_nd > 1):
+            raise ValueError("Layer start points must be between 0 and 1.")
+
+
         outputs["layer_start_nd"] = layer_start_nd
         outputs["layer_end_nd"] = layer_end_nd
 
