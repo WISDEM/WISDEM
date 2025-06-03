@@ -844,19 +844,16 @@ def assign_generator_values(wt_opt, modeling_options, drivetrain, flags, user_el
             wt_opt["generator.y_tau_pr"] = drivetrain["generator"]["y_tau_pr"]
 
             wt_opt["generator.I_0"] = drivetrain["generator"]["I_0"]
-            wt_opt["generator.d_r"] = drivetrain["generator"]["d_r"]
             wt_opt["generator.h_m"] = drivetrain["generator"]["h_m"]
             wt_opt["generator.h_0"] = drivetrain["generator"]["h_0"]
             wt_opt["generator.h_s"] = drivetrain["generator"]["h_s"]
             wt_opt["generator.len_s"] = drivetrain["generator"]["len_s"]
-            wt_opt["generator.n_r"] = drivetrain["generator"]["n_r"]
             wt_opt["generator.rad_ag"] = drivetrain["generator"]["rad_ag"]
-            wt_opt["generator.t_wr"] = drivetrain["generator"]["t_wr"]
 
-            wt_opt["generator.n_s"] = drivetrain["generator"]["n_s"]
-            wt_opt["generator.b_st"] = drivetrain["generator"]["b_st"]
-            wt_opt["generator.d_s"] = drivetrain["generator"]["d_s"]
-            wt_opt["generator.t_ws"] = drivetrain["generator"]["t_ws"]
+            # These inputs were not set in windIO v1.0
+            wt_opt["generator.b_st"] = 0.
+            wt_opt["generator.d_s"] = 0.
+            wt_opt["generator.t_ws"] = 0.
 
             wt_opt["generator.rho_Copper"] = drivetrain["generator"]["rho_Copper"]
             wt_opt["generator.rho_Fe"] = drivetrain["generator"]["rho_Fe"]
