@@ -405,8 +405,9 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
 
             if not anchor_start_found:
                 
+                layer_name = layer_i["name"]
                 raise Exception(
-                    f"Blade structure layer {layer_i["name"]} start_nd_arc anchor {anchor_name} not found in anchors list"
+                    f"Blade structure layer {layer_name} start_nd_arc anchor {anchor_name} not found in anchors list"
                 )
         elif "grid" in layer_i["start_nd_arc"] and "values" in layer_i["start_nd_arc"]:
             layer_start_nd_grid = layer_i["start_nd_arc"]["grid"]
@@ -438,15 +439,6 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
             wt_opt["blade.structure.layer_offset"][i, :] = layer_offset
             wt_opt["blade.structure.layer_rotation"][i] = layer_rotation
 
-        if build_layer > 0:
-            layer_width = np.nan_to_num(
-                        PchipInterpolator(
-                            width_grid,
-                            width_values,
-                            extrapolate=False,
-                        )(nd_span)
-                    )
-            wt_opt["blade.structure.layer_width"][i, :] = layer_width
         if build_layer == 6:
             wt_opt["blade.structure.index_layer_start"][i] = index_layer_start
 
@@ -525,6 +517,16 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         if build_layer == 6:
             wt_opt["blade.structure.index_layer_end"][i] = index_layer_end
         
+        if build_layer > 0:
+            layer_width = np.nan_to_num(
+                        PchipInterpolator(
+                            width_grid,
+                            width_values,
+                            extrapolate=False,
+                        )(nd_span)
+                    )
+            wt_opt["blade.structure.layer_width"][i, :] = layer_width
+
         # thickness
         if "thickness" in layer_i:
             layer_thickness_grid = layer_i["thickness"]["grid"]

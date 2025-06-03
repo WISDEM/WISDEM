@@ -1231,8 +1231,9 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                     layer_end_nd[j, i] = 1.
             
             elif discrete_inputs["build_layer"][j] == 6:
-                layer_start_nd[j, :] = layer_start_nd[int(discrete_inputs["index_layer_start"][j]), :]
-                layer_end_nd[j, :] = layer_end_nd[int(discrete_inputs["index_layer_end"][j]), :]
+                # start a layer from the end of another layer, and end where the other starts
+                layer_start_nd[j, :] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), :]
+                layer_end_nd[j, :] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), :]
 
         if np.any(layer_start_nd < 0) or np.any(layer_start_nd > 1):
             raise ValueError("Layer start points must be between 0 and 1.")
