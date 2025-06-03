@@ -3443,7 +3443,7 @@ class BladeCost(om.ExplicitComponent):
 
                 width_ss = np.zeros(self.n_span)
                 width_ps = np.zeros(self.n_span)
-                if build_layer[i_lay] > 0:
+                if build_layer[i_lay] >= 0:
                     # Determine on which of the two molds the layer should go
                     if (
                         layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
