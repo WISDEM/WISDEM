@@ -492,8 +492,9 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         break
 
             if not anchor_end_found:
+                layer_name = layer_i["name"]
                 raise Exception(
-                    f"Blade structure layer {layer_i["name"]} end_nd_arc anchor {anchor_name} not found in anchors list"
+                    f"Blade structure layer {layer_name} end_nd_arc anchor {anchor_name} not found in anchors list"
                 )
         elif "grid" in layer_i["end_nd_arc"] and "values" in layer_i["end_nd_arc"]:
             layer_end_nd_grid = layer_i["end_nd_arc"]["grid"]
