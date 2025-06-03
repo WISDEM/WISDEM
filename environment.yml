@@ -34,7 +34,7 @@ dependencies:
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
-    - windIO=1.1.1
+    - windIO==1.1.1
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
