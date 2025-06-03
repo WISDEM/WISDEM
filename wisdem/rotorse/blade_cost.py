@@ -799,11 +799,7 @@ class material_cutting_process(object):
         self.materials["n_rolls"] = np.zeros(len(mat_names))
 
         for i_mat in range(len(mat_names)):
-            if (
-                self.materials["orth"][i_mat] == 1
-                and self.materials["component_id"][i_mat] > 1
-                and self.materials["component_id"][i_mat] < 4
-            ):
+            if self.materials["orth"][i_mat] == 1 and self.materials["roll_mass"][i_mat] > 0:
                 # Number of rolls
                 self.materials["n_rolls"][i_mat] = (
                     self.materials["total_mass_w_waste"][i_mat] / self.materials["roll_mass"][i_mat]
@@ -3070,11 +3066,6 @@ class BladeCost(om.ExplicitComponent):
             val=np.zeros(n_mat),
             desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
         )
-        self.add_discrete_input(
-            "component_id",
-            val=np.zeros(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
-        )
         self.add_input(
             "rho",
             val=np.zeros(n_mat),
@@ -3333,7 +3324,6 @@ class BladeCost(om.ExplicitComponent):
         web_end_nd = inputs["web_end_nd"]
         layer_thickness = inputs["layer_thickness"]
         orth = discrete_inputs["orth"]
-        component_id = discrete_inputs["component_id"]
         rho_mat = inputs["rho"]
         waste = inputs["waste"]
         build_layer = discrete_inputs["build_layer"]
@@ -3591,7 +3581,7 @@ class BladeCost(om.ExplicitComponent):
                     max_n_plies_sc_ps = max(layer_thickness[i_lay, :]) / ply_t[i_mat]
 
                 # Shell skins
-                elif component_id[i_mat] == 2:
+                elif orth[i_mat] == 1 and ply_t[i_mat] < 1.e-2 and layer_start_nd[i_lay, imin] < 0.1 and layer_end_nd[i_lay, imin] > 0.9:
                     volume2lay_shell_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
                     volume2lay_shell_ps = np.trapezoid(layer_volume_span_ps[i_lay, :], s * blade_length)
                     fabric2lay_shell_ss += volume2lay_shell_ss / ply_t[i_mat]
@@ -3600,7 +3590,7 @@ class BladeCost(om.ExplicitComponent):
                     mass_shell_ps += volume2lay_shell_ps * rho_mat[i_mat]
 
                 # Shell core
-                elif component_id[i_mat] == 1:
+                elif orth[i_mat] == 0 and layer_start_nd[i_lay, imin] > 0.01 and layer_end_nd[i_lay, imin] < 0.99:
                     areacore2lay_shell_ss += np.trapezoid(width_ss[imin:imax], s[imin:imax] * blade_length)
                     areacore2lay_shell_ps += np.trapezoid(width_ps[imin:imax], s[imin:imax] * blade_length)
                     volume2lay_coreshell_ss = np.trapezoid(
@@ -3613,7 +3603,7 @@ class BladeCost(om.ExplicitComponent):
                     mass_shell_ps += volume2lay_coreshell_ps * rho_mat[i_mat]
 
                 # TE/LE reinforcement
-                elif component_id[i_mat] > 0:
+                elif orth[i_mat] == 1:
                     length2lay_reinf = np.trapezoid(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
                     volume2lay_reinf_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
                     volume2lay_reinf_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
@@ -3744,7 +3734,6 @@ class BladeCost(om.ExplicitComponent):
         mat_dictionary = {}
         mat_dictionary["mat_name"] = discrete_inputs["mat_name"]
         mat_dictionary["orth"] = orth
-        mat_dictionary["component_id"] = component_id
         mat_dictionary["roll_mass"] = roll_mass
         mat_dictionary["total_mass_w_waste"] = mat_mass_scrap
         mat_dictionary["total_ply_area_w_waste"] = mat_area
@@ -3962,7 +3951,6 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.name", ["rc_in.mat_name", "rc_out.mat_name"])
             self.connect("materials.orth", ["rc_in.orth", "rc_out.orth"])
             self.connect("materials.rho", ["rc_in.rho", "rc_out.rho"])
-            self.connect("materials.component_id", ["rc_in.component_id", "rc_out.component_id"])
             self.connect("materials.unit_cost", ["rc_in.unit_cost", "rc_out.unit_cost"])
             self.connect("materials.waste", ["rc_in.waste", "rc_out.waste"])
             self.connect("materials.rho_fiber", ["rc_in.rho_fiber", "rc_out.rho_fiber"])
@@ -4013,7 +4001,6 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.name", "rc.mat_name")
             self.connect("materials.orth", "rc.orth")
             self.connect("materials.rho", "rc.rho")
-            self.connect("materials.component_id", "rc.component_id")
             self.connect("materials.unit_cost", "rc.unit_cost")
             self.connect("materials.waste", "rc.waste")
             self.connect("materials.rho_fiber", "rc.rho_fiber")

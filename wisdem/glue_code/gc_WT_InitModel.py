@@ -1636,7 +1636,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
 
     name = n_mat * [""]
     orth = np.zeros(n_mat)
-    component_id = -np.ones(n_mat)
     rho = np.zeros(n_mat)
     E = np.zeros([n_mat, 3])
     G = np.zeros([n_mat, 3])
@@ -1660,8 +1659,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
         name[i] = materials[i]["name"]
         orth[i] = materials[i]["orth"]
         rho[i] = materials[i]["rho"]
-        if "component_id" in materials[i]:
-            component_id[i] = materials[i]["component_id"]
         if orth[i] == 0:
             if "E" in materials[i]:
                 E[i, :] = np.ones(3) * materials[i]["E"]
@@ -1723,7 +1720,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt["materials.orth"] = orth
     wt_opt["materials.rho"] = rho
     wt_opt["materials.sigma_y"] = sigma_y
-    wt_opt["materials.component_id"] = component_id
     wt_opt["materials.E"] = E
     wt_opt["materials.G"] = G
     wt_opt["materials.Xt"] = Xt

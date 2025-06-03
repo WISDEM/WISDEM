@@ -2190,9 +2190,9 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
         self.add_discrete_input("name", val=n_mat * [""], desc="1D array of names of materials.")
         self.add_discrete_input(
-            "component_id",
-            val=-np.ones(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
+            "orth",
+            val=np.zeros(n_mat),
+            desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
         )
         self.add_input(
             "rho_fiber",
@@ -2261,7 +2261,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         ply_t = np.zeros(self.n_mat)
 
         for i in range(self.n_mat):
-            if discrete_inputs["component_id"][i] > 1:  # It's a composite
+            if discrete_inputs["orth"][i] == 1:  # It's a composite
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
                 fvf[i] = (inputs["rho"][i] - density_resin) / (inputs["rho_fiber"][i] - density_resin)
                 if inputs["fvf_from_yaml"][i] > 0.0:
@@ -2342,89 +2342,84 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
         )
-        ivc.add_output(            "E",
+        ivc.add_output("E",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.",
         )
-        ivc.add_output(            "G",
+        ivc.add_output("G",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.",
         )
-        ivc.add_output(            "nu",
+        ivc.add_output("nu",
             val=np.zeros([n_mat, 3]),
             desc="2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.",
         )
-        ivc.add_output(            "Xt",
+        ivc.add_output("Xt",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.",
         )
-        ivc.add_output(            "Xc",
+        ivc.add_output("Xc",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.",
         )
-        ivc.add_output(            "S",
+        ivc.add_output("S",
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Shear Strength (USS) of the materials. Each row represents a material, the three columns represent S12, S13 and S23.",
         )
-        ivc.add_output(            "sigma_y",
+        ivc.add_output("sigma_y",
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
         )
-        ivc.add_output(            "wohler_exp",
+        ivc.add_output("wohler_exp",
             val=np.zeros(n_mat),
             desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
         )
-        ivc.add_output(            "wohler_intercept",
+        ivc.add_output("wohler_intercept",
             val=np.zeros(n_mat),
             desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
-        ivc.add_output(            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
+        ivc.add_output("unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
         )
-        ivc.add_output(            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
+        ivc.add_output("waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
         )
-        ivc.add_output(            "roll_mass",
+        ivc.add_output("roll_mass",
             val=np.zeros(n_mat),
             units="kg",
             desc="1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.",
         )
 
         ivc.add_discrete_output("name", val=n_mat * [""], desc="1D array of names of materials.")
-        ivc.add_discrete_output(
-            "component_id",
-            val=-np.ones(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
-        )
-        ivc.add_output(            "rho_fiber",
+        ivc.add_output("rho_fiber",
             val=np.zeros(n_mat),
             units="kg/m**3",
             desc="1D array of the density of the fibers of the materials.",
         )
-        ivc.add_output(            "rho",
+        ivc.add_output("rho",
             val=np.zeros(n_mat),
             units="kg/m**3",
             desc="1D array of the density of the materials. For composites, this is the density of the laminate.",
         )
-        ivc.add_output(            "rho_area_dry",
+        ivc.add_output("rho_area_dry",
             val=np.zeros(n_mat),
             units="kg/m**2",
             desc="1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(            "ply_t_from_yaml",
+        ivc.add_output("ply_t_from_yaml",
             val=np.zeros(n_mat),
             units="m",
             desc="1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(            "fvf_from_yaml",
+        ivc.add_output("fvf_from_yaml",
             val=np.zeros(n_mat),
             desc="1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.",
         )
-        ivc.add_output(            "fwf_from_yaml",
+        ivc.add_output("fwf_from_yaml",
             val=np.zeros(n_mat),
             desc="1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.",
         )
