@@ -1206,7 +1206,7 @@ control:
         Vout: 25.0
         maxTS: 95.0
     pitch:
-        ps_percent: 0.8
+        ps_percent: 1.0
         max_pitch: 89.95437383553924
         max_pitch_rate: 2.0
         min_pitch: 0.0
