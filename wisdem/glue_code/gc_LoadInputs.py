@@ -35,8 +35,8 @@ class WindTurbineOntologyPython(object):
             flags[k] = k in self.wt_init
 
         # Generator flag
-        flags["generator"] = False # (flags["drivetrain"] and "generator" in self.wt_init["components"]["drivetrain"]
-            #and self.wt_init["components"]["drivetrain"]["generator"]["h_s"] > 0.0)
+        flags["generator"] = (flags["drivetrain"] and "generator" in self.wt_init["components"]["drivetrain"]
+            and self.wt_init["components"]["drivetrain"]["generator"]["h_s"] > 0.0)
         if flags["generator"]:
             self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["drivetrain"]["generator"]["type"].lower()
 
