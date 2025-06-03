@@ -11,7 +11,7 @@ test_dir = (
     + "02_reference_turbines"
     + os.sep
 )
-fname_modeling_options = test_dir + "modeling_options.yaml"
+
 fname_analysis_options = test_dir + "analysis_options.yaml"
 
 
@@ -19,6 +19,7 @@ class TestRegression(unittest.TestCase):
     def test5MW(self):
         ## NREL 5MW
         fname_wt_input = test_dir + "nrel5mw.yaml"
+        fname_modeling_options = test_dir + "modeling_options_nrel5.yaml"
 
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
@@ -33,6 +34,7 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
+        fname_modeling_options = test_dir + "modeling_options_iea15.yaml"
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9000397734597, 1)
@@ -46,6 +48,7 @@ class TestRegression(unittest.TestCase):
     def test3p4MW(self):
         ## IEA 3.4MW
         fname_wt_input = test_dir + "IEA-3p4-130-RWT.yaml"
+        fname_modeling_options = test_dir + "modeling_options_iea3p4.yaml"
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.586883417647216, 1)

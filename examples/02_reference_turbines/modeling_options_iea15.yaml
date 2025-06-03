@@ -41,7 +41,7 @@ WISDEM:
         air_dyn_viscosity: 1.81e-05
         weib_shape_parameter: 2.0
         air_speed_sound: 340.0
-        # shear_exp: 0.12
+        shear_exp: 0.12
         water_density: 1025.0
         water_dyn_viscosity: 0.0013351
         soil_shear_modulus: 140000000.0
