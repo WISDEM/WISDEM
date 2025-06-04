@@ -57,8 +57,8 @@ jobs:
       # Install development version of windio
       - name: Install windIO
         run: |
-            cd windio
-            python -m pip install . -v
+            cd windIO
+            pip install --no-build-isolation --no-deps . -v
 
       - name: Debug config
         run: |

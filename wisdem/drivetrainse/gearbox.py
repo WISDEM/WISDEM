@@ -115,7 +115,7 @@ class Gearbox(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("direct_drive", default=True)
-        self.options.declare("gearbox_torque_density", default=True)
+        self.options.declare("gearbox_torque_density", default=0.0)
 
     def setup(self):
         self.add_discrete_input("gear_configuration", val="eep")

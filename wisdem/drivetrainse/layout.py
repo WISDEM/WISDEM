@@ -24,8 +24,13 @@ def rod_prop(s, Di, ti, rho):
     D = equal_pts(Di)
     t = equal_pts(ti)
     y = 0.25 * rho * np.pi * (D**2 - (D - 2 * t) ** 2)
-    m = np.trapezoid(y, s)
-    cm = np.trapezoid(y * s, s) / m
+    # Numpy v1/2 clash
+    try:
+        m = np.trapezoid(y, s)
+        cm = np.trapezoid(y * s, s) / m
+    except:
+        m = np.trapz(y, s)
+        cm = np.trapz(y * s, s) / m
     Dm = D.mean()
     tm = t.mean()
     I = np.array(
