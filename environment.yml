@@ -33,6 +33,7 @@ dependencies:
   - sortedcontainers
   - statsmodels
   - swig
+  - xarray
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
