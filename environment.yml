@@ -3,6 +3,7 @@ channels:
   - defaults
 
 dependencies:
+  - cftime
   - coveralls
   - cython
   - jsonschema
@@ -10,6 +11,7 @@ dependencies:
   - matplotlib
   - meson
   - moorpy
+  - netcdf4
   - ninja
   - nlopt<=2.8
   - numpy
@@ -34,7 +36,7 @@ dependencies:
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
-    - windIO==1.1.1
+    #- windIO==2.0
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

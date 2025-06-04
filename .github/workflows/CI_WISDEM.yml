@@ -35,7 +35,7 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
-
+      
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
@@ -47,6 +47,18 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
+
+      # Checkout development version of windio
+      - name: Checkout windIO
+        uses: actions/checkout@v4
+        with:
+            repository: https://github.com/IEAWindSystems/windIO
+
+      # Install development version of windio
+      - name: Install windIO
+        run: |
+            cd windio
+            python -m pip install . -v
 
       - name: Debug config
         run: |
