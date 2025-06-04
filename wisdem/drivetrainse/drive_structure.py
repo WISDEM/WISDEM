@@ -400,7 +400,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         # Load->stress conversion for fatigue
         try: # Numpy v1/2 clash
             cross_section_xy = 2.0 * np.trapezoid(t_lss, s_lss)
-        except:
+        except AttributeError:
             cross_section_xy = 2.0 * np.trapz(t_lss, s_lss)
         ax_load2stress = np.zeros(6)
         ax_load2stress[0] = 1.0 / Ax[0]

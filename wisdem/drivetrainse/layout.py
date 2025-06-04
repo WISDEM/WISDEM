@@ -28,7 +28,7 @@ def rod_prop(s, Di, ti, rho):
     try:
         m = np.trapezoid(y, s)
         cm = np.trapezoid(y * s, s) / m
-    except:
+    except AttributeError:
         m = np.trapz(y, s)
         cm = np.trapz(y * s, s) / m
     Dm = D.mean()

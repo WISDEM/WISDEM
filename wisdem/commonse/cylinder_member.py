@@ -511,12 +511,12 @@ class DiscretizationYAML(om.ExplicitComponent):
             try:
                 # Numpy v1/2 clash
                 cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
-            except:
+            except AttributeError:
                 cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
         else:
             try:
                 cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"], z)
-            except:
+            except AttributeError:
                 cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
             
         ax_load2stress = np.zeros([n_height - 1, 6])
@@ -2359,7 +2359,7 @@ class MemberHydro(om.ExplicitComponent):
             m_a[3:5] = (
                 np.pi * rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
             )  # A44 roll, A55 pitch
-        except:
+        except AttributeError:
             m_a[3:5] = (
                 np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
             )  # A44 roll, A55 pitch
@@ -2551,7 +2551,7 @@ class RectangularMemberHydro(om.ExplicitComponent):
             # Make an equivalent elliptical cylinder
             # yaw added mass per unit length
             m_a[5] = np.trapezoid(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
-        except:
+        except AttributeError:
             m_a[3:5] = (
                 rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
             )  # A44 roll, A55 pitch
