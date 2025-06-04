@@ -52,7 +52,7 @@ jobs:
       - name: Checkout windIO
         uses: actions/checkout@v4
         with:
-            repository: https://github.com/IEAWindSystems/windIO
+            repository: IEAWindSystems/windIO
 
       # Install development version of windio
       - name: Install windIO
