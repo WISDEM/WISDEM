@@ -572,8 +572,6 @@ properties:
                 type: object
                 default: {}
                 description: The field :code:`environment` includes the data characterizing air and water where the wind turbine operates.
-                required:
-                    - flag
                 optional:
                     - air_density
                     - air_dyn_viscosity
@@ -591,7 +589,6 @@ properties:
                     - significant_wave_height
                     - significant_wave_period
                 properties:
-                    flag: *flag
                     gravity:
                         type: number
                         description: Gravitational acceleration

@@ -1,3 +1,4 @@
+windIO_version: '2.0'
 name: 5MW Tower only
 
 assembly:
@@ -12,62 +13,60 @@ assembly:
 
 components:
     tower:
-        outer_shape_bem:
-            reference_axis: &ref_axis_tower
-                x:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                y:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                z:
-                    grid: &grid_tower [0., 0.5, 1.]
-                    values: [10., 43.8, 87.6]
+        outer_shape:
             outer_diameter:
-                grid: *grid_tower
-                values: [6., 4.935, 3.87]
-            drag_coefficient:
+                grid: &grid_tower [0.0, 0.5, 1.0]
+                values: [6.0, 4.935, 3.87]
+            cd:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
-        internal_structure_2d_fem:
+        structure:
             outfitting_factor: 1.07
-            reference_axis: *ref_axis_tower
             layers:
-                - name: tower_wall
+               -  name: tower_wall
                   material: steel
                   thickness:
-                    grid: *grid_tower
-                    values: [0.027, 0.0222, 0.019]
+                      grid: *grid_tower
+                      values: [0.027, 0.0222, 0.019]
+        reference_axis:
+            x:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            y:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            z:
+                grid: *grid_tower
+                values: [0.0, 43.8, 87.6974416]
 
     monopile:
         transition_piece_mass: 100e3
         transition_piece_cost: 100e3
-        outer_shape_bem:
-            reference_axis: &ref_axis_mono
-                x:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                y:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                z:
-                    grid: &grid_mono [0., 0.3846, 0.8462, 1.0]
-                    values: [-55.0, -30.0, 0.0, 10.0]
+        outer_shape:
             outer_diameter:
-                grid: *grid_mono
+                grid: &grid_mono [0., 0.3846, 0.8462, 1.0]
                 values: [8.0, 8.0, 8.0, 8.0]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
-        internal_structure_2d_fem:
+        structure:
             outfitting_factor: 1.07
-            reference_axis: *ref_axis_mono
             layers:
                 - name: tower_wall
                   material: steel
                   thickness:
                     grid: *grid_mono
                     values: [0.055, 0.055, 0.055, 0.055]
+        reference_axis:
+            x:
+              grid: [0.0, 1.0]
+              values: [0.0, 0.0]
+            y:
+              grid: [0.0, 1.0]
+              values: [0.0, 0.0]
+            z:
+              grid: *grid_mono
+              values: [-55.0, -30.0, 0.0, 10.0]
 
 materials:
    -  name: steel
