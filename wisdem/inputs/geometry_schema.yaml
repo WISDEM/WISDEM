@@ -1,0 +1,389 @@
+# Author: Pietro Bortolotti
+# Organization: National Renewable Energy Laboratory, Golden, CO
+# Date: 2020-04-28
+
+
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: WISDEM_ontology_v00
+title: WISDEM wind turbine ontology
+description: Ontology definition for wind turbines as defined in WP1 of IEA Wind Task 37 - Phase II
+type: object
+# additionalProperties: true
+properties:
+    components:
+        type: object
+        default: {}
+        optional:
+            - jacket
+        properties:
+            floating_platform:
+                type: object
+                properties:
+                    members:
+                        type: array
+                        items:
+                            type: object
+                            properties:
+                                member_mass_user:
+                                    type: number
+                                    default: 0.0
+                                    units: kg
+                                    description: Override bottom-up calculation of total member mass with this value
+                                    minimum: 0.0
+            jacket:
+                type: object
+                required:
+                    - n_bays
+                    - n_legs
+                    - r_foot
+                    - r_head
+                    - height
+                    - leg_diameter
+                    - leg_thickness
+                    - brace_diameters
+                    - brace_thicknesses
+                optional:
+                    - material
+                    - transition_piece_mass
+                    - transition_piece_cost
+                    - gravity_foundation_mass
+                    - jacket_mass_user
+                properties:
+                    transition_piece_mass:
+                        type: number
+                        description: Total mass of transition piece
+                        unit: kg
+                        minimum: 0.0
+                        default: 0.0
+                    transition_piece_cost:
+                        type: number
+                        description: Total cost of transition piece
+                        unit: USD
+                        minimum: 0.0
+                        default: 0.0
+                    gravity_foundation_mass:
+                        type: number
+                        description: Total mass of gravity foundation addition onto monopile
+                        unit: kg
+                        minimum: 0.0
+                        default: 0.0
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
+                    material:
+                        type: string
+                        description: Material of jacket members
+                        default: steel
+                    n_bays:
+                        type: integer
+                        description: Number of bays (x-joints) in the vertical direction for jackets.
+                    n_legs:
+                        type: integer
+                        description: Number of legs for jacket.
+                    r_foot:
+                        type: number
+                        description: Radius of foot (bottom) of jacket, in meters.
+                    r_head:
+                        type: number
+                        description: Radius of head (top) of jacket, in meters.
+                    height:
+                        type: number
+                        description: Overall jacket height, meters.
+                    leg_thickness:
+                        type: number
+                        description: Leg thickness, meters. Constant throughout each leg.
+                    brace_diameters:
+                        $ref: "#/definitions/distributed_data/length"
+                    brace_thicknesses:
+                        $ref: "#/definitions/distributed_data/length"
+                    bay_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
+                    leg_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
+                    x_mb:
+                        type: boolean
+                        description: Mud brace included if true.
+                    leg_diameter:
+                        type: number
+                        description: Leg diameter, meters. Constant throughout each leg.
+    control:
+        type: object
+        properties:
+            pitch:
+                type: object
+                properties:
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
+                        
+definitions:
+    distributed_data:
+        grid_al:
+            type: array
+            description: Grid along an arc length, expressed non dimensionally where 0 is the leading edge, -1 is the trailing edge on the pressure side and +1 the trailing edge on the pressure side
+            items:
+                type: number
+                unit: none
+                minItems: 2
+                minimum: -1.0
+                maximum: 1.0
+                uniqueItems: true
+        strings:
+            type: array
+            items:
+                type: string
+                minItems: 2
+                uniqueItems: false
+        mass_length:
+            type: array
+            description: Mass per unit length along a beam, expressed in kilogram per meter
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: kg/m
+                minItems: 2
+                uniqueItems: false
+        area:
+            type: array
+            description: Cross sectional area along a beam, expressed in meter squared
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: m2
+                minItems: 2
+                uniqueItems: false
+                description: Cross sectional area
+        elast_mod:
+            type: array
+            description: Modulus of elasticity of a material along a beam, expressed in Newton over meter squared
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N m2
+                minItems: 2
+                uniqueItems: false
+                description: Modulus of elasticity
+        shear_mod:
+            type: array
+            description: Shear modulus of elasticity of a material along a beam, expressed in Newton over meter squared
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N/m2
+                minItems: 2
+                uniqueItems: false
+                description: Shear modulus of elasticity
+        area_moment:
+            type: array
+            description: Area moment of inertia of a section along a beam, expressed in meter to the power of four
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: m4
+                minItems: 2
+                uniqueItems: false
+                description: Area moment of inertia
+        mass_moment:
+            type: array
+            description: Mass moment of inertia of a section along a beam, expressed in kilogram times meter squared per meter
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: kg*m2/m
+                minItems: 2
+                uniqueItems: false
+                description: Mass moment of inertia per unit span
+        tors_stiff_const:
+            type: array
+            description: Torsional stiffness constant with respect to ze axis at the shear center [m4/rad]. For a circular section only this is identical to the polar moment of inertia
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: m4/rad
+                minItems: 2
+                uniqueItems: false
+        shear_stiff:
+            type: array
+            description: Shearing stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        axial_stiff:
+            type: array
+            description: Axial stiffness EA along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        bending_stiff:
+            type: array
+            description: Bending stiffness E11-E22 along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: Nm2
+                minItems: 2
+                uniqueItems: false
+        tors_stiff:
+            type: array
+            description: Torsional stiffness GJ along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: Nm2
+                minItems: 2
+                uniqueItems: false
+        shearshear_stiff:
+            type: array
+            description: Cross term between shear stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        shearaxial_stiff:
+            type: array
+            description: Cross term between shear and axial stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        shearbending_stiff:
+            type: array
+            description: Cross term between shear and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        sheartorsion_stiff:
+            type: array
+            description: Cross term between shear and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        axialbending_stiff:
+            type: array
+            description: Cross term between axial and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        axialtorsion_stiff:
+            type: array
+            description: Cross term between axial and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        bendingbending_stiff:
+            type: array
+            description: Cross term between bending and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        bendingtorsion_stiff:
+            type: array
+            description: Cross term between bending and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        nd_arc_position:
+            type: object
+            description: non-dimensional location of the point along the non-dimensional arc length
+            properties:
+                grid:
+                    $ref: "#/definitions/distributed_data/grid_nd"
+                values:
+                    $ref: "#/definitions/distributed_data/grid_al"
+                fixed:
+                    type: string
+                    description: Name of the layer to lock the edge
+        offset:
+            type: object
+            description: dimensional offset in respect to the pitch axis along the x axis, which is the chord line rotated by a user-defined angle. Negative values move the midpoint towards the leading edge, positive towards the trailing edge
+            required:
+                - grid
+                - values
+            properties:
+                grid:
+                    $ref: "#/definitions/distributed_data/grid_nd"
+                values:
+                    $ref: "#/definitions/distributed_data/length"
+        rotation:
+            type: object
+            description: rotation of the chord axis around the pitch axis
+            properties:
+                grid:
+                    $ref: "#/definitions/distributed_data/grid_nd"
+                values:
+                    $ref: "#/definitions/distributed_data/angle"
+                fixed:
+                    type: string
+                    description: Name of the layer to lock the edge
+        axis_coordinates:
+            type: object
+            description: The reference system is used across wind turbine components. For the blade, the reference system is located at blade root, with z aligned with the pitch axis, x pointing towards the suction sides of the airfoils (standard prebend will be negative) and y pointing to the trailing edge (standard sweep will be positive). For tower and monopile, the reference system is located at tower/monopile base, with z aligned along the height pointing upwards, x aligned with the main wind direction, and y pointing to the side following the right hand rule.
+            required:
+                - x
+                - y
+                - z
+            properties:
+                x:
+                    type: object
+                    required:
+                        - grid
+                        - values
+                    properties:
+                        grid:
+                            $ref: "#/definitions/distributed_data/grid_nd"
+                        values:
+                            $ref: "#/definitions/distributed_data/length"
+                y:
+                    type: object
+                    required:
+                        - grid
+                        - values
+                    properties:
+                        grid:
+                            $ref: "#/definitions/distributed_data/grid_nd"
+                        values:
+                            $ref: "#/definitions/distributed_data/length"
+                z:
+                    type: object
+                    required:
+                        - grid
+                        - values
+                    properties:
+                        grid:
+                            $ref: "#/definitions/distributed_data/grid_nd"
+                        values:
+                            $ref: "#/definitions/distributed_data/length"
+
