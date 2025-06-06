@@ -47,7 +47,7 @@ class RunPreComp(ExplicitComponent):
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
-            "section_offset_x",
+            "section_offset_y",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
@@ -707,7 +707,7 @@ class RunPreComp(ExplicitComponent):
             inputs["r"],
             inputs["chord"],
             inputs["theta"],
-            inputs["section_offset_x"]/inputs["chord"],
+            inputs["section_offset_y"]/inputs["chord"],
             inputs["precurve"],
             inputs["presweep"],
             profile,
@@ -1536,7 +1536,7 @@ class RotorElasticity(Group):
                     "A",
                     "precurve",
                     "presweep",
-                    "section_offset_x",
+                    "section_offset_y",
                     "coord_xy_interp",
                     "sc_ss_mats",
                     "sc_ps_mats",

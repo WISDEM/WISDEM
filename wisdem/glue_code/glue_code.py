@@ -182,7 +182,7 @@ class WT_RNTA(om.Group):
             if not modeling_options["user_elastic"]["blade"]:
                 self.connect("configuration.n_blades", "rotorse.rs.constr.blade_number")
                 self.connect("drivetrain.uptilt", "rotorse.re.precomp.uptilt")
-                self.connect("blade.outer_shape.section_offset_x", "rotorse.re.section_offset_x")
+                self.connect("blade.outer_shape.section_offset_y", "rotorse.re.section_offset_y")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
                 self.connect("blade.structure.layer_start_nd", "rotorse.re.precomp.layer_start_nd")

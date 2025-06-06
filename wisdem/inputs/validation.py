@@ -3,55 +3,32 @@ import copy
 import numpy as np
 import jsonschema as json
 import jsonmerge
-import ruamel.yaml as ry
 from functools import reduce
 import operator
 from openmdao.utils.mpi import MPI
 import windIO.schemas as windio
+from windIO.yaml import load_yaml, write_yaml
+from windIO.validator import _enforce_no_additional_properties, _jsonschema_validate_modified
+from pathlib import Path
+from referencing import Registry, Resource
+from referencing.exceptions import NoSuchResource
 
 fschema_windio = os.path.join(os.path.dirname(os.path.realpath(windio.__file__)), "turbine", "turbine_schema.yaml")
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
 fschema_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_schema.yaml")
 fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_schema.yaml")
 
+schemaPath = Path(__file__).parent
 
-def load_yaml(fname_input : str) -> dict:
-    """
-    Reads and parses a YAML file in a safe mode using the ruamel.yaml library.
+def retrieve_yaml(uri: str):
+    if not uri.endswith(".yaml"):
+        raise NoSuchResource(ref=uri)
+    path = schemaPath / Path(uri)
+    contents = load_yaml(path)
+    return Resource.from_contents(contents)
 
-    Args:
-        fname_input (str): Path to the YAML file to be loaded.
 
-    Returns:
-        dict: Parsed YAML content as a dictionary.
-    """
-    reader = ry.YAML(typ="safe", pure=True)
-    with open(fname_input, "r", encoding="utf-8") as f:
-        input_yaml = reader.load(f)
-    return input_yaml
-
-def write_yaml(instance : dict, foutput : str) -> None:
-    """
-    Writes a dictionary to a YAML file using the ruamel.yaml library.
-
-    Args:
-        instance (dict): Dictionary to be written to the YAML file.
-        foutput (str): Path to the output YAML file.
-
-    Returns:
-        None
-    """
-    instance = remove_numpy(instance)
-
-    # Write yaml with updated values
-    yaml = ry.YAML()
-    yaml.default_flow_style = None
-    yaml.width = float("inf")
-    yaml.indent(mapping=4, sequence=6, offset=3)
-    yaml.allow_unicode = False
-    with open(foutput, "w", encoding="utf-8") as f:
-        yaml.dump(instance, f)
-
+registry = Registry(retrieve=retrieve_yaml)
 
 # ---------------------
 # This is for when the defaults are in another file
@@ -165,38 +142,48 @@ def MPI_load_yaml(fname):
 
     return dict_yaml
 
-def _validate(finput, fschema, defaults=True, rank_0 = False):
+def _validate(finput, fschema, defaults=True, restrictive=False, rank_0 = False):
     """
     Validates a dictionary against a schema and returns the validated dictionary.
 
     Args:
         finput (dict or str): Dictionary or path to the YAML file to be validated.
         fschema (dict or str): Dictionary or path to the schema file to validate against.
-        defaults (bool): Flag to indicate if default values should be integrated.
-        rank_0 (bool): Flag that should be set to true when the _validate function is
+        defaults (bool, optional): Flag to indicate if default values should be integrated.
+        restrictive (bool, optional): Flag to indicate if strict adherence to schema (no additions)
+        rank_0 (bool, optional): Flag that should be set to true when the _validate function is
         called with MPI turned on and rank=0. Otherwise it can be kept as default to False
 
     Returns:
         dict: Validated dictionary.
     """
+    # Read schema as dictionary
     if isinstance(fschema, dict):
         schema_dict = fschema
     else:
         schema_dict = MPI_load_yaml(fschema) if (MPI and rank_0 == False) else load_yaml(fschema)
+        
+    if restrictive:
+        schema_dict = _enforce_no_additional_properties(schema_dict)
 
-    
+    # Read input file as dictionary
     if isinstance(finput, dict):
         input_dict = finput
     else:
         input_dict = MPI_load_yaml(finput) if (MPI and rank_0 == False) else load_yaml(finput)
 
-    # schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
-    # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
-    validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
-    validator(schema_dict).validate(input_dict)
-
     # Deep copy to ensure no shared references from yaml pointers and anchors
     unique_input_dict = deep_copy_without_shared_refs(input_dict)
+
+    # WindIO way
+    if defaults:
+        _jsonschema_validate_modified(unique_input_dict, schema_dict, cls=DefaultValidatingDraft7Validator, registry=registry)
+    else:
+        _jsonschema_validate_modified(unique_input_dict, schema_dict, registry=registry)
+
+    # Old way
+    #validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
+    #validator(schema_dict).validate(unique_input_dict)
 
     return unique_input_dict
 

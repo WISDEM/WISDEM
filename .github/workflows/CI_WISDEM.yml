@@ -54,6 +54,7 @@ jobs:
         with:
             repository: IEAWindSystems/windIO
             path: windIO
+            ref: floating_fixes
 
       # Install development version of windio
       - name: Install windIO

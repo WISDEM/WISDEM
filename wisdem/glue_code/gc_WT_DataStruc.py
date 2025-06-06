@@ -543,7 +543,7 @@ class Blade(om.Group):
         self.connect("outer_shape.s", "interp_airfoils.s")
         self.connect("outer_shape.rthick_yaml", "interp_airfoils.rthick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
-        self.connect("outer_shape.section_offset_x", ["interp_airfoils.section_offset_x", "compute_coord_xy_dim.section_offset_x"])
+        self.connect("outer_shape.section_offset_y", ["interp_airfoils.section_offset_y", "compute_coord_xy_dim.section_offset_y"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
@@ -642,13 +642,13 @@ class Blade_Outer_Shape(om.Group):
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
         ivc.add_output(
-            "section_offset_x",
+            "section_offset_y",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         ivc.add_output(
-            "section_offset_y",
+            "section_offset_x",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the chordline normal distance in meters from the reference axis. 0 means that the reference axis lies on the airfoil chordline, a positive offset means that the chordline is shifted in the direction of the suction side relative to the reference axis, and a negative offset that the section is shifted in the direction of the pressure side of the airfoil.",
@@ -683,7 +683,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         self.add_input(
-            "section_offset_x",
+            "section_offset_y",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis..",
@@ -820,7 +820,7 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         self.add_input(
-            "section_offset_x",
+            "section_offset_y",
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
@@ -859,13 +859,13 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         self.add_output("projected_area", val=0.0, units="m**2", desc="The projected surface area of the blade")
 
     def compute(self, inputs, outputs):
-        section_offset_x = inputs["section_offset_x"]
+        section_offset_y = inputs["section_offset_y"]
         chord = inputs["chord"]
         twist = inputs["twist"]
         coord_xy_interp = inputs["coord_xy_interp"]
 
         coord_xy_dim = copy.copy(coord_xy_interp)
-        coord_xy_dim[:, :, 0] -= section_offset_x[:, np.newaxis] / chord[:, np.newaxis]
+        coord_xy_dim[:, :, 0] -= section_offset_y[:, np.newaxis] / chord[:, np.newaxis]
         coord_xy_dim = coord_xy_dim * chord[:, np.newaxis, np.newaxis]
 
         outputs["coord_xy_dim"] = coord_xy_dim

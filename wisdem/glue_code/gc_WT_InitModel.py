@@ -159,12 +159,12 @@ def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_sha
     wt_opt["blade.outer_shape.twist"] = PchipInterpolator(
         outer_shape["twist"]["grid"], outer_shape["twist"]["values"]
     )(nd_span)
-    wt_opt["blade.outer_shape.section_offset_x"] = PchipInterpolator(
-        outer_shape["section_offset_x"]["grid"], outer_shape["section_offset_x"]["values"]
+    wt_opt["blade.outer_shape.section_offset_y"] = PchipInterpolator(
+        outer_shape["section_offset_y"]["grid"], outer_shape["section_offset_y"]["values"]
     )(nd_span)
-    if "section_offset_y" in outer_shape:
-        wt_opt["blade.outer_shape.section_offset_y"] = PchipInterpolator(
-            outer_shape["section_offset_y"]["grid"], outer_shape["section_offset_y"]["values"]
+    if "section_offset_x" in outer_shape:
+        wt_opt["blade.outer_shape.section_offset_x"] = PchipInterpolator(
+            outer_shape["section_offset_x"]["grid"], outer_shape["section_offset_x"]["values"]
         )(nd_span)
     af_opt_flag = blade_DV_aero["af_positions"]["flag"]
     if "rthick" in outer_shape and af_opt_flag == False:
