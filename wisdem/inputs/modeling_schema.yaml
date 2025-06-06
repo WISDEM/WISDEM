@@ -702,6 +702,7 @@ properties:
             LCOE:
                 type: object
                 description: Data for a levelized cost of energy analysis.
+                default: {}
                 properties:
                     flag: *flag
                     wake_loss_factor:

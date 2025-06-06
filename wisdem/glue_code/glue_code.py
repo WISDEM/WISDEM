@@ -110,7 +110,8 @@ class WT_RNTA(om.Group):
         elif modeling_options["flags"]["floating"]:
             self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
 
-        self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
+        if modeling_options["flags"]["costs"]:
+            self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 
         if modeling_options["flags"]["blade"]:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -539,8 +540,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_exp", "towerse.wohler_exp_mat")
             self.connect("materials.wohler_intercept", "towerse.wohler_A_mat")
             self.connect("materials.unit_cost", "towerse.unit_cost_mat")
-            self.connect("costs.labor_rate", "towerse.labor_cost_rate")
-            self.connect("costs.painting_rate", "towerse.painting_cost_rate")
+            if modeling_options["flags"]["costs"]:
+                self.connect("costs.labor_rate", "towerse.labor_cost_rate")
+                self.connect("costs.painting_rate", "towerse.painting_cost_rate")
 
         if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
             self.connect("materials.E", "fixedse.E_mat")
@@ -548,8 +550,6 @@ class WT_RNTA(om.Group):
             self.connect("materials.rho", "fixedse.rho_mat")
             self.connect("materials.name", "fixedse.material_names")
             self.connect("materials.unit_cost", "fixedse.unit_cost_mat")
-            self.connect("costs.labor_rate", "fixedse.labor_cost_rate")
-            self.connect("costs.painting_rate", "fixedse.painting_cost_rate")
             self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
@@ -561,6 +561,9 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
                 self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
                 self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
+            if modeling_options["flags"]["costs"]:
+                self.connect("costs.painting_rate", "fixedse.painting_cost_rate")
+                self.connect("costs.labor_rate", "fixedse.labor_cost_rate")
 
         if modeling_options["flags"]["monopile"]:
             if modeling_options["flags"]["blade"]:
@@ -648,11 +651,12 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_exp", "floatingse.wohler_exp_mat")
             self.connect("materials.wohler_intercept", "floatingse.wohler_A_mat")
             self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
-            self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
-            self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
             self.connect("floating.transition_node", "floatingse.transition_node")
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
+            if modeling_options["flags"]["costs"]:
+                self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
+                self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
 
             # Rigid bodies
             for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
@@ -780,58 +784,59 @@ class WT_RNTA(om.Group):
             self.connect("rotorse.rp.powercurve.rated_Omega", "tcons.rated_Omega")
 
         # Connections to turbine capital cost
-        self.connect("configuration.n_blades", "tcc.blade_number")
-        self.connect("configuration.rated_power", "tcc.machine_rating")
-        if modeling_options["flags"]["blade"]:
-            self.connect("rotorse.blade_mass", "tcc.blade_mass")
-            self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
+        if modeling_options["flags"]["costs"]:
+            self.connect("configuration.n_blades", "tcc.blade_number")
+            self.connect("configuration.rated_power", "tcc.machine_rating")
+            if modeling_options["flags"]["blade"]:
+                self.connect("rotorse.blade_mass", "tcc.blade_mass")
+                self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
 
-        if modeling_options["flags"]["drivetrain"]:
-            self.connect("drivese.hub_mass", "tcc.hub_mass")
-            self.connect("drivese.pitch_mass", "tcc.pitch_system_mass")
-            self.connect("drivese.spinner_mass", "tcc.spinner_mass")
-            self.connect("drivese.lss_mass", "tcc.lss_mass")
-            self.connect("drivese.mean_bearing_mass", "tcc.main_bearing_mass")
-            self.connect("drivese.gearbox_mass", "tcc.gearbox_mass")
-            self.connect("drivese.gearbox_torque_density", "tcc.gearbox_torque_density")
-            self.connect("drivese.hss_mass", "tcc.hss_mass")
-            self.connect("drivese.brake_mass", "tcc.brake_mass")
-            self.connect("drivese.generator_mass", "tcc.generator_mass")
-            self.connect("drivese.total_bedplate_mass", "tcc.bedplate_mass")
-            self.connect("drivese.yaw_mass", "tcc.yaw_mass")
-            self.connect("drivese.converter_mass", "tcc.converter_mass")
-            self.connect("drivese.transformer_mass", "tcc.transformer_mass")
-            self.connect("drivese.hvac_mass", "tcc.hvac_mass")
-            self.connect("drivese.cover_mass", "tcc.cover_mass")
-            self.connect("drivese.platform_mass", "tcc.platforms_mass")
+            if modeling_options["flags"]["drivetrain"]:
+                self.connect("drivese.hub_mass", "tcc.hub_mass")
+                self.connect("drivese.pitch_mass", "tcc.pitch_system_mass")
+                self.connect("drivese.spinner_mass", "tcc.spinner_mass")
+                self.connect("drivese.lss_mass", "tcc.lss_mass")
+                self.connect("drivese.mean_bearing_mass", "tcc.main_bearing_mass")
+                self.connect("drivese.gearbox_mass", "tcc.gearbox_mass")
+                self.connect("drivese.gearbox_torque_density", "tcc.gearbox_torque_density")
+                self.connect("drivese.hss_mass", "tcc.hss_mass")
+                self.connect("drivese.brake_mass", "tcc.brake_mass")
+                self.connect("drivese.generator_mass", "tcc.generator_mass")
+                self.connect("drivese.total_bedplate_mass", "tcc.bedplate_mass")
+                self.connect("drivese.yaw_mass", "tcc.yaw_mass")
+                self.connect("drivese.converter_mass", "tcc.converter_mass")
+                self.connect("drivese.transformer_mass", "tcc.transformer_mass")
+                self.connect("drivese.hvac_mass", "tcc.hvac_mass")
+                self.connect("drivese.cover_mass", "tcc.cover_mass")
+                self.connect("drivese.platform_mass", "tcc.platforms_mass")
 
-            if modeling_options["flags"]["generator"]:
-                self.connect("drivese.generator_cost", "tcc.generator_cost_external")
+                if modeling_options["flags"]["generator"]:
+                    self.connect("drivese.generator_cost", "tcc.generator_cost_external")
 
-        if modeling_options["flags"]["tower"]:
-            self.connect("towerse.tower_mass", "tcc.tower_mass")
-            self.connect("towerse.tower_cost", "tcc.tower_cost_external")
+            if modeling_options["flags"]["tower"]:
+                self.connect("towerse.tower_mass", "tcc.tower_mass")
+                self.connect("towerse.tower_cost", "tcc.tower_cost_external")
 
-        self.connect("costs.blade_mass_cost_coeff", "tcc.blade_mass_cost_coeff")
-        self.connect("costs.hub_mass_cost_coeff", "tcc.hub_mass_cost_coeff")
-        self.connect("costs.pitch_system_mass_cost_coeff", "tcc.pitch_system_mass_cost_coeff")
-        self.connect("costs.spinner_mass_cost_coeff", "tcc.spinner_mass_cost_coeff")
-        self.connect("costs.lss_mass_cost_coeff", "tcc.lss_mass_cost_coeff")
-        self.connect("costs.bearing_mass_cost_coeff", "tcc.bearing_mass_cost_coeff")
-        self.connect("costs.gearbox_torque_cost", "tcc.gearbox_torque_cost")
-        self.connect("costs.hss_mass_cost_coeff", "tcc.hss_mass_cost_coeff")
-        self.connect("costs.generator_mass_cost_coeff", "tcc.generator_mass_cost_coeff")
-        self.connect("costs.bedplate_mass_cost_coeff", "tcc.bedplate_mass_cost_coeff")
-        self.connect("costs.yaw_mass_cost_coeff", "tcc.yaw_mass_cost_coeff")
-        self.connect("costs.converter_mass_cost_coeff", "tcc.converter_mass_cost_coeff")
-        self.connect("costs.transformer_mass_cost_coeff", "tcc.transformer_mass_cost_coeff")
-        self.connect("costs.hvac_mass_cost_coeff", "tcc.hvac_mass_cost_coeff")
-        self.connect("costs.cover_mass_cost_coeff", "tcc.cover_mass_cost_coeff")
-        self.connect("costs.elec_connec_machine_rating_cost_coeff", "tcc.elec_connec_machine_rating_cost_coeff")
-        self.connect("costs.platforms_mass_cost_coeff", "tcc.platforms_mass_cost_coeff")
-        self.connect("costs.tower_mass_cost_coeff", "tcc.tower_mass_cost_coeff")
-        self.connect("costs.controls_machine_rating_cost_coeff", "tcc.controls_machine_rating_cost_coeff")
-        self.connect("costs.crane_cost", "tcc.crane_cost")
+                self.connect("costs.blade_mass_cost_coeff", "tcc.blade_mass_cost_coeff")
+                self.connect("costs.hub_mass_cost_coeff", "tcc.hub_mass_cost_coeff")
+                self.connect("costs.pitch_system_mass_cost_coeff", "tcc.pitch_system_mass_cost_coeff")
+                self.connect("costs.spinner_mass_cost_coeff", "tcc.spinner_mass_cost_coeff")
+                self.connect("costs.lss_mass_cost_coeff", "tcc.lss_mass_cost_coeff")
+                self.connect("costs.bearing_mass_cost_coeff", "tcc.bearing_mass_cost_coeff")
+                self.connect("costs.gearbox_torque_cost", "tcc.gearbox_torque_cost")
+                self.connect("costs.hss_mass_cost_coeff", "tcc.hss_mass_cost_coeff")
+                self.connect("costs.generator_mass_cost_coeff", "tcc.generator_mass_cost_coeff")
+                self.connect("costs.bedplate_mass_cost_coeff", "tcc.bedplate_mass_cost_coeff")
+                self.connect("costs.yaw_mass_cost_coeff", "tcc.yaw_mass_cost_coeff")
+                self.connect("costs.converter_mass_cost_coeff", "tcc.converter_mass_cost_coeff")
+                self.connect("costs.transformer_mass_cost_coeff", "tcc.transformer_mass_cost_coeff")
+                self.connect("costs.hvac_mass_cost_coeff", "tcc.hvac_mass_cost_coeff")
+                self.connect("costs.cover_mass_cost_coeff", "tcc.cover_mass_cost_coeff")
+                self.connect("costs.elec_connec_machine_rating_cost_coeff", "tcc.elec_connec_machine_rating_cost_coeff")
+                self.connect("costs.platforms_mass_cost_coeff", "tcc.platforms_mass_cost_coeff")
+                self.connect("costs.tower_mass_cost_coeff", "tcc.tower_mass_cost_coeff")
+                self.connect("costs.controls_machine_rating_cost_coeff", "tcc.controls_machine_rating_cost_coeff")
+                self.connect("costs.crane_cost", "tcc.crane_cost")
 
         # Final component for inverse design objective
         if opt_options["inverse_design"]:

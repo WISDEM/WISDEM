@@ -6,6 +6,7 @@ dependencies:
   - cftime
   - coveralls
   - cython
+  - jsonmerge
   - jsonschema
   - make
   - matplotlib

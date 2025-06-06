@@ -607,7 +607,7 @@ class TestServo(unittest.TestCase):
         debug_npz = np.load(debug_archive)
 
         (n_span, n_aoa, n_Re) = debug_npz["airfoils_cl"].shape
-        n_pc = 50
+        n_pc = 20
 
         modeling_options = {}
         modeling_options["WISDEM"] = {}

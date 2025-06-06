@@ -676,7 +676,7 @@ class PoseOptimization(object):
                 memname = kgrp["names"][0]
                 idx = self.modeling["floating"]["members"]["name2idx"][memname]
                 imem = self.modeling["floating"]["members"]["name"].index(memname)
-                istruct = wt_init["components"]["floating_platform"]["members"][imem]["internal_structure"]
+                istruct = wt_init["components"]["floating_platform"]["members"][imem]["structure"]
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
@@ -701,11 +701,11 @@ class PoseOptimization(object):
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
-                if "ballast" in kgrp and len(istruct["ballasts"]) > 0:
-                    V_ballast = np.zeros(len(istruct["ballasts"]))
+                if "ballast" in kgrp and len(istruct["ballast"]) > 0:
+                    V_ballast = np.zeros(len(istruct["ballast"]))
                     for j in range(V_ballast.size):
-                        if "volume" in istruct["ballasts"][j]:
-                            V_ballast[j] = istruct["ballasts"][j]["volume"]
+                        if "volume" in istruct["ballast"][j]:
+                            V_ballast[j] = istruct["ballast"][j]["volume"]
                     iball = np.where(V_ballast > 0.0)[0]
                     if iball.size > 0:
                         wt_opt.model.add_design_var(

@@ -1201,15 +1201,9 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         floating["members"][i][coeff],
                         )(grid_geom)
 
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
+        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["structure"]["outfitting_factor"]
 
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
-
-        istruct = floating["members"][i]["internal_structure"]
+        istruct = floating["members"][i]["structure"]
         if "bulkhead" in istruct:
             wt_opt[f"floating.memgrp{idx}.bulkhead_grid"] = istruct["bulkhead"]["thickness"]["grid"]
             wt_opt[f"floating.memgrp{idx}.bulkhead_thickness"] = istruct["bulkhead"]["thickness"]["values"]
@@ -1252,10 +1246,10 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
         ballast_mat = [""] * n_ballasts
         for j in range(n_ballasts):
-            wt_opt[f"floating.memgrp{idx}.ballast_grid"][j, :] = istruct["ballasts"][j]["grid"]
+            wt_opt[f"floating.memgrp{idx}.ballast_grid"][j, :] = istruct["ballast"][j]["grid"]
             if floating_init_options["members"]["ballast_flag_member_" + name_member][j] == False:
-                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = istruct["ballasts"][j]["volume"]
-                ballast_mat[j] = istruct["ballasts"][j]["material"]
+                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = istruct["ballast"][j]["volume"]
+                ballast_mat[j] = istruct["ballast"][j]["material"]
             else:
                 wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = 0.0
                 ballast_mat[j] = "seawater"

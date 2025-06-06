@@ -2,12 +2,14 @@ import os
 import copy
 import numpy as np
 import jsonschema as json
+import jsonmerge
 import ruamel.yaml as ry
 from functools import reduce
 import operator
 from openmdao.utils.mpi import MPI
+import windIO.schemas as windio
 
-
+fschema_windio = os.path.join(os.path.dirname(os.path.realpath(windio.__file__)), "turbine", "turbine_schema.yaml")
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
 fschema_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_schema.yaml")
 fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_schema.yaml")
@@ -210,8 +212,15 @@ def deep_copy_without_shared_refs(obj):
         return obj  # Return the value directly if not a container
 
 # ---------------------
+def get_geometry_schema():
+    windio_schema = load_yaml(fschema_windio)
+    wisdem_schema = load_yaml(fschema_geom)
+    merged_schema = jsonmerge.merge(windio_schema, wisdem_schema)
+    return merged_schema
+
 def load_geometry_yaml(finput):
-    return _validate(finput, fschema_geom)
+    merged_schema = get_geometry_schema()
+    return _validate(finput, merged_schema)
 
 
 def load_modeling_yaml(finput):
@@ -222,6 +231,15 @@ def load_analysis_yaml(finput):
     return _validate(finput, fschema_opt)
 
 
+def write_geometry_yaml(instance, foutput):
+    merged_schema = get_geometry_schema()
+    _validate(instance, merged_schema, defaults=False)
+    sfx_str = '.yaml'
+    if foutput[-5:] == sfx_str:
+        sfx_str = ''
+    write_yaml(instance, foutput+sfx_str)
+
+    
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
     _validate(instance, fschema_model, defaults=False, rank_0=True)
 

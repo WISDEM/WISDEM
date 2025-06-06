@@ -50,6 +50,7 @@ classifiers = [  # Optional
 
 dependencies = [
   "dearpygui",
+  "jsonmerge",
   "jsonschema",
   "moorpy",
   "numpy",
