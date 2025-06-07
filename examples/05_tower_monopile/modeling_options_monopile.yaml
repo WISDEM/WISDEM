@@ -59,6 +59,7 @@ WISDEM:
         water_dyn_viscosity: 1.3351e-3
         soil_shear_modulus: 140.e+6
         soil_poisson: 0.4
+        water_depth: 30.0
     LCOE:
         flag: True
         labor_rate: 58.8
