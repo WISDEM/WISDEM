@@ -33,7 +33,6 @@ WISDEM:
         distance_to_site: 115.
         distance_to_landfall: 50.
         port_cost_per_month: 2e6
-        boem_review_cost: 0.0
         construction_insurance: 44.0
         construction_financing: 183.0
         contingency: 316.0
@@ -42,7 +41,6 @@ WISDEM:
         construction_plan_cost: 2.5e5
         installation_plan_cost: 1e6
     Environment:
-        flag: True
         air_density: 1.225
         air_dyn_viscosity: 1.81e-05
         weib_shape_parameter: 2.0

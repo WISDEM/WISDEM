@@ -18,7 +18,6 @@ WISDEM:
     BOS:
         flag: False
     Environment:
-        flag: True
         air_density: 1.225
         air_dyn_viscosity: 1.81e-5
         weib_shape_parameter: 2.

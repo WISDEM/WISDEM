@@ -24,7 +24,6 @@ WISDEM:
         distance_to_interconnection: 8.
         interconnect_voltage: 130
     Environment:
-        flag: True
         air_density: 1.225
         air_dyn_viscosity: 1.81e-5
         weib_shape_parameter: 2.

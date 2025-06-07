@@ -108,8 +108,8 @@ def simple_types(indict : dict) -> dict:
 
 
 # ---------------------
-# See: https://python-jsonschema.readthedocs.io/en/stable/faq/#why-doesn-t-my-schema-s-default-property-set-the-default-on-my-instance
 def extend_with_default(validator_class):
+    # https://python-jsonschema.readthedocs.io/en/stable/faq/#why-doesn-t-my-schema-s-default-property-set-the-default-on-my-instance
     validate_properties = validator_class.VALIDATORS["properties"]
 
     def set_defaults(validator, properties, instance, schema):
@@ -122,8 +122,22 @@ def extend_with_default(validator_class):
 
     return json.validators.extend(validator_class, {"properties": set_defaults})
 
+def extend_remove_additional(validator_class):
+    # https://stackoverflow.com/questions/44694835/remove-properties-from-json-object-not-present-in-schema
+    validate_properties = validator_class.VALIDATORS["properties"]
+
+    def remove_additional_properties(validator, properties, instance, schema):
+        for prop in list(instance.keys()):
+            if prop not in properties:
+                del instance[prop]
+
+        for error in validate_properties(validator, properties, instance, schema):
+            yield error
+
+    return json.validators.extend(validator_class, {"properties" : remove_additional_properties})
 
 DefaultValidatingDraft7Validator = extend_with_default(json.Draft7Validator)
+RemovalValidatingDraft7Validator = extend_remove_additional(json.Draft7Validator)
 
 def MPI_load_yaml(fname):
     """
@@ -142,7 +156,7 @@ def MPI_load_yaml(fname):
 
     return dict_yaml
 
-def _validate(finput, fschema, defaults=True, restrictive=False, rank_0 = False):
+def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, rank_0 = False):
     """
     Validates a dictionary against a schema and returns the validated dictionary.
 
@@ -178,6 +192,8 @@ def _validate(finput, fschema, defaults=True, restrictive=False, rank_0 = False)
     # WindIO way
     if defaults:
         _jsonschema_validate_modified(unique_input_dict, schema_dict, cls=DefaultValidatingDraft7Validator, registry=registry)
+    elif removal:
+        _jsonschema_validate_modified(unique_input_dict, schema_dict, cls=RemovalValidatingDraft7Validator, registry=registry)
     else:
         _jsonschema_validate_modified(unique_input_dict, schema_dict, registry=registry)
 
@@ -207,20 +223,20 @@ def get_geometry_schema():
 
 def load_geometry_yaml(finput):
     merged_schema = get_geometry_schema()
-    return _validate(finput, merged_schema)
+    return _validate(finput, merged_schema, restrictive=False) #True)
 
 
 def load_modeling_yaml(finput):
-    return _validate(finput, fschema_model)
+    return _validate(finput, fschema_model, restrictive=True)
 
 
 def load_analysis_yaml(finput):
-    return _validate(finput, fschema_opt)
+    return _validate(finput, fschema_opt, restrictive=True)
 
 
 def write_geometry_yaml(instance, foutput):
     merged_schema = get_geometry_schema()
-    _validate(instance, merged_schema, defaults=False)
+    _validate(instance, merged_schema, restrictive=False, removal=False, defaults=False)
     sfx_str = '.yaml'
     if foutput[-5:] == sfx_str:
         sfx_str = ''
@@ -228,7 +244,7 @@ def write_geometry_yaml(instance, foutput):
 
     
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_model, defaults=False, rank_0=True)
+    _validate(instance, fschema_model, restrictive=True, removal=True, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
@@ -243,7 +259,7 @@ def write_modeling_yaml(instance : dict, foutput : str) -> None:
 
 
 def write_analysis_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_opt, defaults=False, rank_0=True)
+    _validate(instance, fschema_opt, restrictive=True, removal=True, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
