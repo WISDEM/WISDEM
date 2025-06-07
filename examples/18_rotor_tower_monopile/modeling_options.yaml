@@ -37,3 +37,36 @@ WISDEM:
             tol: 1e-9
     BOS:
         flag: True
+        plant_turbine_spacing: 7
+        plant_row_spacing: 7
+        commissioning_cost_kW: 44.0
+        decommissioning_cost_kW: 58.0
+        distance_to_substation: 1.0
+        distance_to_interconnection: 8.5
+        interconnect_voltage: 130.
+        distance_to_site: 115.
+        distance_to_landfall: 50.
+        port_cost_per_month: 2e6
+        construction_insurance: 44.0
+        construction_financing: 183.0
+        contingency: 316.0
+        site_auction_price: 100e6
+        site_assessment_cost: 50e6
+        construction_plan_cost: 2.5e5
+        installation_plan_cost: 1e6
+
+    Environment:
+        air_density: 1.225
+        air_dyn_viscosity: 1.81e-5
+        weib_shape_parameter: 2.
+        air_speed_sound: 340.
+        shear_exp: 0.12
+        water_density: 1025.0
+        water_dyn_viscosity: 1.3351e-3
+        soil_shear_modulus: 140e6
+        soil_poisson: 0.4
+        water_depth: 30.0
+        significant_wave_height: 4.52
+        significant_wave_period: 9.45
+    LCOE:
+        flag: True

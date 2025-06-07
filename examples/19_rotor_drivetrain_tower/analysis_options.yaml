@@ -7,7 +7,6 @@ design_variables:
         flag: True 
         minimum: 100.0
         maximum: 180.0
-        scaler: 1.e-2
     blade:
         aero_shape:
           twist:
@@ -138,7 +137,7 @@ driver:
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         # step_size: 1.e-3    # Step size for finite differencing
         form: central       # Finite differencing mode, either forward or central
-        verify_level: -1 # SNOPT check derivatives (-1 means no deriv checks)
+        #verify_level: -1 # SNOPT check derivatives (-1 means no deriv checks)
         
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
