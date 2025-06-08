@@ -8,30 +8,19 @@ design_variables:
                 flag: False    # Flag to optimize the twist
                 inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
                 n_opt: 8         # Number of control points along blade span
-                lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]                    # Lower bounds for the twist in [rad] at the n_opt locations
-                upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
             chord:
                 flag: False         # Flag to optimize the chord
                 n_opt: 8                # Number of control points along blade span
-                min_gain: 0.2     # Nondimensional lower bound at the n_opt locations
-                max_gain: 2.0     # Nondimensional upper bound at the n_opt locations
+                max_decrease: 0.2     # Nondimensional lower bound at the n_opt locations
+                max_increase: 2.0     # Nondimensional upper bound at the n_opt locations
             af_positions:
                 flag: False         # Flag to optimize the airfoil positions
                 af_start: 4         # Index of the first airfoil from blade root that can have the location optimized. First airfoil is number 0. Last airfoil is always locked at blade tip.
-        dac:
-            te_flap_ext:
-                flag: False
-                min_ext: 0.0
-                max_ext: 0.3
-            te_flap_end:
-                flag: False
-                min_end: 0.3
-                max_end: 1.0
     control:
         tsr:
             flag: False         # Flag to optimize the rotor tip speed ratio
-            min_gain: 0.9     # Nondimensional lower bound
-            max_gain: 1.1     # Nondimensional upper bound
+            minimum: 0.9     # Nondimensional lower bound
+            maximum: 1.1     # Nondimensional upper bound
 
     tower:
         outer_diameter:
@@ -89,7 +78,7 @@ design_variables:
                       flag: False
                       lower_bound: 0.0
                       upper_bound: 1.0
-    members:
+        members:
             diameter:
                 linked_members:
                     # This will set the same diameter profile for all of the members listed in the same names entry
@@ -291,9 +280,9 @@ constraints:
             flag: False
         shell_buckling:
             flag: False
-        constr_d_to_t:
+        d_to_t:
             flag: False
-        constr_taper:
+        taper:
             flag: False
         slope:
             flag: False

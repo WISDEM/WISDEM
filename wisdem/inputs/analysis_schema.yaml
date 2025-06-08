@@ -220,7 +220,7 @@ properties:
                             description: Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.
                             default: {}
                             properties:
-                                layer_name: 
+                                layer_name:
                                     type: string
                                     description: Name of blade structural layer to be optimized
                                 n_opt:
@@ -866,14 +866,14 @@ properties:
                             upper_bound: *uboundm
             user:
                 type: array
-                description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components.
                 default: []
                 items:
                     type: object
-                    description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
+                    description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html
                     default: {}
                     properties:
-                        name: 
+                        name:
                             type: string
                             description: Promoted name of the design variable in the system.
                         lower_bound:
@@ -1491,7 +1491,7 @@ properties:
                     roll_period: *period
                     pitch_period: *period
                     yaw_period: *period
-                    
+
             user:
                 type: array
                 description: User-defined constraints based on full variable name.  Must enter a lower_bound and/or an upper bound for each constraint
@@ -1540,7 +1540,7 @@ properties:
                 type: boolean
                 default: False
                 description: If true, this maximizes the objective function.  If false, then minimize
-        
+
     inverse_design:
         type: object
         description: For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via "idx".
@@ -1578,9 +1578,33 @@ properties:
                         minimum: 1e-12
                         maximum: 1.0
                         unit: none
+                    catol:
+                        type: number
+                        description: Some type of tolerance?
+                        default: 1e-6
+                        minimum: 1e-12
+                        maximum: 1.0
+                        unit: none
+                    rhobeg:
+                        type: number
+                        description: Initial rho?
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: none
+                    adaptive:
+                        type: boolean
+                        description: Adaptive solver flag?
+                        default: False
                     max_iter:
                         type: integer
                         description: Max number of optimization iterations
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_gen:
+                        type: integer
+                        description: Max number of generations for evolutionary drivers
                         default: 100
                         minimum: 0
                         maximum: 100000
