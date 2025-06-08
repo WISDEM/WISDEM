@@ -55,7 +55,7 @@ class TestRE(unittest.TestCase):
         self.inputs["r"] = np.linspace(0.0, 10.0, nspan)
         self.inputs["theta"] = np.zeros(nspan)
         self.inputs["chord"] = 2 * np.ones(nspan)
-        self.inputs["section_offset_x"] = 1. * np.ones(nspan) # 0=LE, 1=TE
+        self.inputs["section_offset_y"] = 1. * np.ones(nspan) # 0=LE, 1=TE
         self.inputs["precurve"] = np.zeros(nspan)
         self.inputs["presweep"] = np.zeros(nspan)
         self.inputs["coord_xy_interp"] = np.zeros( (nspan, npts, 2) )
@@ -180,7 +180,7 @@ class TestRE(unittest.TestCase):
         
         
     def test_with_le_pitch_axis(self):
-        self.inputs["section_offset_x"] = np.zeros(self.inputs["section_offset_x"].shape)
+        self.inputs["section_offset_y"] = np.zeros(self.inputs["section_offset_y"].shape)
         
         self.run_precomp()
         self.myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)

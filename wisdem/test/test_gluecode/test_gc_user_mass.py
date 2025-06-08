@@ -15,7 +15,7 @@ test_dir = os.path.join(
 
 
 class TestRegression(unittest.TestCase):
-    def test15MW(self):
+    def test_nrel5mw_user(self):
         ## IEA 15MW
         fname_wt_input = os.path.join(test_dir, "nrel5mw-spar_oc3_user_mass.yaml")
         fname_modeling_options = os.path.join(test_dir, "modeling_options.yaml")
@@ -39,7 +39,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["floatingse.platform_hull_mass"][0], 203000.0)
 
 
-    def testElastic(self):
+    def testElastic15mw(self):
         fname_wt_input = os.path.join(test_dir, "IEA-15-240-RWT_VolturnUS-S_user_elastic.yaml")
         fname_modeling_options = os.path.join(test_dir, "modeling_options_user_elastic.yaml")
         fname_analysis_options = os.path.join(test_dir, "analysis_options_null.yaml")

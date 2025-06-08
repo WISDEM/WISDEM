@@ -20,6 +20,72 @@ properties:
             drivetrain:
                 type: object
                 properties:
+                    bedplate_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular calculation of bedplate mass with this value
+                        minimum: 0.0
+                    brake_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of brake mass with this value
+                        minimum: 0.0
+                    hvac_mass_coefficient:
+                        type: number
+                        default: 0.025
+                        units: kg/kW
+                        description: Regression-based scaling coefficient on machine rating to get HVAC system mass
+                        minimum: 0.0
+                    converter_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of converter mass with this value
+                        minimum: 0.0
+                    transformer_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of transformer mass with this value
+                        minimum: 0.0
+                    mb1_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of first main bearing mass with this value
+                        minimum: 0.0
+                    mb2_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of second main bearing mass with this value
+                        minimum: 0.0
+                    yaw_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of yaw drive mass with this value
+                        minimum: 0.0
+                    above_yaw_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
+                        minimum: 0.0
+                    spring_constant_user:
+                        type: number
+                        default: 0.0
+                        units: N*m/rad
+                        description: Override regular calculation of drivetrain spring constant with this value
+                        minimum: 0.0
+                    damping_coefficient_user:
+                        type: number
+                        default: 0.0
+                        units: N*m/rad
+                        description: Override regular calculation of drivetrain damping coefficient with this value
+                        minimum: 0.0
                     generator:
                         type: object
                         properties:
