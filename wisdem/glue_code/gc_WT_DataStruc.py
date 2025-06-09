@@ -1042,6 +1042,7 @@ class Blade_Structure(om.Group):
             promotes=["*"],
         )
 
+
 class Compute_Blade_Structure(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -1172,6 +1173,19 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                 web_start_nd[j, i] = xy_arc_i[idx_web_ss] /  xy_arc_i[-1]
                 web_end_nd[j, i] = xy_arc_i[idx_web_ps] /  xy_arc_i[-1]
             
+        if np.any(web_start_nd < 0):
+            logger.debug("Web start points must be larger than 0. Setting the value to 0.")
+            web_start_nd[web_start_nd < 0] = 0
+        if np.any(web_start_nd > 1):
+            logger.debug("Web start points must be smaller than 1. Setting the value to 1.")
+            web_start_nd[web_start_nd > 1] = 1
+        if np.any(web_end_nd < 0):
+            logger.debug("Web end points must be larger than 0. Setting the value to 0.")
+            web_end_nd[web_end_nd < 0] = 0
+        if np.any(web_end_nd > 1):
+            logger.debug("Web end points must be smaller than 1. Setting the value to 1.")
+            web_end_nd[web_end_nd > 1] = 1
+        
         outputs["web_start_nd"] = web_start_nd
         outputs["web_end_nd"] = web_end_nd
 
@@ -1239,11 +1253,18 @@ class Compute_Blade_Structure(om.ExplicitComponent):
                 layer_start_nd[j, :] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), :]
                 layer_end_nd[j, :] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), :]
 
-        if np.any(layer_start_nd < 0) or np.any(layer_start_nd > 1):
-            raise ValueError("Layer start points must be between 0 and 1.")
-        if np.any(layer_end_nd < 0) or np.any(layer_end_nd > 1):
-            raise ValueError("Layer start points must be between 0 and 1.")
-
+        if np.any(layer_start_nd < 0):
+            logger.debug("Layer start points must be larger than 0. Setting the value to 0.")
+            layer_start_nd[layer_start_nd < 0] = 0
+        if np.any(layer_start_nd > 1):
+            logger.debug("Layer start points must be smaller than 1. Setting the value to 1.")
+            layer_start_nd[layer_start_nd > 1] = 1
+        if np.any(layer_end_nd < 0):
+            logger.debug("Layer end points must be larger than 0. Setting the value to 0.")
+            layer_end_nd[layer_end_nd < 0] = 0
+        if np.any(layer_end_nd > 1):
+            logger.debug("Layer end points must be smaller than 1. Setting the value to 1.")
+            layer_end_nd[layer_end_nd > 1] = 1
 
         outputs["layer_start_nd"] = layer_start_nd
         outputs["layer_end_nd"] = layer_end_nd
