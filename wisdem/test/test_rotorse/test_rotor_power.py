@@ -131,6 +131,11 @@ class TestServo(unittest.TestCase):
                 9.30627534e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
                 9.33574791e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
                 9.33574791e+00, 9.33574791e+00])
+        # import matplotlib.pyplot as plt
+        # plt.plot(r, outputs["stall_angle_along_span"], label="Computed Stall Angle")
+        # plt.plot(r, ref_stall_angle_along_span, label="Reference No Stall Constraint")
+        # plt.legend()
+        # plt.show()
 
         npt.assert_almost_equal(outputs["no_stall_constraint"], ref_no_stall_constraint)
         npt.assert_almost_equal(outputs["stall_angle_along_span"], ref_stall_angle_along_span)
@@ -148,7 +153,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -436,7 +441,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -532,6 +537,10 @@ class TestServo(unittest.TestCase):
         prob["omega_max"] = 1e3
         prob["control_maxTS"] = 1e4
         prob["rated_power"] = 5e6
+        prob["ps_percent"] = 1.0
+        prob.run_model()
+        T_peak = max(prob["T"])
+        prob["ps_percent"] = 0.8
         prob.run_model()
         V_expect1 = np.sort(np.r_[V_expect0, prob["rated_V"]])
         Omega_tsr = V_expect1 * 10 * 60 / 70.0 / 2.0 / np.pi
@@ -544,7 +553,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
         npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
-        npt.assert_array_less(prob["T"], 0.8 * 880899)  # From print out in first test
+        npt.assert_array_less(prob["T"], prob["ps_percent"][0] * T_peak)
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertGreater(prob["rated_pitch"], 0.0)
         myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
@@ -616,7 +625,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
