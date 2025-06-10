@@ -562,6 +562,15 @@ properties:
                                     units: kg
                                     description: Override bottom-up calculation of total member mass with this value
                                     minimum: 0.0
+            jacket:
+                type: object
+                properties:
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
 
     control:
         type: object
