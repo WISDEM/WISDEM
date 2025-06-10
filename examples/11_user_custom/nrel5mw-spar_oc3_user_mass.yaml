@@ -603,6 +603,9 @@ components:
         pitch_system_scaling_factor: 0.54
         spinner_gust_ws: 70.0
         cd: 0.5
+        hub_shell_mass_user: 2700.0
+        spinner_mass_user: 500.0
+        pitch_system_mass_user: 8300.0
     drivetrain:
         outer_shape:
             uptilt: 4.999629720311564
@@ -614,7 +617,7 @@ components:
             damping_ratio: 0.01
             gear_configuration: eep
             planet_numbers: [3, 3, 0]
-            mass: 21500.0
+            mass_user: 21500.0
         lss:
             diameter: [0.577, 0.577]
             wall_thickness: [0.288, 0.288]
@@ -630,18 +633,18 @@ components:
             flange_thickness: 0.05
             web_thickness: 0.05
             material: steel
-            mass: 20000.0
+            mass_user: 20000.0
         other_components:
-            brake_mass: 5500.0
-            converter_mass: 4200.0
-            transformer_mass: 11500.0
+            brake_mass_user: 5500.0
+            converter_mass_user: 4200.0
+            transformer_mass_user: 11500.0
             mb1_type: CARB
             mb2_type: SRB
             uptower: true
-            mb1_mass: 1500.0
-            mb2_mass: 1350.0
+            mb1_mass_user: 1500.0
+            mb2_mass_user: 1350.0
         generator:
-            mass: 19500.0
+            mass_user: 19500.0
             rho_Fe: 7700.0
             rho_Fes: 7850.0
             rho_Copper: 8900.0

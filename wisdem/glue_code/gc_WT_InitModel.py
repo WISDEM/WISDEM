@@ -705,7 +705,7 @@ def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, flags, user_e
         wt_opt["drivetrain.hvac_mass_coeff"] = drivetrain["other_components"]["hvac_mass_coefficient"]
         wt_opt["drivetrain.bedplate_material"] = drivetrain["bedplate"]["material"]
         if "mass_user" in drivetrain["bedplate"]:
-            wt_opt["drivetrain.bedplate_mass_user"] = drivetrain["bedplate"]["mass"]
+            wt_opt["drivetrain.bedplate_mass_user"] = drivetrain["bedplate"]["mass_user"]
         if "brake_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.brake_mass_user"] = drivetrain["other_components"]["brake_mass_user"]
         if "mb1_mass_user" in drivetrain["other_components"]:
