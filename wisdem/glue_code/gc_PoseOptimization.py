@@ -750,37 +750,35 @@ class PoseOptimization(object):
                     )
 
         # -- Mooring --
-        '''
-        if mooring_opt["line_length"]["flag"]:
+        if mooring_opt["line_length"][0]["flag"]:
             wt_opt.model.add_design_var(
                 "mooring.unstretched_length_in",
-                lower=mooring_opt["line_length"]["lower_bound"],
-                upper=mooring_opt["line_length"]["upper_bound"],
+                lower=mooring_opt["line_length"][0]["lower_bound"],
+                upper=mooring_opt["line_length"][0]["upper_bound"],
                 ref=1e2,
             )
 
-        if mooring_opt["line_diameter"]["flag"]:
+        if mooring_opt["line_diameter"][0]["flag"]:
             wt_opt.model.add_design_var(
                 "mooring.line_diameter_in",
-                lower=mooring_opt["line_diameter"]["lower_bound"],
-                upper=mooring_opt["line_diameter"]["upper_bound"],
+                lower=mooring_opt["line_diameter"][0]["lower_bound"],
+                upper=mooring_opt["line_diameter"][0]["upper_bound"],
                 ref=1e-1,
             )
 
-        if mooring_opt["line_mass_density_coeff"]["flag"]:
-            wt_opt.model.add_design_var(
-                "mooring.line_mass_density_coeff",
-                lower=mooring_opt["line_mass_density_coeff"]["lower_bound"],
-                upper=mooring_opt["line_mass_density_coeff"]["upper_bound"],
-            )
+        # if mooring_opt["line_mass_density_coeff"][0]["flag"]:
+        #     wt_opt.model.add_design_var(
+        #         "mooring.line_mass_density_coeff",
+        #         lower=mooring_opt["line_mass_density_coeff"][0]["lower_bound"],
+        #         upper=mooring_opt["line_mass_density_coeff"][0]["upper_bound"],
+        #     )
 
-        if mooring_opt["line_stiffness_coeff"]["flag"]:
-            wt_opt.model.add_design_var(
-                "mooring.line_stiffness_coeff",
-                lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
-                upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
-            )
-        '''
+        # if mooring_opt["line_stiffness_coeff"][0]["flag"]:
+        #     wt_opt.model.add_design_var(
+        #         "mooring.line_stiffness_coeff",
+        #         lower=mooring_opt["line_stiffness_coeff"][0]["lower_bound"],
+        #         upper=mooring_opt["line_stiffness_coeff"][0]["upper_bound"],
+        #     )
 
         # -- User DVs --
         if "user" in self.opt["design_variables"]:

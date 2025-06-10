@@ -5,20 +5,19 @@ design_variables:
 
     floating:
         joints:
-            flag: True
             r_coordinate:
                 - names: [anchor1, anchor2, anchor3]
                   lower_bound: 400.0
                   upper_bound: 2000.0
     mooring:
         line_length:
-            flag: True
-            lower_bound: 250.0
-            upper_bound: 2000.0
+            - flag: True
+              lower_bound: 250.0
+              upper_bound: 2000.0
         line_diameter:
-            flag: True
-            lower_bound: 0.04
-            upper_bound: 0.2
+            - flag: True
+              lower_bound: 0.04
+              upper_bound: 0.2
 
 
 merit_figure: mooring_mass
