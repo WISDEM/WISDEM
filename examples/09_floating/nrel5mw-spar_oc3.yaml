@@ -1152,17 +1152,11 @@ control:
         Vin: 3.0
         Vout: 25.0
         maxTS: 80.0
-        #rated_power: 5000000.0
-        minOmega: 0.72256
-        maxOmega: 1.26711
     pitch:
         ps_percent: 0.9
         max_pitch: 89.95437383553924
         max_pitch_rate: 9.998113525032865
         min_pitch: 0.0
-        #fl_feedback:
-        #    twr_freq: 100
-        #    ptfm_freq: 0.2
     torque:
         tsr: 7.01754386
         max_torque_rate: 1500000.0
