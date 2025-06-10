@@ -664,26 +664,120 @@ components:
     hub:
         diameter: 7.94
         cone_angle: 4.0
-        elastic_properties_mb:
-            system_mass: 69360.0
-            system_inertia: [973520.0, 619970.0, 619970.0]
-    nacelle:
-        drivetrain:
-            uptilt: 0.10471975511966002
-            distance_tt_hub: 5.614100000000008
-            overhang: 12.032
-            gear_ratio: 1
-            gearbox_efficiency: 1.0
-        elastic_properties_mb:
-            system_mass: 675175.0
-            yaw_mass: 0
-            system_inertia: [9912933.0, 10862815.0, 10360761.0]
-            system_inertia_tt: [9912933.0, 10862815.0, 10360761.0]
-            system_center_mass: [-4.528, -0.14, 4.098]
+        flange_t2shell_t: 6.0
+        flange_OD2hub_D: 0.6
+        flange_ID2OD: 0.8
+        hub_blade_spacing_margin: 1.2
+        hub_stress_concentration: 3.0
+        n_front_brackets: 5
+        n_rear_brackets: 5
+        clearance_hub_spinner: 0.5
+        spin_hole_incr: 1.2
+        pitch_system_scaling_factor: 0.75
+        spinner_gust_ws: 70.0
+        hub_material: cast_iron
+        spinner_material: glass_uni
+        cd: 0.5
+    drivetrain:
+        outer_shape:
+            uptilt: 6.0
+            distance_tt_hub: 5.614
+            distance_hub_mb: 1.0
+            distance_mb_mb: 1.2
+            overhang: 12.0313
+            cd: 0.5
+        gearbox:
+            gear_ratio: 1.0
+            efficiency: 1.0
+        lss:
+            diameter: [3.0, 3.0]
+            wall_thickness: [0.1, 0.1]
+            material: steel_drive
+        hss: {}
+        nose:
+            diameter: [2.2, 2.2]
+            wall_thickness: [0.1, 0.1]
+        bedplate:
+            wall_thickness:
+                grid: [0.0, 1.0]
+                values: [0.05, 0.05]
+            material: steel_drive
+        other_components:
+            mb1Type: CARB
+            mb2Type: SRB
+            uptower: true
         generator:
-            elastic_properties_mb:
-                system_mass: 69360.0
-                rotor_inertia: [9912933.0, 10862815.0, 10360761.0]
+            rho_Fe: 7700.0
+            rho_Fes: 7850.0
+            rho_Copper: 8900.0
+            rho_PM: 7450.0
+            B_r: 1.279
+            P_Fe0e: 1.0
+            P_Fe0h: 4.0
+            S_N: -0.002
+            alpha_p: 1.0995574287564276
+            b_r_tau_r: 0.45
+            b_ro: 0.004
+            b_s_tau_s: 0.45
+            b_so: 0.004
+            cofi: 0.9
+            freq: 60.0
+            h_i: 0.004
+            h_sy0: 0.0
+            h_w: 0.005
+            k_fes: 0.8
+            k_fillr: 0.55
+            k_fills: 0.65
+            k_s: 0.2
+            m: 3
+            mu_0: 1.2566370614359173e-06
+            mu_r: 1.06
+            phi: 90.0
+            q1: 5
+            q2: 4
+            ratio_mw2pp: 0.8
+            resist_Cu: 2.52e-08
+            y_tau_pr: 0.8333333
+            y_tau_p: 0.8
+            rad_ag: 5.12623359
+            len_s: 2.23961662
+            tau_p: 0.1610453779
+            tau_s: 0.1339360726
+            h_s: 0.3769449149
+            b_s: 0.05121796888
+            b_t: 0.08159225451
+            h_t: 0.3859449149
+            h_ys: 0.03618114528
+            h_yr: 0.0361759511
+            h_m: 0.0995385122
+            b_m: 0.1288363023
+            B_g: 1.38963289
+            B_symax: 1.63455514
+            B_rymax: 1.63478983
+            p: 100
+            R_s: 0.02457052
+            L_s: 0.01138752
+            S: 240
+            t_r: 0.0607657125
+            h_sr: 0.04677116325
+            t_s: 0.06065213554
+            h_ss: 0.04650825863
+            E_p: 1905.2558883257652
+            b: 2.0
+            c: 5.0
+            N_c: 2
+            B_tmax: 1.9
+            u_allow_pcent: 8.5
+            y_allow_pcent: 1.0
+            z_allow_deg: 0.05
+            sigma: 60000.0
+            h_0: 0.05
+            C_Cu: 4.786
+            C_Fe: 0.556
+            C_Fes: 0.50139
+            C_PM: 50.0
+            length: 2.15
+            type: PMSG_Outer
     tower:
         outer_shape:
             outer_diameter:
