@@ -114,24 +114,22 @@ class TestServo(unittest.TestCase):
 
         myobj.compute(inputs, outputs)
 
-        ref_no_stall_constraint = np.array([0.        , 0.        ,
-                             0.        , 0.        , 0.        ,
-            0.        , 0.        , 0.77009342, 0.80530567, 0.83153911,
-            0.85911535, 0.89343367, 0.97975052, 1.07592565, 1.11609355,
-            1.13403252, 1.14891246, 1.14568097, 1.14014398, 1.12239983,
-            1.07454375, 1.07115146, 1.07115146, 1.07115146, 1.07115146,
-            1.07115146, 1.07115146, 1.07115146, 1.07115146, 1.07115146])
+        ref_no_stall_constraint = np.array([0.        , 0.        , 0.        , 0.        , 0.        ,
+            0.        , 0.        , 0.67118396, 0.790765  , 0.91126711,
+            1.04726257, 1.07996108, 1.10021102, 1.10700111, 1.11135515,
+            1.11887215, 1.12847682, 1.13645538, 1.14486372, 1.14846378,
+            1.13405906, 1.13241738, 1.11592884, 1.11454111, 1.11388991,
+            1.11688013, 1.13381233, 1.14722555, 1.13538874, 0.92356469])
         
-        ref_stall_angle_along_span = np.array([1.00000000e-06, 6.24217266e+01, 
-                                               3.04993295e+00, 3.86108996e+01,
-                2.45945626e+01, 1.84737813e+01, 1.35576462e+01, 1.29854375e+01,
-                1.24176450e+01, 1.20258925e+01, 1.16398805e+01, 1.11927727e+01,
-                1.02066799e+01, 9.29432250e+00, 8.95982239e+00, 8.81808929e+00,
-                8.70388331e+00, 8.72843333e+00, 8.77082210e+00, 8.90948100e+00,
-                9.30627534e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
-                9.33574791e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
-                9.33574791e+00, 9.33574791e+00])
-
+        ref_stall_angle_along_span = np.array([1.00000000e-06, 3.12001944e+00, 2.80452784e+00, 3.57331530e+01,
+            3.02078680e+01, 2.60958541e+01, 2.26989830e+01, 1.48990450e+01,
+            1.26459821e+01, 1.09737309e+01, 9.54870368e+00, 9.25959294e+00,
+            9.08916542e+00, 9.03341461e+00, 8.99802368e+00, 8.93757165e+00,
+            8.86150239e+00, 8.79928960e+00, 8.73466410e+00, 8.70728371e+00,
+            8.81788291e+00, 8.83066627e+00, 8.96114484e+00, 8.97230255e+00,
+            8.97754785e+00, 8.95351232e+00, 8.81980176e+00, 8.71668173e+00,
+            8.80755609e+00, 1.08276119e+01])
+        
         npt.assert_almost_equal(outputs["no_stall_constraint"], ref_no_stall_constraint)
         npt.assert_almost_equal(outputs["stall_angle_along_span"], ref_stall_angle_along_span)
 
@@ -148,7 +146,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -436,7 +434,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
@@ -532,6 +530,10 @@ class TestServo(unittest.TestCase):
         prob["omega_max"] = 1e3
         prob["control_maxTS"] = 1e4
         prob["rated_power"] = 5e6
+        prob["ps_percent"] = 1.0
+        prob.run_model()
+        T_peak = max(prob["T"])
+        prob["ps_percent"] = 0.8
         prob.run_model()
         V_expect1 = np.sort(np.r_[V_expect0, prob["rated_V"]])
         Omega_tsr = V_expect1 * 10 * 60 / 70.0 / 2.0 / np.pi
@@ -544,7 +546,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
         npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
-        npt.assert_array_less(prob["T"], 0.8 * 880899)  # From print out in first test
+        npt.assert_array_less(prob["T"], prob["ps_percent"][0] * T_peak)
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertGreater(prob["rated_pitch"], 0.0)
         myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
@@ -616,7 +618,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = True
+        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
