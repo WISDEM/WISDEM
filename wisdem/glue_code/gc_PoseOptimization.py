@@ -645,34 +645,24 @@ class PoseOptimization(object):
             "nose_wall_thickness",
         ]:
             if drive_opt[k]["flag"]:
-                wt_opt.model.add_design_var(
-                    "drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
-                )
+                wt_opt.model.add_design_var("drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2)
 
         # -- Floating --
-        if float_opt["joints"]["flag"]:
-            jointz = float_opt["joints"]["z_coordinate"]
-            jointr = float_opt["joints"]["r_coordinate"]
-
-            count = 0
-            for k in range(len(jointz)):
-                wt_opt.model.add_design_var(
-                    f"floating.jointdv_{count}",
-                    lower=jointz[k]["lower_bound"],
-                    upper=jointz[k]["upper_bound"],
-                )
+        count = 0
+        jointz = float_opt["joints"]["z_coordinate"]
+        jointr = float_opt["joints"]["r_coordinate"]
+        for k in range(len(jointz)):
+            if jointz[k]["flag"]:
+                wt_opt.model.add_design_var(f"floating.jointdv_{count}", lower=jointz[k]["lower_bound"], upper=jointz[k]["upper_bound"])
                 count += 1
 
-            for k in range(len(jointr)):
-                wt_opt.model.add_design_var(
-                    f"floating.jointdv_{count}",
-                    lower=jointr[k]["lower_bound"],
-                    upper=jointr[k]["upper_bound"],
-                )
+        for k in range(len(jointr)):
+            if jointr[k]["flag"]:
+                wt_opt.model.add_design_var(f"floating.jointdv_{count}", lower=jointr[k]["lower_bound"], upper=jointr[k]["upper_bound"])
                 count += 1
 
-        if float_opt["members"]["flag"]:
-            for kgrp in float_opt["members"]["groups"]:
+        for kgrp in float_opt["members"]["groups"]:
+            if kgrp["flag"]:
                 memname = kgrp["names"][0]
                 idx = self.modeling["floating"]["members"]["name2idx"][memname]
                 imem = self.modeling["floating"]["members"]["name"].index(memname)
@@ -760,6 +750,7 @@ class PoseOptimization(object):
                     )
 
         # -- Mooring --
+        '''
         if mooring_opt["line_length"]["flag"]:
             wt_opt.model.add_design_var(
                 "mooring.unstretched_length_in",
@@ -789,7 +780,9 @@ class PoseOptimization(object):
                 lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
+        '''
 
+        # -- User DVs --
         if "user" in self.opt["design_variables"]:
             user_defined = self.opt["design_variables"]["user"]
             for i in range(len(user_defined)):

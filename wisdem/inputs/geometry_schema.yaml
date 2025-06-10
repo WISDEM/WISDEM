@@ -17,75 +17,155 @@ properties:
         optional:
             - jacket
         properties:
+            hub:
+                type: object
+                required:
+                    - diameter
+                    - cone_angle
+                properties:
+                    flange_t2shell_t:
+                        type: number
+                        description: Ratio of flange thickness to shell thickness
+                        default: 6.
+                        unit: none
+                        minimum: 0
+                        maximum: 20.
+                    flange_OD2hub_D:
+                        type: number
+                        description: Ratio of flange outer diameter to hub diameter
+                        default: 0.6
+                        unit: none
+                        minimum: 0
+                        maximum: 10.
+                    flange_ID2OD:
+                        type: number
+                        description: Check this
+                        unit: none
+                        default: 0.8
+                        minimum: 0
+                        maximum: 10.
+                    hub_blade_spacing_margin:
+                        type: number
+                        description: Ratio of flange thickness to shell thickness
+                        default: 1.2
+                        unit: none
+                        minimum: 0
+                        maximum: 20.
+                    hub_stress_concentration:
+                        type: number
+                        description: Stress concentration factor. Stress concentration occurs at all fillets,notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
+                        unit: none
+                        default: 3.
+                        minimum: 0
+                        maximum: 20.
+                    n_front_brackets:
+                        type: integer
+                        description: Number of front spinner brackets
+                        unit: none
+                        default: 5
+                        minimum: 0
+                        maximum: 20
+                    n_rear_brackets:
+                        type: integer
+                        description: Number of rear spinner brackets
+                        unit: none
+                        default: 5
+                        minimum: 0
+                        maximum: 20
+                    clearance_hub_spinner:
+                        type: number
+                        description: Clearance between spinner and hub
+                        default: 0.5
+                        unit: m
+                        minimum: 0
+                        maximum: 20.
+                    spin_hole_incr:
+                        type: number
+                        description: Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
+                        unit: none
+                        default: 1.2
+                        minimum: 0
+                        maximum: 20.
+                    pitch_system_scaling_factor:
+                        type: number
+                        description: Scaling factor to tune the total mass (0.54 is recommended for modern designs)
+                        unit: none
+                        default: 0.54
+                        minimum: 0
+                        maximum: 2.
+                    hub_material:
+                        type: string
+                        description: Material of the shell of the hub
+                    spinner_material:
+                        type: string
+                        description: Material of the spinner
+                    hub_shell_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    spinner_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    pitch_system_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of pitch system mass with this value
+                        minimum: 0.0
+                    hub_system_mass_user:
+                        type: number
+                        description: User input override of full hub system mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
             drivetrain:
                 type: object
                 properties:
-                    bedplate_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular calculation of bedplate mass with this value
-                        minimum: 0.0
-                    brake_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of brake mass with this value
-                        minimum: 0.0
-                    hvac_mass_coefficient:
-                        type: number
-                        default: 0.025
-                        units: kg/kW
-                        description: Regression-based scaling coefficient on machine rating to get HVAC system mass
-                        minimum: 0.0
-                    converter_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of converter mass with this value
-                        minimum: 0.0
-                    transformer_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of transformer mass with this value
-                        minimum: 0.0
-                    mb1_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of first main bearing mass with this value
-                        minimum: 0.0
-                    mb2_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of second main bearing mass with this value
-                        minimum: 0.0
-                    yaw_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular regression-based calculation of yaw drive mass with this value
-                        minimum: 0.0
-                    above_yaw_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
-                        minimum: 0.0
-                    spring_constant_user:
-                        type: number
-                        default: 0.0
-                        units: N*m/rad
-                        description: Override regular calculation of drivetrain spring constant with this value
-                        minimum: 0.0
-                    damping_coefficient_user:
-                        type: number
-                        default: 0.0
-                        units: N*m/rad
-                        description: Override regular calculation of drivetrain damping coefficient with this value
-                        minimum: 0.0
+                    bedplate:
+                        type: object
+                        properties:
+                            mass:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular calculation of bedplate mass with this value
+                                minimum: 0.0
+                    other_components:
+                        type: object
+                        description: Inputs describing all other drivetrain components, the assembly of brake, hvac, converter, transformer, and main bearings
+                        properties:
+                            mb1_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of first main bearing mass with this value
+                                minimum: 0.0
+                            mb2_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of second main bearing mass with this value
+                                minimum: 0.0
+                    elastic_properties:
+                        type: object
+                        properties:
+                            spring_constant_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain spring constant with this value
+                                minimum: 0.0
+                            damping_coefficient_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain damping coefficient with this value
+                                minimum: 0.0
                     generator:
                         type: object
                         properties:
@@ -500,86 +580,6 @@ properties:
                                     units: kg
                                     description: Override bottom-up calculation of total member mass with this value
                                     minimum: 0.0
-
-            jacket:
-                type: object
-                required:
-                    - n_bays
-                    - n_legs
-                    - r_foot
-                    - r_head
-                    - height
-                    - leg_diameter
-                    - leg_thickness
-                    - brace_diameters
-                    - brace_thicknesses
-                optional:
-                    - material
-                    - transition_piece_mass
-                    - transition_piece_cost
-                    - gravity_foundation_mass
-                    - jacket_mass_user
-                properties:
-                    transition_piece_mass:
-                        type: number
-                        description: Total mass of transition piece
-                        unit: kg
-                        minimum: 0.0
-                        default: 0.0
-                    transition_piece_cost:
-                        type: number
-                        description: Total cost of transition piece
-                        unit: USD
-                        minimum: 0.0
-                        default: 0.0
-                    gravity_foundation_mass:
-                        type: number
-                        description: Total mass of gravity foundation addition onto monopile
-                        unit: kg
-                        minimum: 0.0
-                        default: 0.0
-                    jacket_mass_user:
-                        type: number
-                        default: 0.0
-                        units: kg
-                        description: Override bottom-up calculation of total jacket mass with this value
-                        minimum: 0.0
-                    material:
-                        type: string
-                        description: Material of jacket members
-                        default: steel
-                    n_bays:
-                        type: integer
-                        description: Number of bays (x-joints) in the vertical direction for jackets.
-                    n_legs:
-                        type: integer
-                        description: Number of legs for jacket.
-                    r_foot:
-                        type: number
-                        description: Radius of foot (bottom) of jacket, in meters.
-                    r_head:
-                        type: number
-                        description: Radius of head (top) of jacket, in meters.
-                    height:
-                        type: number
-                        description: Overall jacket height, meters.
-                    leg_thickness:
-                        type: number
-                        description: Leg thickness, meters. Constant throughout each leg.
-                    brace_diameters:
-                        $ref: "#/definitions/distributed_data/length"
-                    brace_thicknesses:
-                        $ref: "#/definitions/distributed_data/length"
-                    bay_spacing:
-                        $ref: "#/definitions/distributed_data/grid_nd"
-                    leg_spacing:
-                        $ref: "#/definitions/distributed_data/grid_nd"
-                    x_mb:
-                        type: boolean
-                        description: Mud brace included if true.
-                    leg_diameter:
-                        type: number
-                        description: Leg diameter, meters. Constant throughout each leg.
 
     control:
         type: object

@@ -1,138 +1,103 @@
 general:
     folder_output: outputs
     fname_output: refturb_output
+
+design_variables:
     floating:
         joints:
-            draft:
-                # Adjusts the z-coordinate of the listed joints
-                linked_joints:
-                    # This will set the same z-value for all of the joints listed in the same names entry
-                    - names: [col1_keel, col2_keel, col3_keel]
-                      flag: False
-                      lower_bound: -100.0
-                      upper_bound: -5.0
-                independent_joints:
-                    # This will adjust the z-coordinate of the joints separately
-                    - name: maincol_keel
-                      flag: False
-                      lower_bound: -100.0
-                      upper_bound: -5.0
-            column_spacing:
-                # Adjusts the x/y-coordinate of the listed joints to be a desired radius from (0,0)
-                linked_joints:
-                    # This will set the x,y-value for all of the joints listed in the same names entry at constant angle relative to (0,0)
-                    - names: [col1_keel, col1_freeboard, col1_fairlead, col2_keel, col2_freeboard, col2_fairlead, col3_keel, col3_freeboard, col3_fairlead]
-                      flag: False
-                      lower_bound: 5.0
-                      upper_bound: 75.0
-            fairlead_depth:
-                # Adjusts the z-coordinate of the listed joints
-                linked_joints:
-                    # This will set the same z-value for all of the joints listed in the same names entry.
-                    # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
-                    - names: [col1_fairlead, col2_fairlead, col3_fairlead]
-                      flag: False
-                      lower_bound: 0.0
-                      upper_bound: 1.0
-            pontoon_depth:
-                # Adjusts the z-coordinate of the listed joints
-                linked_joints:
-                    # This will set the same z-value for all of the joints listed in the same names entry.
-                    # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
-                    - names: [col1_pontoon_lower, col2_pontoon_lower, col3_pontoon_lower]
-                      flag: False
-                      lower_bound: 0.0
-                      upper_bound: 1.0
-                    - names: [col1_pontoon_upper, col2_pontoon_upper, col3_pontoon_upper]
-                      flag: False
-                      lower_bound: 0.0
-                      upper_bound: 1.0
-    members:
-            diameter:
-                linked_members:
-                    # This will set the same diameter profile for all of the members listed in the same names entry
-                    - names: [col1, col2, col3]
-                      flag: False
+            z_coordinate:
+                # This will set the same z-value for all of the joints listed in the same names entry
+                - names: [col1_keel, col2_keel, col3_keel]
+                  lower_bound: -100.0
+                  upper_bound: -5.0
+                  flag: False
+                # This will set the same z-value for all of the joints listed in the same names entry.
+                # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
+                - names: [col1_fairlead, col2_fairlead, col3_fairlead]
+                  lower_bound: 0.0
+                  upper_bound: 1.0
+                  flag: False
+                # This will set the same z-value for all of the joints listed in the same names entry.
+                # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
+                - names: [col1_pontoon_lower, col2_pontoon_lower, col3_pontoon_lower]
+                  lower_bound: 0.0
+                  upper_bound: 1.0
+                  flag: False
+                - names: [col1_pontoon_upper, col2_pontoon_upper, col3_pontoon_upper]
+                  lower_bound: 0.0
+                  upper_bound: 1.0
+                  flag: False
+                - names: [maincol_keel]
+                  lower_bound: -100.0
+                  upper_bound: -5.0
+                  flag: False
+            r_coordinate:
+                # This will set the x,y-value for all of the joints listed in the same names entry at constant angle relative to (0,0)
+                - names: [col1_keel, col1_freeboard, col1_fairlead, col2_keel, col2_freeboard, col2_fairlead, col3_keel, col3_freeboard, col3_fairlead]
+                  lower_bound: 5.0
+                  upper_bound: 75.0
+                  flag: False
+        members:
+            groups:
+                - names: [main_col]
+                  flag: False
+                  diameter:
                       lower_bound: 1.0
                       upper_bound: 20.0
-                    - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 5.0
-                    - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 5.0
-                independent_members:
-                    # This will set the same ballast for all of the members listed in the same names entry
-                    - name: main_col
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 20.0
-            thickness:
-                linked_members:
-                    # This will set the same thickness profile for all of the members listed in the same names entry
-                    - names: [col1, col2, col3]
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 20.0
-                    - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 5.0
-                    - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 5.0
-                independent_members:
-                    # This will set the same ballast for all of the members listed in the same names entry
-                    - name: main_col
-                      flag: False
-                      lower_bound: 1.0
-                      upper_bound: 20.0
-            ballast:
-                linked_members:
-                    # This will set the same ballast for all of the members listed in the same names entry
-                    - names: [col1, col2, col3]
-                      flag: False
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 0.5
+                  ballast:
                       lower_bound: 1.0
                       upper_bound: 1.e+6
-                independent_members:
-                    # This will set the same ballast for all of the members listed in the same names entry
-                    - name: main_col
-                      flag: False
+                - names: [col1, col2, col3]
+                  flag: False
+                  diameter:
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 0.5
+                  ballast:
                       lower_bound: 1.0
                       upper_bound: 1.e+6
+                - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
+                  flag: False
+                  diameter:
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 0.5
+                - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
+                  flag: False
+                  diameter:
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 0.5
     mooring:
-            anchor_radius:
-                # This adjusts the radius of all anchor nodes from (0,0)
-                flag: False
-                lower_bound: 10.0
-                upper_bound: 1000.0
             line_length:
                 # Adjust the unstretched line length of the mooring segments
-                linked_lines:
-                    # This will set the same line length for all segments listed in the same names entry
-                    - names: [line1, line2, line3]
-                      flag: False
-                      lower_bound: 100.0
-                      upper_bound: 2000.0
-                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                      flag: False
-                      lower_bound: 100.0
-                      upper_bound: 2000.0
+                - names: [line1, line2, line3]
+                  flag: False
+                  lower_bound: 100.0
+                  upper_bound: 2000.0
+                - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                  flag: False
+                  lower_bound: 100.0
+                  upper_bound: 2000.0
             line_diameter:
                 # Adjust the diameter of the mooring segments
-                linked_lines:
-                    # This will set the same diameter for all segments listed in the same names entry
-                    - names: [line1, line2, line3]
-                      flag: False
-                      lower_bound: 0.1
-                      upper_bound: 2.0
-                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                      flag: False
-                      lower_bound: 0.1
-                      upper_bound: 2.0
+                - names: [line1, line2, line3]
+                  flag: False
+                  lower_bound: 0.1
+                  upper_bound: 2.0
+                - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                  flag: False
+                  lower_bound: 0.1
+                  upper_bound: 2.0
 
 merit_figure: LCOE
 

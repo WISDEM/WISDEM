@@ -5,18 +5,19 @@ design_variables:
 
     floating:
         joints:
-            flag: False
             z_coordinate:
                 - names: [spar_keel]
                   lower_bound: -40.0
                   upper_bound: -15.0
+                  flag: False
                 - names: [spar_freeboard]
                   lower_bound: -40.0
                   upper_bound: -15.0
+                  flag: False
         members:
-            flag: True
             groups:
                 - names: [spar]
+                  flag: True
                   ballast:
                       lower_bound: 1.0
                       upper_bound: 1e4

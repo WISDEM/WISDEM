@@ -658,7 +658,6 @@ properties:
                         description: Design variables associated with the node/joint locations used in the floating platform
                         default: {}
                         properties:
-                            flag: *flag
                             z_coordinate: &link_m
                                 type: array
                                 description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
@@ -671,6 +670,7 @@ properties:
                                             description: Joint or member names of those that are linked
                                             items:
                                                 type: string
+                                        flag: *flag
                                         lower_bound:
                                             type: number
                                             unit: m
@@ -682,10 +682,9 @@ properties:
                             r_coordinate: *link_m
                     members:
                         type: object
-                        description: Design variables associated with the members used in the floating platform
+                        description: Design variables associated with the sets of members that share the same design
                         default: {}
                         properties:
-                            flag: *flag
                             groups:
                                 type: array
                                 description: Sets of members that share the same design
@@ -694,6 +693,7 @@ properties:
                                     type: object
                                     properties:
                                         names: *floatname
+                                        flag: *flag
                                         diameter:
                                             type: object
                                             #default: {}
@@ -827,43 +827,29 @@ properties:
                 description: Design variables associated with the mooring system
                 default: {}
                 properties:
-                    line_length:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: &lboundm
-                                type: number
-                                unit: m
-                                description: Design variable bound
-                                default: 0.0
-                                minimum: 0.0
-                            upper_bound: &uboundm
-                                type: number
-                                unit: m
-                                description: Design variable bound
-                                minimum: 0.0
-                    line_diameter:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *lboundm
-                            upper_bound: *uboundm
-                    line_mass_density_coeff:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *lboundm
-                            upper_bound: *uboundm
-                    line_stiffness_coeff:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *lboundm
-                            upper_bound: *uboundm
+                    line_length: &mooringdv
+                        type: array
+                        description: List of lines by name sets that should be adjusted.  A single entry for an independent line or a list of names for those that should be linked by symmetry.
+                        default: []
+                        items:
+                            type: object
+                            properties:
+                                names: *floatname
+                                flag: *flag
+                                lower_bound:
+                                    type: number
+                                    unit: m
+                                    description: Design variable bound
+                                    default: 0.0
+                                    minimum: 0.0
+                                upper_bound:
+                                    type: number
+                                    unit: m
+                                    description: Design variable bound
+                                    minimum: 0.0
+                    line_diameter: *mooringdv
+                    line_mass_density_coeff: *mooringdv
+                    line_stiffness_coeff: *mooringdv
             user:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components.

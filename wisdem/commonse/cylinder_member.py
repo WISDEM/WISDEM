@@ -1376,6 +1376,7 @@ class MemberComplex(om.ExplicitComponent):
                     sigy=sigymat[k],
                 )
                 self.add_section(s_full[k], s_full[k + 1], iprop)
+
         elif self.shape == "rectangular":
             for k in range(len(s_full) - 1):
                 irect = cs.Rectangle(a_sec[k], b_sec[k], t_full[k])
@@ -1399,6 +1400,7 @@ class MemberComplex(om.ExplicitComponent):
 
         # Adjust for ghost sections
         if s_ghost1 > 0.0:
+            print(s_ghost1)
             self.add_node(s_ghost1)
             for s in self.sections:
                 if s >= s_ghost1:

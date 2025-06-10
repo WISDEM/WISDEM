@@ -126,6 +126,91 @@ components:
         spinner_mass_user: 500.0
         pitch_system_mass_user: 8300.0
         cd: 0.5
+    drivetrain:
+        outer_shape:
+            uptilt: 4.999629720311564
+            distance_tt_hub: 2.3
+            overhang: 5.0
+        gearbox:
+            gear_ratio: 96
+            efficiency: 0.975
+            damping_ratio: 0.01
+            gear_configuration: eep
+            planet_numbers: [3, 3, 0]
+            mass: 21500.0
+        lss:
+            diameter: [0.577, 0.577]
+            wall_thickness: [0.288, 0.288]
+            material: steel_drive
+        hss:
+            length: 1.5
+            diameter: [0.288, 0.288]
+            wall_thickness: [0.144, 0.144]
+            material: steel_drive
+        nose: {}
+        bedplate:
+            flange_width: 1.0
+            flange_thickness: 0.05
+            web_thickness: 0.05
+            material: steel
+            mass: 20000.0
+        other_components:
+            brake_mass: 5500.0
+            converter_mass: 4200.0
+            transformer_mass: 11500.0
+            mb1_type: CARB
+            mb2_type: SRB
+            uptower: true
+            mb1_mass: 1500.0
+            mb2_mass: 1350.0
+        generator:
+            mass: 19500.0
+            rho_Fe: 7700.0
+            rho_Fes: 7850.0
+            rho_Copper: 8900.0
+            rho_PM: 7450.0
+            B_r: 1.2
+            P_Fe0e: 1.0
+            P_Fe0h: 4.0
+            S_N: -0.002
+            alpha_p: 1.0995574287564276
+            b_r_tau_r: 0.45
+            b_ro: 0.004
+            b_s_tau_s: 0.45
+            b_so: 0.004
+            freq: 60
+            h_i: 0.001
+            h_sy0: 0.0
+            h_w: 0.005
+            k_fes: 0.9
+            k_s: 0.2
+            m: 3
+            mu_0: 1.2566370614359173e-06
+            mu_r: 1.06
+            p: 3.0
+            phi: 90.0
+            ratio_mw2pp: 0.7
+            resist_Cu: 2.52e-08
+            y_tau_pr: 0.8333333
+            cofi: 0.9
+            y_tau_p: 0.8
+            sigma: 21500.0
+            rad_ag: 0.61
+            len_s: 0.49
+            h_s: 0.08
+            I_0: 40.0
+            B_symax: 1.3
+            h_0: 0.01
+            k_fillr: 0.55
+            k_fills: 0.65
+            q1: 5
+            q2: 4
+            C_Cu: 4.786
+            C_Fe: 0.556
+            C_Fes: 0.50139
+            C_PM: 50.0
+            type: DFIG
+            length: 2.0
     tower:
         tower_mass_user: 250000.0
         outer_shape:
@@ -284,91 +369,6 @@ components:
         anchor_types:
            -  name: drag_embedment
               type: drag_embedment
-    drivetrain:
-        outer_shape:
-            uptilt: 4.999629720311564
-            distance_tt_hub: 2.3
-            overhang: 5.0
-        gearbox:
-            gear_ratio: 96
-            efficiency: 0.975
-            damping_ratio: 0.01
-            gear_configuration: eep
-            planet_numbers: [3, 3, 0]
-            mass: 21500.0
-        lss:
-            diameter: [0.577, 0.577]
-            wall_thickness: [0.288, 0.288]
-            material: steel_drive
-        hss:
-            length: 1.5
-            diameter: [0.288, 0.288]
-            wall_thickness: [0.144, 0.144]
-            material: steel_drive
-        nose: {}
-        bedplate:
-            flange_width: 1.0
-            flange_thickness: 0.05
-            web_thickness: 0.05
-            material: steel
-            mass: 20000.0
-        other_components:
-            brake_mass: 5500.0
-            converter_mass: 4200.0
-            transformer_mass: 11500.0
-            mb1_type: CARB
-            mb2_type: SRB
-            uptower: true
-            mb1_mass: 1500.0
-            mb2_mass: 1350.0
-        generator:
-            mass: 19500.0
-            rho_Fe: 7700.0
-            rho_Fes: 7850.0
-            rho_Copper: 8900.0
-            rho_PM: 7450.0
-            B_r: 1.2
-            P_Fe0e: 1.0
-            P_Fe0h: 4.0
-            S_N: -0.002
-            alpha_p: 1.0995574287564276
-            b_r_tau_r: 0.45
-            b_ro: 0.004
-            b_s_tau_s: 0.45
-            b_so: 0.004
-            freq: 60
-            h_i: 0.001
-            h_sy0: 0.0
-            h_w: 0.005
-            k_fes: 0.9
-            k_s: 0.2
-            m: 3
-            mu_0: 1.2566370614359173e-06
-            mu_r: 1.06
-            p: 3.0
-            phi: 90.0
-            ratio_mw2pp: 0.7
-            resist_Cu: 2.52e-08
-            y_tau_pr: 0.8333333
-            cofi: 0.9
-            y_tau_p: 0.8
-            sigma: 21500.0
-            rad_ag: 0.61
-            len_s: 0.49
-            h_s: 0.08
-            I_0: 40.0
-            B_symax: 1.3
-            h_0: 0.01
-            k_fillr: 0.55
-            k_fills: 0.65
-            q1: 5
-            q2: 4
-            C_Cu: 4.786
-            C_Fe: 0.556
-            C_Fes: 0.50139
-            C_PM: 50.0
-            type: DFIG
-            length: 2.0
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
