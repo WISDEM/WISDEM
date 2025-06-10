@@ -18,8 +18,8 @@ class TestRegression(unittest.TestCase):
     def test_nrel5mw_user(self):
         ## IEA 15MW
         fname_wt_input = os.path.join(test_dir, "nrel5mw-spar_oc3_user_mass.yaml")
-        fname_modeling_options = os.path.join(test_dir, "modeling_options.yaml")
-        fname_analysis_options = os.path.join(test_dir, "analysis_options.yaml")
+        fname_modeling_options = os.path.join(test_dir, "modeling_options_spar.yaml")
+        fname_analysis_options = os.path.join(test_dir, "analysis_options_null.yaml")
         wt_opt, modeling_options, opt_options = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )

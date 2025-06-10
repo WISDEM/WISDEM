@@ -637,31 +637,31 @@ components:
               location: [0.0, 0.0, 10.0]
               transition: true
            -  name: col1_keel
-              location: [28.86751, 3.14159265, -20.0]
+              location: [28.86751, 180., -20.0]
               cylindrical: true
            -  name: col1_freeboard
-              location: [28.86751, 3.14159265, 12.0]
+              location: [28.86751, 180.0, 12.0]
               cylindrical: true
            -  name: col2_keel
-              location: [28.86751, 1.0471976, -20.0]
+              location: [28.86751, 60.0, -20.0]
               cylindrical: true
            -  name: col2_freeboard
-              location: [28.86751, 1.0471975, 12.0]
+              location: [28.86751, 60.0, 12.0]
               cylindrical: true
            -  name: col3_keel
-              location: [28.86751, -1.0471976, -20.0]
+              location: [28.86751, -60.0, -20.0]
               cylindrical: true
            -  name: col3_freeboard
-              location: [28.86751, -1.0471976, 12.0]
+              location: [28.86751, -60.0, 12.0]
               cylindrical: true
            -  name: anchor1
-              location: [837.6, 3.14159265, -200.0]
+              location: [837.6, 180.0, -200.0]
               cylindrical: true
            -  name: anchor2
-              location: [837.6, 1.0471976, -200.0]
+              location: [837.6, 60.0, -200.0]
               cylindrical: true
            -  name: anchor3
-              location: [837.6, -1.0471976, -200.0]
+              location: [837.6, -60.0, -200.0]
               cylindrical: true
         members:
            -  name: main_column

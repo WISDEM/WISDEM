@@ -2022,8 +2022,8 @@ class AggregateJoints(om.ExplicitComponent):
                 s_ghost1 = node_r[joint1id] / hk
             if intersects[joint2id] > 1 and node_r[joint2id] > Rk[-1]:
                 s_ghost2 = 1.0 - node_r[joint2id] / hk
-            outputs["member_" + iname + ":s_ghost1"] = s_ghost1 #if s_ghost1 < 1.0 else 0.0
-            outputs["member_" + iname + ":s_ghost2"] = s_ghost2 #if s_ghost2 < 1.0 else 0.0
+            outputs["member_" + iname + ":s_ghost1"] = s_ghost1
+            outputs["member_" + iname + ":s_ghost2"] = s_ghost2
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz

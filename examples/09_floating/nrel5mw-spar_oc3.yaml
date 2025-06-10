@@ -717,19 +717,19 @@ components:
               location: [5.2, 0.0, -70.0]
               cylindrical: true
            -  name: fairlead2
-              location: [5.2, 2.0943951023931953, -70.0]
+              location: [5.2, 120.0, -70.0]
               cylindrical: true
            -  name: fairlead3
-              location: [5.2, 4.1887902047863905, -70.0]
+              location: [5.2, 240.0, -70.0]
               cylindrical: true
            -  name: anchor1
               location: [853.87, 0.0, -320.0]
               cylindrical: true
            -  name: anchor2
-              location: [853.87, 2.0943951023931953, -320.0]
+              location: [853.87, 120.0, -320.0]
               cylindrical: true
            -  name: anchor3
-              location: [853.87, 4.1887902047863905, -320.0]
+              location: [853.87, 240.0, -320.0]
               cylindrical: true
         members:
            -  name: spar

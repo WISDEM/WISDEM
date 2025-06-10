@@ -1400,7 +1400,6 @@ class MemberComplex(om.ExplicitComponent):
 
         # Adjust for ghost sections
         if s_ghost1 > 0.0:
-            print(s_ghost1)
             self.add_node(s_ghost1)
             for s in self.sections:
                 if s >= s_ghost1:
