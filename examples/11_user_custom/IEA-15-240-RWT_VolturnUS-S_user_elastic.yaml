@@ -685,6 +685,8 @@ components:
             system_inertia: [9912933.0, 10862815.0, 10360761.0]
             system_inertia_tt: [9912933.0, 10862815.0, 10360761.0]
             system_center_mass: [-4.528, -0.14, 4.098]
+            spring_constant: 0.
+            damping_coefficient: 0.
         generator:
             elastic_properties_mb:
                 system_mass: 69360.0
