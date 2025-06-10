@@ -667,6 +667,30 @@ components:
         elastic_properties_mb:
             system_mass: 69360.0
             system_inertia: [973520.0, 619970.0, 619970.0]
+            system_center_mass: [0, 0, 0]
+    drivetrain:
+        outer_shape:
+            uptilt: 6.0
+            distance_tt_hub: 5.614
+            distance_hub_mb: 1.0
+            distance_mb_mb: 1.2
+            overhang: 12.0313
+            cd: 0.5
+        gearbox:
+            gear_ratio: 1.0
+            efficiency: 1.0
+        elastic_properties_mb:
+            system_mass: 675175.0
+            yaw_mass: 0
+            system_inertia: [9912933.0, 10862815.0, 10360761.0]
+            system_inertia_tt: [9912933.0, 10862815.0, 10360761.0]
+            system_center_mass: [-4.528, -0.14, 4.098]
+            spring_constant: 0.
+            damping_coefficient: 0.
+        generator:
+            elastic_properties_mb:
+                system_mass: 69360.0
+                rotor_inertia: [9912933.0, 10862815.0, 10360761.0]
     nacelle:
         drivetrain:
             uptilt: 0.10471975511966002

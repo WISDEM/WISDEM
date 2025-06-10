@@ -9,7 +9,7 @@ WISDEM:
         te_ss: TE_reinforcement_SS # Name in the yaml of the spar cap laminate on the suction side
         te_ps: TE_reinforcement_PS # Name in the yaml of the spar cap laminate on the suction side
     DriveSE:
-        flag: True
+        flag: user_elastic
     TowerSE:             # Options of TowerSE module
         flag: True
     FloatingSE:
