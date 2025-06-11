@@ -79,7 +79,7 @@ jobs:
       - name: Run all tests
         if: contains( matrix.os, 'ubuntu')
         run: |
-          pytest -p no:warnings --disable-warnings --cov=wisdem
+          pytest -p no:warnings --disable-warnings --cov=wisdem wisdem
 
       - name: Limited test for non Linux
         if: false == contains( matrix.os, 'ubuntu')
@@ -140,6 +140,18 @@ jobs:
         with:
             python-version: ${{ matrix.python-version }}
             update-environment: true
+
+      - name: Checkout windIO
+        uses: actions/checkout@v4
+        with:
+            repository: IEAWindSystems/windIO
+            path: windIO
+            ref: floating_fixes
+
+      - name: Install windIO
+        run: |
+            cd windIO
+            pip install --no-build-isolation --no-deps . -v
 
       - name: Set compilers
         if: false == contains( matrix.os, 'windows')

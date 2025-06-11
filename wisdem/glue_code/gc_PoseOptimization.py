@@ -750,7 +750,6 @@ class PoseOptimization(object):
                     )
 
         # -- Mooring --
-        '''
         if mooring_opt["line_length"]["flag"]:
             wt_opt.model.add_design_var(
                 "mooring.unstretched_length_in",
@@ -780,7 +779,7 @@ class PoseOptimization(object):
                 lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
-        '''
+
 
         # -- User DVs --
         if "user" in self.opt["design_variables"]:

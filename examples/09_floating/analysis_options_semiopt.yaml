@@ -70,26 +70,14 @@ design_variables:
                                 upper_bound: 1.0
 
     mooring:
-            line_length:
-                # This will set the same line length for all segments listed in the same names entry
-                - names: [line1, line2, line3]
-                  flag: False
-                  lower_bound: 100.0
-                  upper_bound: 2000.0
-                - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                  flag: False
-                  lower_bound: 100.0
-                  upper_bound: 2000.0
-            line_diameter:
-                # This will set the same diameter for all segments listed in the same names entry
-                - names: [line1, line2, line3]
-                  flag: False
-                  lower_bound: 0.1
-                  upper_bound: 2.0
-                - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                  flag: False
-                  lower_bound: 0.1
-                  upper_bound: 2.0
+        line_length:
+            flag: False
+            lower_bound: 100.0
+            upper_bound: 2000.0
+        line_diameter:
+            flag: False
+            lower_bound: 0.1
+            upper_bound: 2.0
 
 merit_figure: LCOE
 
