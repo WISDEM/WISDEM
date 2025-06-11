@@ -151,7 +151,8 @@ jobs:
       - name: Install windIO
         run: |
             cd windIO
-            pip install --no-build-isolation --no-deps . -v
+            '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
+            '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       - name: Set compilers
         if: false == contains( matrix.os, 'windows')
@@ -163,7 +164,6 @@ jobs:
         env:
             MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
           '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       - name: Limited test
