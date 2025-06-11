@@ -133,11 +133,6 @@ class PreComp:
         beam_x_cg = np.zeros(nsec)
         beam_y_cg = np.zeros(nsec)
 
-        # distance to elastic center from point about which structural properties are computed
-        # using airfoil coordinate system
-        beam_x_ec = np.zeros(nsec)
-        beam_y_ec = np.zeros(nsec)
-
         # distance to elastic center from airfoil nose
         # using profile coordinate system
         self.x_ec_nose = np.zeros(nsec)
@@ -182,43 +177,6 @@ class PreComp:
                 tW = [0]
                 thetaW = [0]
                 mat_idxW = [0]
-
-            #(eifbar,eilbar,gjbar,eabar,eiflbar,
-            # sfbar,slbar,sftbar,sltbar,satbar,
-            # z_sc,y_sc,ztc_ref,ytc_ref,
-            # mass,area,iflap_eta,ilag_zeta,tw_iner,
-            # zcm_ref,ycm_ref) = _precomp.properties(
-            #    self.chord[i],
-            #    self.theta[i],
-            #    self.th_prime[i],
-            #    self.leLoc[i],
-            #    xnode,
-            #    ynode,
-            #    E1,
-            #    E2,
-            #    G12,
-            #    nu12,
-            #    rho,
-            #    locU,
-            #    n_laminaU,
-            #    n_pliesU,
-            #    tU,
-            #    thetaU,
-            #    mat_idxU,
-            #    locL,
-            #    n_laminaL,
-            #    n_pliesL,
-            #    tL,
-            #    thetaL,
-            #    mat_idxL,
-            #    nwebs,
-            #    locW,
-            #    n_laminaW,
-            #    n_pliesW,
-            #    tW,
-            #    thetaW,
-            #    mat_idxW,
-            #)
 
             (eifbar,eilbar,gjbar,eabar,eiflbar,
              sfbar,slbar,sftbar,sltbar,satbar,

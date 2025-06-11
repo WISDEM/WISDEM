@@ -400,10 +400,10 @@ class RunPreComp(ExplicitComponent):
                 dp = np.mean((np.abs(web_start_nd_arc), np.abs(web_start_nd_arc)), axis=0).tolist()
 
                 dp_all = [
-                    [-1.0 * start_nd_arci, -1.0 * end_nd_arci]
+                    [start_nd_arci, end_nd_arci]
                     for start_nd_arci, end_nd_arci in zip(web_start_nd_arc, web_end_nd_arc)
                 ]
-                web_dp, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
+                _, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
                 for webi in np.unique(web_ids):
                     # store variable values (thickness, orientation, material) for layers that make up each web, based on the mapping array web_ids
                     n_pliesi = [1.0 for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi]
