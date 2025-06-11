@@ -141,6 +141,18 @@ jobs:
             python-version: ${{ matrix.python-version }}
             update-environment: true
 
+      - name: Checkout windIO
+        uses: actions/checkout@v4
+        with:
+            repository: IEAWindSystems/windIO
+            path: windIO
+            ref: floating_fixes
+
+      - name: Install windIO
+        run: |
+            cd windIO
+            pip install --no-build-isolation --no-deps . -v
+
       - name: Set compilers
         if: false == contains( matrix.os, 'windows')
         run: |
