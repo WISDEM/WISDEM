@@ -79,7 +79,7 @@ jobs:
       - name: Run all tests
         if: contains( matrix.os, 'ubuntu')
         run: |
-          pytest -p no:warnings --disable-warnings --cov=wisdem
+          pytest -p no:warnings --disable-warnings --cov=wisdem wisdem
 
       - name: Limited test for non Linux
         if: false == contains( matrix.os, 'ubuntu')
