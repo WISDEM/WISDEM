@@ -12,7 +12,7 @@ setup is called.
 
 mydir = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__))), "02_reference_turbines")
 fname_wt_input = osp.join(mydir, "IEA-15-240-RWT.yaml")
-fname_modeling_options = osp.join(mydir, "modeling_options.yaml")
+fname_modeling_options = osp.join(mydir, "modeling_options_iea15.yaml")
 fname_analysis_options = osp.join(mydir, "analysis_options.yaml")
 
 wt_opt, modeling_options, analysis_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
