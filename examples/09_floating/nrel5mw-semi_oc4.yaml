@@ -216,7 +216,6 @@ components:
             overhang: 5.
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
-            generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
@@ -236,6 +235,7 @@ components:
             hss_material: steel_drive
             bedplate_material: steel
         generator:
+            generator_length: 2.0
             generator_type: DFIG
             rho_Fe: 7700.0
             rho_Fes: 7850.0
@@ -951,8 +951,6 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 5.e+6
-        minOmega: 0.72256
-        maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -991,8 +989,8 @@ environment:
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
-    commissioning_pct: 0.01
-    decommissioning_pct: 0.15
+    commissioning_cost_kW: 44.0
+    decommissioning_cost_kW: 58.0
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130

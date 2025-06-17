@@ -8,83 +8,6 @@ from wisdem.commonse.csystem import DirectionVector
 cosd = lambda x: np.cos(np.deg2rad(x))
 sind = lambda x: np.sin(np.deg2rad(x))
 
-
-class CCBladeGeometry(ExplicitComponent):
-    """
-    Compute some geometric properties of the turbine based on the tip radius,
-    precurve, presweep, and precone.
-
-    Parameters
-    ----------
-    Rtip : float
-        Rotor tip radius.
-    precurve_in : numpy array[n_span]
-        Prebend distribution along the span.
-    presweep_in : numpy array[n_span]
-        Presweep distribution along the span.
-    precone : float
-        Precone angle.
-
-    Returns
-    -------
-    R : float
-        Rotor radius.
-    diameter : float
-        Rotor diameter.
-    precurveTip : float
-        Precurve value at the rotor tip.
-    presweepTip : float
-        Presweep value at the rotor tip.
-    """
-
-    def initialize(self):
-        self.options.declare("n_span")
-
-    def setup(self):
-        n_span = self.options["n_span"]
-
-        self.add_input("Rtip", val=0.0, units="m")
-        self.add_input("precurve_in", val=np.zeros(n_span), units="m")
-        self.add_input("presweep_in", val=np.zeros(n_span), units="m")
-        self.add_input("precone", val=0.0, units="deg")
-
-        self.add_output("R", val=0.0, units="m")
-        self.add_output("diameter", val=0.0, units="m")
-        self.add_output("precurveTip", val=0.0, units="m")
-        self.add_output("presweepTip", val=0.0, units="m")
-
-        self.declare_partials("R", ["Rtip", "precone"])
-        self.declare_partials("diameter", ["Rtip", "precone"])
-
-        self.declare_partials(["R", "diameter"], "precurve_in", rows=[0], cols=[n_span - 1])
-
-        self.declare_partials("precurveTip", "precurve_in", val=1.0, rows=[0], cols=[n_span - 1])
-        self.declare_partials("presweepTip", "presweep_in", val=1.0, rows=[0], cols=[n_span - 1])
-
-    def compute(self, inputs, outputs):
-        Rtip = inputs["Rtip"][0]
-        precone = inputs["precone"][0]
-
-        outputs["precurveTip"] = inputs["precurve_in"][-1]
-        outputs["presweepTip"] = inputs["presweep_in"][-1]
-
-        outputs["R"] = Rtip * cosd(precone) + outputs["precurveTip"] * sind(precone)
-        outputs["diameter"] = outputs["R"] * 2
-
-    def compute_partials(self, inputs, J):
-        Rtip = inputs["Rtip"]
-        precone = inputs["precone"]
-        precurveTip = inputs["precurve_in"][-1]
-
-        J["R", "precurve_in"] = sind(precone)
-        J["R", "Rtip"] = cosd(precone)
-        J["R", "precone"] = (-Rtip * sind(precone) + precurveTip * cosd(precone)) * np.pi / 180.0
-
-        J["diameter", "precurve_in"] = 2.0 * J["R", "precurve_in"]
-        J["diameter", "Rtip"] = 2.0 * J["R", "Rtip"]
-        J["diameter", "precone"] = 2.0 * J["R", "precone"]
-
-
 class CCBladeLoads(ExplicitComponent):
     """
     Compute the aerodynamic forces along the blade span given a rotor speed,
@@ -114,7 +37,7 @@ class CCBladeLoads(ExplicitComponent):
     Rhub : float
         Hub radius.
     Rtip : float
-        Tip radius.
+        Distance between rotor center and blade tip along z axis of blade root c.s.
     hub_height : float
         Hub height.
     precone : float
@@ -400,7 +323,7 @@ class CCBladeTwist(ExplicitComponent):
         n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
-        self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
+        self.add_input("Uhub", val=5.0, units="m/s", desc="Undisturbed wind speed")
 
         self.add_input("tsr", val=0.0, desc="Tip speed ratio")
         self.add_input("pitch", val=0.0, units="deg", desc="Pitch angle")
@@ -439,7 +362,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
         self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
         self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
-        self.add_input("Rtip", val=0.0, units="m", desc="tip radius")
+        self.add_input("Rtip", val=0.0, units="m", desc="Distance between rotor center and blade tip along z axis of blade root c.s.")
         self.add_input(
             "rthick", val=np.zeros(n_span), desc="1D array of the relative thicknesses of the blade defined along span."
         )
@@ -580,7 +503,8 @@ class CCBladeTwist(ExplicitComponent):
             discrete_inputs["usecd"],
         )
 
-        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / inputs["r"][-1] * 30.0 / np.pi
+        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (
+            inputs["Rtip"][0] * np.cos(np.deg2rad(inputs["precone"][0]))) * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
@@ -591,12 +515,15 @@ class CCBladeTwist(ExplicitComponent):
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
             alpha = np.zeros(self.n_span)
+            Emax = np.zeros(self.n_span)
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
-            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
+            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"][0] / inputs["mu"][0])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
-                if abs(aoa_op[i] - np.pi) < 1.0e-4:
+                if abs(aoa_op[i] - np.pi) > 1.0e-4:
+                    alpha[i] = aoa_op[i]
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'stall_margin':
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
                         inputs["airfoils_cl"][i, :, 0, 0],
@@ -604,8 +531,16 @@ class CCBladeTwist(ExplicitComponent):
                         inputs["airfoils_cm"][i, :, 0, 0],
                     )
                     alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'max_efficiency':
+                    af[i].eval_unsteady(
+                        inputs["airfoils_aoa"],
+                        inputs["airfoils_cl"][i, :, 0, 0],
+                        inputs["airfoils_cd"][i, :, 0, 0],
+                        inputs["airfoils_cm"][i, :, 0, 0],
+                    )
+                    Emax[i], alpha[i], _, _ = af[i].max_eff(Re[i])
                 else:
-                    alpha[i] = aoa_op[i]
+                    raise Exception('The flags for the twist inverse design are not set appropriately. Please check documentation for the available analysis options.')
                 cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
 
             # Overwrite aoa of high thickness airfoils at blade root
@@ -621,19 +556,16 @@ class CCBladeTwist(ExplicitComponent):
 
             # Cap twist root region to 20 degrees
             for i in range(len(ccblade.theta)):
-                if ccblade.theta[-i - 1] > 20.0 / 180.0 * np.pi:
-                    ccblade.theta[0 : len(ccblade.theta) - i] = 20.0 / 180.0 * np.pi
+                cap_twist_root = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["cap_twist_root"]
+                if ccblade.theta[-i - 1] > cap_twist_root:
+                    ccblade.theta[0 : len(ccblade.theta) - i] = cap_twist_root
                     break
         else:
             ccblade.theta = inputs["theta_in"]
 
-        # Smooth out twist profile if we're doing inverse and inn_af design
-        if (
-            self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]
-            and self.options["modeling_options"]["WISDEM"]["RotorSE"]["inn_af"]
-        ):
-            n_opt = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
-            training_theta = np.copy(ccblade.theta)
+        # Smooth out twist profile if we're doing inverse design for twist
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            training_theta = ccblade.theta
             s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
 
             twist_spline = PchipInterpolator(s, training_theta)
@@ -655,7 +587,7 @@ class CCBladeTwist(ExplicitComponent):
 
         # import matplotlib.pyplot as plt
         # plt.figure()
-        # plt.plot(inputs['r'], alpha*180./np.pi, '-')
+        # plt.plot(inputs['r'], np.rad2deg(alpha), '-')
         # plt.plot(inputs['r'], loads["alpha"], ':')
         # plt.xlabel('blade fraction')
         # plt.ylabel('aoa (deg)')

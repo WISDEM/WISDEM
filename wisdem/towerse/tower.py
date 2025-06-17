@@ -7,8 +7,6 @@ import wisdem.commonse.cylinder_member as mem
 from wisdem.commonse import NFREQ, gravity
 
 RIGID = 1e30
-NREFINE = 3
-
 
 class PreDiscretization(om.ExplicitComponent):
     """
@@ -497,6 +495,7 @@ class TowerSEProp(om.Group):
             ("outer_diameter_in", "tower_outer_diameter_in"),
             ("outer_diameter", "tower_outer_diameter"),
             ("wall_thickness", "tower_wall_thickness"),
+            ("shell_mass_user", "tower_mass_user"),
             ("shell_mass", "tower_mass"),
             ("shell_cost", "tower_cost"),
             ("shell_z_cg", "tower_center_of_mass"),

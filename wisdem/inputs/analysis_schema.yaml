@@ -61,7 +61,12 @@ properties:
                                     inverse:
                                         type: boolean
                                         default: False
-                                        description: Words TODO?
+                                        description: This flag is only used if the flag in twist is set to False. Once turned on, the twist is set to achieve a given target for the angle of attack. The target can be a predefined margin to stall or the point of maximum airfoil efficiency, see flag inverse_target
+                                    inverse_target:
+                                        type: string
+                                        enumerate: ['max_efficiency', 'stall_margin']
+                                        default: 'max_efficiency'
+                                        description: This input is only used if the flag 'inverse' is set to True. 'max_efficiency' makes sure the twist generates angles of attack corresponding to max airfoil efficiency along span. The input 'stall_margin' makes sure the angles of attack respect a predefined margin from the stall point. The actual margin is set in the input 'stall_margin' among the blade aerodynamic constraints.
                                     n_opt: &nopt
                                         type: integer
                                         default: 8
@@ -89,6 +94,11 @@ properties:
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
+                                    cap_twist_root:
+                                        type: number
+                                        description: Maximum allowable twist during an inverse design. Close to blade root, twist will be capped to this value.
+                                        default: 0.349
+                                        unit: rad
                             chord:
                                 type: object
                                 default: {}
@@ -204,6 +214,7 @@ properties:
                     structure:
                         type: array
                         description: Design variables associated with the internal blade structure
+                        default: []
                         items:
                             type: object
                             description: Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -853,9 +864,10 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-            user_defined:
+            user:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                default: []
                 items:
                     type: object
                     description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
@@ -883,7 +895,7 @@ properties:
                             type: array
                             description: If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers
                             items:
-                                type: number
+                                type: integer
     constraints:
         type: object
         default: {}
@@ -984,6 +996,18 @@ properties:
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    chord_slope:
+                        type: object
+                        description: Constraint to enforce monothonically increasing chord to max chord, and then decreasing afterwards
+                        default: {}
+                        properties:
+                            flag: *flag
+                    twist_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing twist to min twist, and then increasing afterwards
+                        default: {}
+                        properties:
+                            flag: *flag
                     root_circle_diameter:
                         type: object
                         description: Enforcing the minimum blade root circle diameter.
@@ -1025,9 +1049,9 @@ properties:
                             first_edge: *freq_constraint
                             # second_edge: *freq_constraint
                             first_torsion: *freq_constraint
-                    mass:
+                    mass: &mass_constr
                         type: object
-                        description: Enforcing a target blade mass (useful for inverse design approaches)
+                        description: Enforcing a target mass (useful for inverse design approaches)
                         default: {}
                         properties:
                             flag: *flag
@@ -1035,13 +1059,31 @@ properties:
                                 type: number
                                 default: 0.
                                 minimum: 0.
-                                maximum: 3.e+5
+                                maximum: 1.e+7
                                 description: Value of the target blade mass
                             acceptable_error:
                                 type: number
                                 default: 0.
                                 minimum: 0.
                                 maximum: 5.e+4
+                                description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
+                    rated_velocity:
+                        type: object
+                        description: Enforcing a target rated velocity (useful for inverse design approaches)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            target:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 100.0
+                                description: Value of the target rated velocity
+                            acceptable_error:
+                                type: number
+                                default: 0.1
+                                minimum: 0.
+                                maximum: 5.0
                                 description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
                         type: object
@@ -1189,6 +1231,7 @@ properties:
                                 maximum: 5.0
                                 unit: Hz
                             upper_bound: *fminmax
+                    mass: *mass_constr
             monopile: &moncon
                 type: object
                 default: {}
@@ -1202,6 +1245,7 @@ properties:
                     d_to_t: *d_to_t
                     taper: *taper
                     frequency_1: *towfreq1
+                    mass: *mass_constr
                     pile_depth:
                         type: object
                         description: Ensures that the submerged suction pile depth meets a minimum value
@@ -1459,18 +1503,24 @@ properties:
                             type: string
                             description: User-specified constraint variable using full name in the WISDEM namespace
                         lower_bound:
-                            type: number
+                            type: array
                             description: Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         upper_bound:
-                            type: number
+                            type: array
                             description: Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         indices:
-                            type: string
+                            type: array
                             description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
+                            items:
+                                type: integer
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, turbine_cost- turbine CapEx, bos_cost- balance of station CapEx, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
 
     merit_figure_user:
@@ -1551,12 +1601,30 @@ properties:
                         description: Max seconds of major iteration runtime for SNOPT
                         default: 0
                         minimum: 0
+                    major_step_limit:
+                        type: integer
+                        description: Max change during a line search in SNOPT
+                        default: 2.0
+                        minimum: 0
+                    function_precision:
+                        type: number
+                        description: A measure of the relative accuracy with which the nonlinear functions can be computed for SNOPT. Usually set based on how many significant digits the function is known to be accurately computed to.
+                        default: 3.7e-11
+                        minimum: 0
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
                         default: 100000
                         minimum: 0
                         maximum: 100000000
+                    hist_file:
+                        type: string
+                        description: File name (saved to the output folder) for saving pyopt_sparse optimization history. Default is None for no output.
+                        default: 'None'
+                    hotstart_file:
+                        type: string
+                        description: File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
+                        default: 'None'
                     solver:
                         type: string
                         description: Optimization driver.

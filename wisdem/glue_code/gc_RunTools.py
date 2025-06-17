@@ -2,8 +2,7 @@ import os
 
 import openmdao.api as om
 import matplotlib.pyplot as plt
-
-from wisdem.commonse.mpi_tools import MPI
+import numpy as np
 
 
 class Convergence_Trends_Opt(om.ExplicitComponent):
@@ -17,11 +16,8 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         folder_output = self.options["opt_options"]["general"]["folder_output"]
         optimization_log = os.path.join(folder_output, self.options["opt_options"]["recorder"]["file_name"])
-        if MPI:
-            rank = MPI.COMM_WORLD.Get_rank()
-        else:
-            rank = 0
-        if os.path.exists(optimization_log) and rank == 0:
+
+        if os.path.exists(optimization_log):
             cr = om.CaseReader(optimization_log)
             cases = cr.get_cases()
             rec_data = {}
@@ -53,15 +49,22 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
 
             if self.options["opt_options"]["driver"]["optimization"]["flag"]:
                 for param in rec_data.keys():
-                    try:
-                        fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-                        ax.plot(iterations, rec_data[param])
-                        ax.set(xlabel="Number of Iterations", ylabel=param)
-                        fig_name = "Convergence_trend_" + param + ".png"
-                        fig.savefig(os.path.join(folder_output, fig_name))
-                        plt.close(fig)
-                    except ValueError:
-                        pass
+                    fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
+                    np_data = np.array(rec_data[param])
+                    if len(np_data.shape) < 3:
+                        ax.plot(iterations, np_data)
+                    elif len(np_data.shape) == 3:
+                        for i in range(np_data.shape[2]):
+                            ax.plot(iterations, np_data[:,:,i])
+                    else:
+                        print(
+                                f"Warning: Iteration plot not printed for {param} as they are arrays with more than 3 dimensions. Please check plotting logic."
+                            )
+                    ax.set(xlabel="Number of Iterations", ylabel=param)
+                    fig_name = "Convergence_trend_" + param + ".png"
+                    fig.savefig(os.path.join(folder_output, fig_name))
+                    plt.close(fig)
+
 
             elif self.options["opt_options"]["driver"]["design_of_experiments"]["flag"]:
                 for resp in responses:
@@ -82,8 +85,7 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
 class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen
     def initialize(self):
-        self.options.declare("modeling_options")
-        self.options.declare("opt_options")
+        self.options.declare("verbosity", default=False)
 
     def setup(self):
         self.add_input("aep", val=0.0, units="GW * h")
@@ -100,13 +102,14 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input("tip_deflection", val=0.0, units="m")
 
     def compute(self, inputs, outputs):
-        print("########################################")
-        print("Objectives")
-        print("Turbine AEP: {:8.10f} GWh".format(inputs["aep"][0]))
-        print("Blade Mass:  {:8.10f} kg".format(inputs["blade_mass"][0]))
-        print("LCOE:        {:8.10f} USD/MWh".format(inputs["lcoe"][0]))
-        print("Tip Defl.:   {:8.10f} m".format(inputs["tip_deflection"][0]))
-        print("########################################")
+        if self.options["verbosity"] == True: 
+            print("########################################")
+            print("Objectives")
+            print("Turbine AEP: {:8.10f} GWh".format(inputs["aep"][0]))
+            print("Blade Mass:  {:8.10f} kg".format(inputs["blade_mass"][0]))
+            print("LCOE:        {:8.10f} USD/MWh".format(inputs["lcoe"][0]))
+            print("Tip Defl.:   {:8.10f} m".format(inputs["tip_deflection"][0]))
+            print("########################################")
 
 
 class PlotRecorder(om.Group):

@@ -41,6 +41,7 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs["nose_wall_thickness"] = 0.04 * myones
 
         self.inputs["bedplate_wall_thickness"] = 0.06 * np.ones(4)
+        self.inputs["bedplate_mass_user"] = np.zeros(1)
 
         self.discrete_inputs["upwind"] = True
 
@@ -284,6 +285,26 @@ class TestDirectLayout(unittest.TestCase):
             self.outputs["nose_I"][1], (1 / 12) * m_nose * (3 * (1.5**2 + 1.45**2) + self.outputs["L_nose"] ** 2)
         )
 
+    def testMassValues_Override(self):
+        self.discrete_inputs["upwind"] = True
+        self.inputs["tilt"] = np.zeros(1)
+        self.inputs["drive_height"] = np.array([ 5.0 ])
+        self.inputs["D_top"] = np.array([ 3.0 ])
+        self.inputs["overhang"] = np.array([ 4.5 + 3.5 + 0.5 * 3.0 + 2 ])
+        myones = np.ones(5)
+        self.inputs["lss_diameter"] = 2.0 * myones
+        self.inputs["nose_diameter"] = 3.0 * myones
+        self.inputs["lss_wall_thickness"] = 0.05 * myones
+        self.inputs["nose_wall_thickness"] = 0.05 * myones
+        self.inputs["bedplate_wall_thickness"] = 0.05 * np.ones(npts)
+        self.inputs["bedplate_mass_user"] = 1e4 * np.ones(1)
+        myobj = lay.DirectLayout()
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        #rho = self.inputs["lss_rho"]
+        m_bedplate = 1e4 #5 * 0.5 * np.pi * np.pi * (1.5**2 - (1.5 - 0.05) ** 2) * rho
+        npt.assert_almost_equal(self.outputs["bedplate_mass"], m_bedplate)
+
     def testMassValuesDownwind(self):
         self.discrete_inputs["upwind"] = False
         self.inputs["tilt"] = np.zeros(1)
@@ -343,6 +364,7 @@ class TestGearedLayout(unittest.TestCase):
         self.inputs["bedplate_flange_thickness"] = 0.05
         # self.inputs['bedplate_web_height'] = 1.0
         self.inputs["bedplate_web_thickness"] = 0.05
+        self.inputs["bedplate_mass_user"] = np.zeros(1)
 
         self.inputs["D_top"] = 6.5
         self.inputs["hub_diameter"] = 4.0
@@ -375,7 +397,7 @@ class TestGearedLayout(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["s_gearbox"], 3.3 - ds)
         npt.assert_almost_equal(self.outputs["s_mb1"], 5.95 - ds)
         npt.assert_almost_equal(self.outputs["s_mb2"], 3.95 - ds)
-        npt.assert_almost_equal(self.outputs["L_bedplate"], 6.95)
+        npt.assert_almost_equal(self.outputs["L_bedplate"], 2 + 6.95)
         npt.assert_almost_equal(self.outputs["H_bedplate"], 4.875)
         npt.assert_almost_equal(self.outputs["bedplate_web_height"], 4.725)
         npt.assert_almost_equal(self.outputs["constr_length"], 6.95 - 2 - 0.5 * 6.5)
@@ -396,7 +418,7 @@ class TestGearedLayout(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["s_gearbox"], 3.3 - ds)
         npt.assert_almost_equal(self.outputs["s_mb1"], 5.95 - ds)
         npt.assert_almost_equal(self.outputs["s_mb2"], 3.95 - ds)
-        npt.assert_almost_equal(self.outputs["L_bedplate"], 6.95 * ct)
+        npt.assert_almost_equal(self.outputs["L_bedplate"], (2 + 6.95) * ct)
         npt.assert_almost_equal(self.outputs["H_bedplate"], 4.875 - (2 + 6.95) * st)
         npt.assert_almost_equal(self.outputs["bedplate_web_height"], 4.725 - (2 + 6.95) * st)
         npt.assert_almost_equal(self.outputs["constr_length"], (2 + 6.95) * ct - 2 - 2 - 0.5 * 6.5)
@@ -415,9 +437,9 @@ class TestGearedLayout(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         rho = self.inputs["lss_rho"]
-        m_bedplate = 2 * rho * (2 * 1.5 * 0.05 + 4.725 * 0.05) * 6.95
+        m_bedplate = 2 * rho * (2 * 1.5 * 0.05 + 4.725 * 0.05) * (6.95 + 2.)
         npt.assert_almost_equal(self.outputs["bedplate_mass"], m_bedplate)
-        npt.assert_almost_equal(self.outputs["bedplate_cm"], np.r_[0.5 * 6.95 - 2 - 2.0, 0.0, 0.5 * 4.725 + 0.05])
+        npt.assert_almost_equal(self.outputs["bedplate_cm"], np.r_[0.5 * (6.95+2.) - 2 - 2.0, 0.0, 0.5 * 4.725 + 0.05])
 
         m_lss = rho * np.pi * (1**2 - 0.95**2) * self.outputs["L_lss"]
         npt.assert_almost_equal(self.outputs["lss_mass"], m_lss)
@@ -437,9 +459,27 @@ class TestGearedLayout(unittest.TestCase):
 
         self.discrete_inputs["upwind"] = False
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        npt.assert_almost_equal(self.outputs["bedplate_cm"], np.r_[(2 + 2 - 0.5 * 6.95), 0.0, 0.5 * 4.725 + 0.05])
+        npt.assert_almost_equal(self.outputs["bedplate_cm"], np.r_[(2 + 2 - 0.5 * (6.95+2.)), 0.0, 0.5 * 4.725 + 0.05])
         npt.assert_almost_equal(self.outputs["lss_cm"], 0.5 * (self.outputs["s_lss"][0] + self.outputs["s_lss"][-1]))
         npt.assert_almost_equal(self.outputs["hss_cm"], 0.5 * (self.outputs["s_hss"][0] + self.outputs["s_hss"][-1]))
+
+    def testMassValues_Override(self):
+        self.inputs["tilt"] = np.zeros(1)
+        self.discrete_inputs["upwind"] = True
+        myones = np.ones(5)
+        self.inputs["lss_diameter"] = 2.0 * myones
+        self.inputs["lss_wall_thickness"] = 0.05 * myones
+        myones = np.ones(3)
+        self.inputs["hss_diameter"] = 1.5 * myones
+        self.inputs["hss_wall_thickness"] = 0.04 * myones
+        self.inputs["bedplate_mass_user"] = 1e4 * np.ones(1)
+        myobj = lay.GearedLayout()
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        #rho = self.inputs["lss_rho"]
+        m_bedplate = 1e4 #2 * rho * (2 * 1.5 * 0.05 + 4.725 * 0.05) * 6.95
+        npt.assert_almost_equal(self.outputs["bedplate_mass"], m_bedplate)
+        npt.assert_almost_equal(self.outputs["bedplate_cm"], np.r_[0.5 * (6.95+2.) - 2 - 2.0, 0.0, 0.5 * 4.725 + 0.05])
 
 
 def suite():

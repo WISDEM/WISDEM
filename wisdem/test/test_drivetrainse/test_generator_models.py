@@ -20,6 +20,7 @@ class TestGenerators(unittest.TestCase):
         self.inputs["rho_Fes"] = 7850.0
         self.inputs["rho_Copper"] = 8900.0
         self.inputs["rho_PM"] = 7450.0
+        self.inputs["generator_mass_user"] = 0.0
 
         self.inputs["B_r"] = 1.2
         self.inputs["E"] = 2e11
@@ -67,7 +68,7 @@ class TestGenerators(unittest.TestCase):
         self.inputs["rad_ag"] = 4.0  # rev 1  4.92
         self.inputs["len_s"] = 1.7  # rev 2.3
         self.inputs["h_s"] = 0.7  # rev 1 0.3
-        self.inputs["p"] = 70  # 100.0    # rev 1 160
+        self.inputs["p"] = 70.0  # 100.0    # rev 1 160
         self.inputs["h_m"] = 0.005  # rev 1 0.034
         self.inputs["h_ys"] = 0.04  # rev 1 0.045
         self.inputs["h_yr"] = 0.06  # rev 1 0.045
@@ -132,6 +133,11 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["Structural_mass"], 62323.08483264)
         npt.assert_almost_equal(self.outputs["generator_mass"], 166530.21537414)
 
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
+        
+        
     def testPMSG_Arms(self):
         myobj = gm.PMSG_Arms(n_pc=20)
 
@@ -192,6 +198,10 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["generator_mass"], 94729.99806753898)
         npt.assert_almost_equal(self.outputs["mass_PM"], 1683.970424551947)
 
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
+
     def testPMSG_disc(self):
         myobj = gm.PMSG_Disc(n_pc=20)
 
@@ -248,6 +258,10 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["generator_mass"], 123674.5978407)
         npt.assert_almost_equal(self.outputs["mass_PM"], 1959.3502831)
 
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
+
     def testEESG(self):
         myobj = gm.EESG(n_pc=20)
 
@@ -301,6 +315,10 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["R_out"], 3.219748743718593)
         npt.assert_almost_equal(self.outputs["Structural_mass"], 42403.44234)
         npt.assert_almost_equal(self.outputs["generator_mass"], 130823.74127458173)
+
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
 
     def testSCIG(self):
         myobj = gm.SCIG(n_pc=20)
@@ -361,6 +379,10 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["R_out"], 0.7663579416108941)
         npt.assert_almost_equal(self.outputs["Structural_mass"], 27848.15730159148)
         npt.assert_almost_equal(self.outputs["TC1"], 0.29453832454167966)
+
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
 
     def testDFIG(self):
         myobj = gm.DFIG(n_pc=20)
@@ -427,6 +449,10 @@ class TestGenerators(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["TC1"], 0.24790308982258036)
         npt.assert_almost_equal(self.outputs["Current_ratio"][-1], 0.17760183748148742)
 
+
+        self.inputs["generator_mass_user"] = 1e5 * np.ones(1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs["generator_mass"], 1e5)
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,10 +3,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_ss
-        spar_cap_ps: Spar_cap_ps
-        peak_thrust_shaving: True
-        thrust_shaving_coeff: 0.8
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
     DriveSE:
         flag: True
     TowerSE:

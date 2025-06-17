@@ -7,7 +7,7 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
-description: Scehma that describes the modeling options for WISDEM
+description: Schema that describes the modeling options for WISDEM
 type: object
 properties:
     General:
@@ -36,9 +36,10 @@ properties:
                 default: {}
                 properties:
                     flag: &flag
-                        type: boolean
+                        type: [boolean, string]
+                        enum: [true, false, True, False, TRUE, FALSE, 0, 1, user_elastic, User_Elastic, USER_ELASTIC]
                         default: False
-                        description: Whether or not to run this module
+                        description: Whether or not to run this module or pull from elastic properties
                     n_aoa:
                         type: integer
                         default: 200
@@ -91,18 +92,6 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
-                    peak_thrust_shaving:
-                        type: boolean
-                        default: False
-                        description: If True, apply peak thrust shaving within RotorSE.
-                    thrust_shaving_coeff:
-                        type: number
-                        default: 1.0
-                        description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
-                    fix_pitch_regI12:
-                        type: boolean
-                        default: False
-                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -181,19 +170,11 @@ properties:
                         minimum: 0.
                         maximum: 1.
                         description: Minimum airfoil thickness supported by the INN for airfoil design
-                    rail_transport:
-                        type: boolean
-                        default: False
-                        description: Flag switching on and off the rail transport module of RotorSE
             DriveSE:
                 type: object
                 default: {}
                 properties:
                     flag: *flag
-                    model_generator:
-                        type: boolean
-                        default: False
-                        description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
                     gamma_f: &gamma_f
                         type: number
                         description: Partial safety factor on loads
@@ -237,6 +218,15 @@ properties:
                                 maximum: 5.0
                                 default: 1.5
                                 unit: none
+                    generator:
+                        type: object
+                        default: {}
+                        properties:
+                            type:
+                                type: string
+                                enum: [dfig, eesg, scig, pmsg_outer, pmsg_arms, pmsg_disc, DFIG, EESG, SCIG, PMSG_Outer, PMSG_Arms, PMSG_Disc]
+                                default: pmsg_outer
+                                description: Type of generator architecture for detailed property, performance, and cost modeling
             TowerSE:
                 type: object
                 default: {}
@@ -405,7 +395,7 @@ properties:
             Loading:
                 type: object
                 # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
-                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
+                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only analysis
                 properties:
                     mass:
                         type: number
@@ -434,7 +424,7 @@ properties:
                         description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
                     loads:
                         type: array
-                        default: {}
+                        default: []
                         description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
                         items:
                             type: object

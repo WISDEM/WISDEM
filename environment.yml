@@ -11,10 +11,10 @@ dependencies:
   - meson
   - moorpy
   - ninja
-  - nlopt
-  - numpy>=1.26
+  - nlopt<=2.8
+  - numpy
   - numpydoc
-  - openmdao>=3.31
+  - openmdao
   - openpyxl
   - pandas
   - pip
@@ -32,7 +32,7 @@ dependencies:
   - statsmodels
   - swig
   - pip:
-    - marmot-agents
+    - orbit-nrel>=1.2.1
     - dearpygui
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

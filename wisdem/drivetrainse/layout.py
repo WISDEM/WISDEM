@@ -71,6 +71,8 @@ class Layout(om.ExplicitComponent):
         material density
     bedplate_rho : float, [kg/m**3]
         material density
+    bedplate_mass_user : float, [kg]
+        User override of bedplate mass
 
     Returns
     -------
@@ -125,6 +127,7 @@ class Layout(om.ExplicitComponent):
         self.add_input("hub_diameter", val=0.0, units="m")
         self.add_input("lss_rho", val=0.0, units="kg/m**3")
         self.add_input("bedplate_rho", val=0.0, units="kg/m**3")
+        self.add_input("bedplate_mass_user", val=0.0, units="kg")
 
         self.add_output("L_lss", 0.0, units="m")
         self.add_output("L_drive", 0.0, units="m")
@@ -253,6 +256,7 @@ class DirectLayout(Layout):
         upwind = discrete_inputs["upwind"]
         lss_rho = float(inputs["lss_rho"][0])
         bedplate_rho = float(inputs["bedplate_rho"][0])
+        bedplate_mass_user = float(inputs["bedplate_mass_user"][0])
 
         # ------- Discretization ----------------
         L_grs = 0.5 * L_h1
@@ -375,9 +379,10 @@ class DirectLayout(Layout):
         x_outer -= x_c[0]
         x_c -= x_c[0]
 
-        outputs["bedplate_mass"] = mass_tot
+        coef_user = 1.0 if bedplate_mass_user == 0.0 else bedplate_mass_user / mass_tot
+        outputs["bedplate_mass"] = coef_user * mass_tot
         outputs["bedplate_cm"] = cm
-        outputs["bedplate_I"] = util.unassembleI(I_bed)
+        outputs["bedplate_I"] = coef_user * util.unassembleI(I_bed)
 
         # Geometry outputs
         outputs["x_bedplate"] = x_c
@@ -509,6 +514,7 @@ class GearedLayout(Layout):
         lss_rho = float(inputs["lss_rho"][0])
         hss_rho = float(inputs["hss_rho"][0])
         bedplate_rho = float(inputs["bedplate_rho"][0])
+        bedplate_mass_user = float(inputs["bedplate_mass_user"][0])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
@@ -557,7 +563,7 @@ class GearedLayout(Layout):
         outputs["s_lss"] = s_lss
 
         # ------- Bedplate I-beam properties ----------------
-        L_bedplate = L_drive * np.cos(tilt)
+        L_bedplate = (L_drive + 0.5 * D_hub) * np.cos(tilt)
         H_bedplate = H_drive - (L_drive + 0.5 * D_hub) * np.sin(tilt)  # Subtract thickness of platform plate
         outputs["L_bedplate"] = L_bedplate
         outputs["H_bedplate"] = H_bedplate
@@ -572,10 +578,11 @@ class GearedLayout(Layout):
             + m_bedplate * L_bedplate**2 / 12.0 * np.r_[0.0, 1.0, 1.0]
             + m_bedplate * yoff**2 * np.r_[1.0, 0.0, 1.0]
         )
+        coef_user = 1.0 if bedplate_mass_user == 0.0 else bedplate_mass_user / (2 * m_bedplate)
         outputs["bedplate_web_height"] = bed_h_web
-        outputs["bedplate_mass"] = 2 * m_bedplate
+        outputs["bedplate_mass"] = coef_user * 2 * m_bedplate
         outputs["bedplate_cm"] = cg_bedplate
-        outputs["bedplate_I"] = 2 * np.r_[I_bedplate, np.zeros(3)]
+        outputs["bedplate_I"] = coef_user * 2 * np.r_[I_bedplate, np.zeros(3)]
 
         # ------- Constraints ----------------
         outputs["constr_length"] = (L_drive + 0.5 * D_hub) * np.cos(tilt) - L_overhang - 0.5 * D_top  # Should be > 0

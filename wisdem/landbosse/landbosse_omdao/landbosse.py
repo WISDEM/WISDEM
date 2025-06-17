@@ -31,8 +31,8 @@ class LandBOSSE(om.Group):
 
         self.set_input_defaults("turbine_spacing_rotor_diameters", 4)
         self.set_input_defaults("row_spacing_rotor_diameters", 10)
-        self.set_input_defaults("commissioning_pct", 0.01)
-        self.set_input_defaults("decommissioning_pct", 0.15)
+        self.set_input_defaults("commissioning_cost_kW", 44.0, units="USD/kW")
+        self.set_input_defaults("decommissioning_cost_kW", 58.0, units="USD/kW")
         self.set_input_defaults("trench_len_to_substation_km", 50.0, units="km")
         self.set_input_defaults("interconnect_voltage_kV", 130.0, units="kV")
 
@@ -42,6 +42,7 @@ class LandBOSSE(om.Group):
         self.set_input_defaults("nacelle_mass", 50e3, units="kg")
         self.set_input_defaults("tower_mass", 240e3, units="kg")
         self.set_input_defaults("turbine_rating_MW", 1500.0, units="kW")
+        self.set_input_defaults("turbine_capex_kW", 0.0, units="USD/kW")
 
         self.add_subsystem("landbosse", LandBOSSE_API(), promotes=["*"])
 
@@ -101,6 +102,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input("hub_height_meters", val=80, units="m", desc="Hub height m")
         self.add_input("rotor_diameter_m", val=77, units="m", desc="Rotor diameter m")
         self.add_input("wind_shear_exponent", val=0.2, desc="Wind shear exponent")
+        self.add_input("turbine_capex_kW", val=0.0, units="USD/kW", desc="Turbine capital cost")
         self.add_input("turbine_rating_MW", val=1.5, units="MW", desc="Turbine rating MW")
         self.add_input("fuel_cost_usd_per_gal", val=1.5, desc="Fuel cost USD/gal")
 
@@ -146,7 +148,7 @@ class LandBOSSE_API(om.ExplicitComponent):
             desc="Non-Erection Wind Delay Critical Height (m)",
             val=10,
         )
-        self.add_discrete_input("road_distributed_winnd", val=False)
+        self.add_discrete_input("road_distributed_wind", val=False)
         self.add_input("road_width_ft", units="ft", desc="Road width (ft)", val=20)
         self.add_input("road_thickness", desc="Road thickness (in)", val=8)
         self.add_input("crane_width", units="m", desc="Crane width (m)", val=12.2)
@@ -163,8 +165,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Disabled due to Pandas conflict right now.
         self.add_input("labor_cost_multiplier", val=1.0, desc="Labor cost multiplier")
 
-        self.add_input("commissioning_pct", 0.01)
-        self.add_input("decommissioning_pct", 0.15)
+        self.add_input("commissioning_cost_kW", 44.0, units="USD/kW", desc="Commissioning cost.")
+        self.add_input("decommissioning_cost_kW", 58.0, units="USD/kW", desc="Decommissioning cost.")
 
     def setup_discrete_inputs_that_are_not_dataframes(self):
         """
@@ -448,6 +450,9 @@ class LandBOSSE_API(om.ExplicitComponent):
             discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"][0]
         )
 
+        # Turbine Capex
+        incomplete_input_dict["turbine_capex"] = float(inputs["turbine_capex_kW"][0])
+        
         # Needed to avoid distributed wind keys
         incomplete_input_dict["road_distributed_wind"] = False
 
@@ -584,24 +589,23 @@ class LandBOSSE_API(om.ExplicitComponent):
         installation_per_kW = 0.0
 
         for row in costs_by_module_type_operation:
+            if row["Module"] in ["TurbineCost"]:
+                continue
             bos_per_kw += row["Cost / kW"]
             bos_per_project += row["Cost / project"]
             if row["Module"] in ["ErectionCost", "FoundationCost"]:
                 installation_per_project += row["Cost / project"]
                 installation_per_kW += row["Cost / kW"]
 
-        commissioning_pct = inputs["commissioning_pct"]
-        decommissioning_pct = inputs["decommissioning_pct"]
+        commissioning_kW = inputs["commissioning_cost_kW"]
+        decommissioning_kW = inputs["decommissioning_cost_kW"]
 
-        commissioning_per_project = bos_per_project * commissioning_pct
-        decomissioning_per_project = bos_per_project * decommissioning_pct
-        commissioning_per_kW = bos_per_kw * commissioning_pct
-        decomissioning_per_kW = bos_per_kw * decommissioning_pct
+        capacity = bos_per_project / bos_per_kw
 
-        outputs["total_capex_kW"] = bos_per_kw + commissioning_per_kW + decomissioning_per_kW
-        outputs["total_capex"] = bos_per_project + commissioning_per_project + decomissioning_per_project
         outputs["bos_capex"] = bos_per_project
         outputs["bos_capex_kW"] = bos_per_kw
+        outputs["total_capex_kW"] = bos_per_kw + commissioning_kW + decommissioning_kW
+        outputs["total_capex"] = bos_per_project + capacity*(commissioning_kW + decommissioning_kW)
         outputs["installation_capex"] = installation_per_project
         outputs["installation_capex_kW"] = installation_per_kW
 

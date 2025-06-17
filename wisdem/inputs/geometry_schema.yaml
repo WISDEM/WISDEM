@@ -205,7 +205,7 @@ properties:
                             # coordinates:
                                     # description: Coordinates expressed in the blade root coordinate system.
                                     # $ref: "#/definitions/distributed_data/coordinates"
-                    elastic_properties_mb:
+                    elastic_properties:
                         type: object
                         properties:
                             timoschenko_hawc:
@@ -217,7 +217,7 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
-                        default: {}
+                        # default: {}
                         required:
                             - reference_axis
                             - layers
@@ -488,6 +488,30 @@ properties:
                     spinner_material:
                         type: string
                         description: Material of the spinner
+                    hub_shell_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    spinner_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    pitch_system_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of pitch system mass with this value
+                        minimum: 0.0
+                    hub_system_mass_user:
+                        type: number
+                        description: User input override of full hub system mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -497,9 +521,11 @@ properties:
                                 description: Mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, ....
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             system_inertia:
                                 type: array
                                 description: Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -509,6 +535,7 @@ properties:
                             system_center_mass:
                                 type: array
                                 description: Center of mass of the hub system. Work in progress.
+                                default: [0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: m
@@ -557,39 +584,6 @@ properties:
                                 minimum: 0.
                                 maximum: 20.
                                 default: 5.0
-                            generator_length:
-                                type: number
-                                description: Length of generator along the shaft
-                                unit: meter
-                                minimum: 0.
-                                maximum: 20.
-                                default: 2.0
-                            generator_radius_user:
-                                type: number
-                                description: User input override of generator radius, only used when using simple generator scaling
-                                unit: m
-                                minimum: 0.
-                                maximum: 20.0
-                                default: 0.0
-                            generator_mass_user:
-                                type: number
-                                description: User input override of generator mass, only used when using simple generator mass scaling
-                                unit: kg
-                                minimum: 0.
-                                maximum: 1.e+9
-                                default: 0.0
-                            generator_rpm_efficiency_user:
-                                type: object
-                                description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
-                                default: {'grid':[0.0], 'values':[0.0]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/length"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
                             gear_ratio:
                                 type: number
                                 description: Gear ratio of the drivetrain. Set it to 1 for direct drive machines.
@@ -747,6 +741,12 @@ properties:
                                 minimum: 0.
                                 maximum: 1.
                                 default: 0.05
+                            bedplate_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular calculation of bedplate mass with this value
+                                minimum: 0.0
                             brake_mass_user:
                                 type: number
                                 default: 0.0
@@ -785,6 +785,18 @@ properties:
                                 description: Type of bearing for second main bearing
                                 default: SRB
                                 enum: [CARB, CRB, SRB, TRB]
+                            mb1_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of first main bearing mass with this value
+                                minimum: 0.0
+                            mb2_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of second main bearing mass with this value
+                                minimum: 0.0
                             uptower:
                                 type: boolean
                                 description: If power electronics are located uptower (True) or at tower base (False)
@@ -805,378 +817,448 @@ properties:
                                     uniqueItems: false
                                     minimum: 0
                                     maximum: 6
+                            yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of yaw drive mass with this value
+                                minimum: 0.0
+                            above_yaw_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
+                                minimum: 0.0
+                            spring_constant_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain spring constant with this value
+                                minimum: 0.0
+                            damping_coefficient_user:
+                                type: number
+                                default: 0.0
+                                units: N*m/rad
+                                description: Override regular calculation of drivetrain damping coefficient with this value
+                                minimum: 0.0
                     generator:
-                      properties:
-                        mass_coefficient:
-                          type: number
-                          default: 0.0
-                          units: none
-                          description: When not doing a detailed generator design, use a simplified approach to generator scaling. This input allows for overriding of the regression-based scaling coefficient to obtain generator mass
-                          minimum: 0.0
-                        generator_type:
-                          type: string
-                          default: DFIG
-                          enum: [DFIG, dfig, EESG, eesg, SCIG, scig, PMSG_Arms, PMSG_ARMS, pmsg_arms, PMSG_Disc, PMSG_Disk, PMSG_DISC, PMSG_DISK, pmsg_disk, pmsg_disc, PMSG_Outer, PMSG_OUTER, pmsg_outer]
-                        B_r:
-                          type: number
-                          default: 1.2
-                          units: Tesla
-                          description: Words
-                          minimum: 0.0
-                        P_Fe0e:
-                          type: number
-                          default: 1.0
-                          units: W/kg
-                          minimum: 0.0
-                          maximum: 1000.0
-                          description: Words
-                        P_Fe0h:
-                          type: number
-                          default: 4.0
-                          units: W/kg
-                          minimum: 0.0
-                          maximum: 1000.0
-                          description: Words
-                        S_N:
-                          type: number
-                          default: -0.002
-                          units: none
-                          minimum: -100.0
-                          maximum: 0.0
-                          description: Words
-                        S_Nmax:
-                          type: number
-                          default: -0.2
-                          units: none
-                          minimum: -100.0
-                          maximum: 0.0
-                          description: Words
-                        alpha_p:
-                          type: number
-                          default: 1.0995574287564276
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_r_tau_r:
-                          type: number
-                          default: 0.45
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_ro:
-                          type: number
-                          default: 0.004
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_s_tau_s:
-                          type: number
-                          default: 0.45
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_so:
-                          type: number
-                          default: 0.004
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        cofi:
-                          type: number
-                          default: 0.85
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        freq:
-                          type: number
-                          default: 60.0
-                          units: Hz
-                          minimum: 1.0
-                          maximum: 1000.0
-                          description: Words
-                        h_i:
-                          type: number
-                          default: 0.001
-                          units: m
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Words
-                        h_sy0:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_w:
-                          type: number
-                          default: 0.005
-                          units: m
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Words
-                        k_fes:
-                          type: number
-                          default: 0.9
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_fillr:
-                          type: number
-                          default: 0.7
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_fills:
-                          type: number
-                          default: 0.65
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        k_s:
-                          type: number
-                          default: 0.2
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        m:
-                          type: integer
-                          default: 3
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        mu_0:
-                          type: number
-                          default: 1.2566370614359173e-06
-                          units: m*kg/s^2/A^2
-                          minimum: 0.0
-                          maximum: 1.0
-                          description: Permittivity of free space
-                        mu_r:
-                          type: number
-                          default: 1.06
-                          units: m*kg/s^2/A^2
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        p:
-                          type: number
-                          default: 3.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        phi:
-                          type: number
-                          default: 1.5707963267948966 #90deg
-                          units: rad
-                          minimum: 0.0
-                          maximum: 7.0
-                          description: Words
-                        q1:
-                          type: integer
-                          default: 6
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        q3:
-                          type: integer
-                          default: 4
-                          minimum: 0
-                          maximum: 100
-                          description: Words
-                        ratio_mw2pp:
-                          type: number
-                          default: 0.7
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        resist_Cu:
-                          type: number
-                          default: 2.52
-                          units: ohm/m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Resistivity of copper
-                        sigma:
-                          type: number
-                          default: 40.e+3
-                          units: kg/s^2/m
-                          minimum: 0.0
-                          maximum: 100.e+6
-                          description: Maximum allowable shear stress
-                        y_tau_p:
-                          type: number
-                          default: 1.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        y_tau_pr:
-                          type: number
-                          default: 0.83333333
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        I_0:
-                          type: number
-                          default: 0.0
-                          units: A
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        d_r:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_m:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_0:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        h_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        len_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        n_r:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        rad_ag:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        t_wr:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        n_s:
-                          type: number
-                          default: 0.0
-                          units: none
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        b_st:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        d_s:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        t_ws:
-                          type: number
-                          default: 0.0
-                          units: m
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Words
-                        rho_Copper:
-                          type: number
-                          default: 8900.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Copper density
-                        rho_Fe:
-                          type: number
-                          default: 7700.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Structural steel density
-                        rho_Fes:
-                          type: number
-                          default: 7850.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Electrical steel density
-                        rho_PM:
-                          type: number
-                          default: 7450.0
-                          units: kg/m^3
-                          minimum: 0.0
-                          maximum: 1.e+5
-                          description: Permanent magnet density
-                        C_Cu:
-                          type: number
-                          default: 4.786
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Copper cost
-                        C_Fe:
-                          type: number
-                          default: 0.556
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Structural steel cost
-                        C_Fes:
-                          type: number
-                          default: 0.50139
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Electrical steel cost
-                        C_PM:
-                          type: number
-                          default: 50.0
-                          units: USD/kg
-                          minimum: 0.0
-                          maximum: 100.0
-                          description: Permanent magnet cost
+                        properties:
+                            generator_mass_user:
+                                type: number
+                                default: 0.0
+                                units: none
+                                description: Override regular calculation of generator mass (bottom-up or regression-based) with this value
+                                minimum: 0.0
+                            generator_length:
+                                type: number
+                                description: Length of generator along the shaft
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 2.0
+                            generator_radius_user:
+                                type: number
+                                description: User input override of generator radius, only used when using simple generator scaling
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
+                            generator_rpm_efficiency_user:
+                                type: object
+                                description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
+                                default: {'grid':[0.0], 'values':[0.0]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/length"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/length"
+                            generator_type:
+                                type: string
+                                default: DFIG
+                                enum: [DFIG, dfig, EESG, eesg, SCIG, scig, PMSG_Arms, PMSG_ARMS, pmsg_arms, PMSG_Disc, PMSG_Disk, PMSG_DISC, PMSG_DISK, pmsg_disk, pmsg_disc, PMSG_Outer, PMSG_OUTER, pmsg_outer]
+                            B_r:
+                                type: number
+                                default: 1.2
+                                units: Tesla
+                                description: Words
+                                minimum: 0.0
+                            P_Fe0e:
+                                type: number
+                                default: 1.0
+                                units: W/kg
+                                minimum: 0.0
+                                maximum: 1000.0
+                                description: Words
+                            P_Fe0h:
+                                type: number
+                                default: 4.0
+                                units: W/kg
+                                minimum: 0.0
+                                maximum: 1000.0
+                                description: Words
+                            S_N:
+                                type: number
+                                default: -0.002
+                                units: none
+                                minimum: -100.0
+                                maximum: 0.0
+                                description: Words
+                            S_Nmax:
+                                type: number
+                                default: -0.2
+                                units: none
+                                minimum: -100.0
+                                maximum: 0.0
+                                description: Words
+                            alpha_p:
+                                type: number
+                                default: 1.0995574287564276
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_r_tau_r:
+                                type: number
+                                default: 0.45
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_ro:
+                                type: number
+                                default: 0.004
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_s_tau_s:
+                                type: number
+                                default: 0.45
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_so:
+                                type: number
+                                default: 0.004
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            cofi:
+                                type: number
+                                default: 0.85
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            freq:
+                                type: number
+                                default: 60.0
+                                units: Hz
+                                minimum: 1.0
+                                maximum: 1000.0
+                                description: Words
+                            h_i:
+                                type: number
+                                default: 0.001
+                                units: m
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Words
+                            h_sy0:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_w:
+                                type: number
+                                default: 0.005
+                                units: m
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Words
+                            k_fes:
+                                type: number
+                                default: 0.9
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_fillr:
+                                type: number
+                                default: 0.7
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_fills:
+                                type: number
+                                default: 0.65
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            k_s:
+                                type: number
+                                default: 0.2
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            m:
+                                type: integer
+                                default: 3
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            mu_0:
+                                type: number
+                                default: 1.2566370614359173e-06
+                                units: m*kg/s^2/A^2
+                                minimum: 0.0
+                                maximum: 1.0
+                                description: Permittivity of free space
+                            mu_r:
+                                type: number
+                                default: 1.06
+                                units: m*kg/s^2/A^2
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            p:
+                                type: number
+                                default: 3.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            phi:
+                                type: number
+                                default: 1.5707963267948966 #90deg
+                                units: rad
+                                minimum: 0.0
+                                maximum: 7.0
+                                description: Words
+                            q1:
+                                type: integer
+                                default: 6
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            q3:
+                                type: integer
+                                default: 4
+                                minimum: 0
+                                maximum: 100
+                                description: Words
+                            ratio_mw2pp:
+                                type: number
+                                default: 0.7
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            resist_Cu:
+                                type: number
+                                default: 2.52
+                                units: ohm/m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Resistiity of copper
+                            sigma:
+                                type: number
+                                default: 40.e+3
+                                units: kg/s^2/m
+                                minimum: 0.0
+                                maximum: 100.e+6
+                                description: Maximum allowable shear stress
+                            y_tau_p:
+                                type: number
+                                default: 1.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            y_tau_pr:
+                                type: number
+                                default: 0.83333333
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            I_0:
+                                type: number
+                                default: 0.0
+                                units: A
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            d_r:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_m:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_0:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            h_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            len_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            n_r:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            rad_ag:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            t_wr:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            n_s:
+                                type: number
+                                default: 0.0
+                                units: none
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            b_st:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            d_s:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            t_ws:
+                                type: number
+                                default: 0.0
+                                units: m
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Words
+                            rho_Copper:
+                                type: number
+                                default: 8900.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Copper ensity
+                            rho_Fe:
+                                type: number
+                                default: 7700.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Structural steel density
+                            rho_Fes:
+                                type: number
+                                default: 7850.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Electrical steel density
+                            rho_PM:
+                                type: number
+                                default: 7450.0
+                                units: kg/m^3
+                                minimum: 0.0
+                                maximum: 1.e+5
+                                description: Permanent magnet density
+                            C_Cu:
+                                type: number
+                                default: 4.786
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Copper cost
+                            C_Fe:
+                                type: number
+                                default: 0.556
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Structural steel cost
+                            C_Fes:
+                                type: number
+                                default: 0.50139
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Electrical steel cost
+                            C_PM:
+                                type: number
+                                default: 50.0
+                                units: USD/kg
+                                minimum: 0.0
+                                maximum: 100.0
+                                description: Permanent magnet cost
+                            elastic_properties_mb:
+                                type: object
+                                default: {}
+                                properties:
+                                    system_mass:
+                                        type: number
+                                        description: Mass of the generator system, including both rotor and stator
+                                        unit: kg
+                                        minimum: 0
+                                        default: 0.0
+                                    rotor_inertia:
+                                      type: array
+                                      description: Inertia of the rotating generator rotor system with respect to its center of mass.
+                                      default: [0.0, 0.0, 0.0]
+                                      items:
+                                          type: number
+                                          unit: kgm2
+                                          minItems: 3
+                                          maxItems: 3
+                                          uniqueItems: false
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -1186,14 +1268,17 @@ properties:
                                 description: Mass of the nacelle system, including the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             yaw_mass:
                                 type: number
                                 description: Mass of the yaw system.
                                 unit: kg
                                 minimum: 0
+                                default: 0.0
                             system_inertia:
                                 type: array
                                 description: Inertia of the nacelle system with respect to the center of mass. The sum includes the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -1203,6 +1288,7 @@ properties:
                             system_inertia_tt:
                                 type: array
                                 description: Inertia of the nacelle system with respect to the tower top. The sum includes the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: kgm2
@@ -1212,17 +1298,33 @@ properties:
                             system_center_mass:
                                 type: array
                                 description: Center of mass of the nacelle system, including the entire drivetrain system (shafts, gearbox if present, break, bearings, generator). It excludes the turbine rotor, the hub, and the yaw system.
+                                default: [0.0, 0.0, 0.0]
                                 items:
                                     type: number
                                     unit: m
                                     minItems: 3
                                     maxItems: 3
                                     uniqueItems: false
+                            spring_constant:
+                                type: number
+                                description: Equivalent spring constant for the drivetrain system
+                                unit: N*m/rad
+                                minimum: 0.0
+                                default: 0.0
+                            damping_coefficient:
+                                type: number
+                                description: Equivalent damping coefficient for the drivetrain system
+                                unit: N*m*s/rad
+                                minimum: 0.0
+                                default: 0.0
             tower:
                 type: object
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
+                    - tower_mass_user
+                    - elastic_properties_mb
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1262,6 +1364,12 @@ properties:
                                 $ref: "#/definitions/beam/cp_lambda_beam"
                             six_x_six:
                                 $ref: "#/definitions/beam/six_x_six"
+                    tower_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total tower mass with this value
+                        minimum: 0.0
                     internal_structure_2d_fem:
                         type: object
                         required:
@@ -1315,6 +1423,7 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - monopile_mass_user
                 properties:
                     transition_piece_mass: &m_tp
                         type: number
@@ -1334,6 +1443,12 @@ properties:
                         unit: kg
                         minimum: 0.0
                         default: 0.0
+                    monopile_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total monopile mass with this value
+                        minimum: 0.0
                     outer_shape:
                         type: object
                         required:
@@ -1433,10 +1548,17 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - jacket_mass_user
                 properties:
                     transition_piece_mass: *m_tp
                     transition_piece_cost: *c_tp
                     gravity_foundation_mass: *g_fm
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
                     material:
                         type: string
                         description: Material of jacket members
@@ -1562,6 +1684,7 @@ properties:
                                 - Cp
                                 - Cd
                                 - Cdy
+                                - member_mass_user
                             properties:
                                 name:
                                     description: Name of the member
@@ -1570,6 +1693,12 @@ properties:
                                     type: string
                                     description: Name of joint/node connection
                                 joint2: *jointid
+                                member_mass_user:
+                                    type: number
+                                    default: 0.0
+                                    units: kg
+                                    description: Override bottom-up calculation of total member mass with this value
+                                    minimum: 0.0
                                 outer_shape:
                                     type: object
                                     required:
@@ -1833,11 +1962,17 @@ properties:
                                                 description: Non-dimensional value along member axis
                                 Ca: &ca
                                     description: User-defined added mass coefficient if axi-symmetric or user-defined added mass coefficient in x-direction
-                                    type: array
-                                    default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
-                                    items:
-                                        type: number
-                                        minimum: -1.0
+                                    oneOf:
+                                        - type: number
+                                          default: -1.0
+                                          minimum: 0
+                                        - type: array
+                                          default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
+                                          items:
+                                            type: number
+                                            minimum: -1.0
+                                    default: [-1.0]
+
                                 Cay:
                                     <<: *ca
                                     description: User-defined added mass coefficient in y-direction
@@ -1846,18 +1981,15 @@ properties:
                                     type: number
                                     default: 0.0
                                 Cd: &cd
+                                    <<: *ca
                                     description: User-defined drag coefficient if axi-symmetric or user-defined drag coefficient in x-direction
-                                    type: array
-                                    default: [-1.0]
-                                    items:
-                                        type: number
-                                        minimum: -1.0
                                 Cdy:
                                     <<: *cd
                                     description: User-defined drag coefficient in y-direction
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
+                        default: []
                         items:
                             type: object
                             required:
@@ -2567,6 +2699,14 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
+                    ps_percent:
+                        type: number
+                        default: 1.
+                        description: Scalar applied to the max thrust within RotorSE for peak thrust shaving
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
             torque:
                 type: object
                 required:
@@ -2730,20 +2870,6 @@ properties:
                 minimum: 1
                 maximum: 100
                 default: 7
-            commissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to commissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.01
-            decommissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to decommissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.15
             distance_to_substation:
                 type: number
                 description: Distance from centroid of plant to substation in km
@@ -2779,6 +2905,41 @@ properties:
                 minimum: 0
                 maximum: 1000
                 default: 130
+            contingency:
+                type: number
+                description: Additional contingency cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 316.0
+            construction_insurance:
+                type: number
+                description: Additional insurance cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            construction_financing:
+                type: number
+                description: Additional financing cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 183.0
+            commissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to commission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            decommissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to decommission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 58.0
             port_cost_per_month:
                 type: number
                 description: Monthly port rental fees
@@ -2792,28 +2953,14 @@ properties:
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            site_assessment_plan_cost:
-                type: number
-                description: Cost to do engineering plan for site assessment
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 100e6
             site_assessment_cost:
                 type: number
-                description: Cost to execute site assessment
+                description: Cost to do engineering site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            construction_operations_plan_cost:
-                type: number
-                description: Cost to do construction planning
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 50e6
             boem_review_cost:
                 type: number
                 description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
@@ -2821,13 +2968,20 @@ properties:
                 minimum: 0
                 maximum: 1.e+9
                 default: 0.0
-            design_install_plan_cost:
+            construction_plan_cost:
+                type: number
+                description: Cost to do construction planning
+                unit: USD
+                minimum: 0
+                maximum: 1.e+9
+                default: 1e6
+            installation_plan_cost:
                 type: number
                 description: Cost to do installation planning
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
+                default: 2.5e5
     costs:
         type: object
         properties:
@@ -3214,7 +3368,7 @@ definitions:
             default: [0.0, 0.0]
             items:
                 type: number
-                unit: N/m2
+                unit: Nm2
                 minItems: 2
                 uniqueItems: false
         tors_stiff:
@@ -3223,7 +3377,79 @@ definitions:
             default: [0.0, 0.0]
             items:
                 type: number
-                unit: N/m2
+                unit: Nm2
+                minItems: 2
+                uniqueItems: false
+        shearshear_stiff:
+            type: array
+            description: Cross term between shear stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        shearaxial_stiff:
+            type: array
+            description: Cross term between shear and axial stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        shearbending_stiff:
+            type: array
+            description: Cross term between shear and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        sheartorsion_stiff:
+            type: array
+            description: Cross term between shear and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        axialbending_stiff:
+            type: array
+            description: Cross term between axial and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        axialtorsion_stiff:
+            type: array
+            description: Cross term between axial and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        bendingbending_stiff:
+            type: array
+            description: Cross term between bending and bending stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
+                minItems: 2
+                uniqueItems: false
+        bendingtorsion_stiff:
+            type: array
+            description: Cross term between bending and torsion stiffness along the beam
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: N
                 minItems: 2
                 uniqueItems: false
         nd_arc_position:
@@ -3702,27 +3928,146 @@ definitions:
         six_x_six:
             type: object
             required:
-                - reference_axis
                 - stiff_matrix
+                - inertia_matrix
             properties:
-                reference_axis:
-                    $ref: "#/definitions/distributed_data/axis_coordinates"
                 stiff_matrix:
                     type: object
                     required:
                         - grid
-                        - values
+                        - K44
+                        - K55
                     properties:
                         grid:
                             $ref: "#/definitions/distributed_data/grid_nd"
-                        values:
+                        K11:
+                            $ref: "#/definitions/distributed_data/shear_stiff"
+                        K22:
+                            $ref: "#/definitions/distributed_data/shear_stiff"
+                        K33:
+                            $ref: "#/definitions/distributed_data/axial_stiff"
+                        K44:
+                            $ref: "#/definitions/distributed_data/bending_stiff"
+                        K55:
+                            $ref: "#/definitions/distributed_data/bending_stiff"
+                        K66:
+                            $ref: "#/definitions/distributed_data/tors_stiff"
+                        K12:
+                            $ref: "#/definitions/distributed_data/shearshear_stiff"
+                        K13:
+                            $ref: "#/definitions/distributed_data/shearaxial_stiff"
+                        K14:
+                            $ref: "#/definitions/distributed_data/shearbending_stiff"
+                        K15:
+                            $ref: "#/definitions/distributed_data/shearbending_stiff"
+                        K16:
+                            $ref: "#/definitions/distributed_data/sheartorsion_stiff"
+                        K23:
+                            $ref: "#/definitions/distributed_data/shearaxial_stiff"
+                        K24:
+                            $ref: "#/definitions/distributed_data/shearbending_stiff"
+                        K25:
+                            $ref: "#/definitions/distributed_data/shearbending_stiff"
+                        K26:
+                            $ref: "#/definitions/distributed_data/sheartorsion_stiff"
+                        K34:
+                            $ref: "#/definitions/distributed_data/axialbending_stiff"
+                        K35:
+                            $ref: "#/definitions/distributed_data/axialbending_stiff"
+                        K36:
+                            $ref: "#/definitions/distributed_data/axialtorsion_stiff"
+                        K45:
+                            $ref: "#/definitions/distributed_data/bendingbending_stiff"
+                        K46:
+                            $ref: "#/definitions/distributed_data/bendingtorsion_stiff"
+                        K56:
+                            $ref: "#/definitions/distributed_data/bendingtorsion_stiff"
+                inertia_matrix:
+                    type: object
+                    required:
+                        - grid
+                        - mass
+                    properties:
+                        grid:
+                            $ref: "#/definitions/distributed_data/grid_nd"
+                        mass:
+                            $ref: "#/definitions/distributed_data/mass_length"
+                        cm_x:
                             type: array
+                            description: Center of mass along the x axis, expressed in meter
+                            default: [0.0, 0.0]
                             items:
-                                type: array
-                                description: Stiffness matrix 6x6, only upper diagonal reported line by line (21 elements), specified at each grid point
-                                minItems: 21
-                                maxItems: 21
+                                type: number
+                                unit: meter
+                                minItems: 2
                                 uniqueItems: false
+                        cm_y:
+                            type: array
+                            description: Center of mass along the y axis, expressed in meter
+                            default: [0.0, 0.0]
+                            items:
+                                type: number
+                                unit: meter
+                                minItems: 2
+                                uniqueItems: false
+                        i_edge:
+                            $ref: "#/definitions/distributed_data/mass_moment"
+                        i_flap:
+                            $ref: "#/definitions/distributed_data/mass_moment"
+                        i_plr:
+                            type: array
+                            description: Polar moment of inertia of a section along a beam, expressed in kilogram times meter squared
+                            default: [0.0, 0.0]
+                            items:
+                                type: number
+                                unit: kg*m2
+                                minItems: 2
+                                uniqueItems: false
+                                description: Polor moment of inertia per unit span
+                        i_cp:
+                            type: array
+                            description: Cross-product of inertia of a section along a beam, expressed in kilogram times meter squared
+                            default: [0.0, 0.0]
+                            items:
+                                type: number
+                                unit: kg*m2
+                                minItems: 2
+                                uniqueItems: false
+                                description: Cross-product of inertia per unit span
+                structural_damping:
+                    type: object
+                    required:
+                        - mu
+                    properties:
+                        mu:
+                            type: array
+                            description: Six damping coefficients to model viscous damping, where the damping forces are proportional to the strain rate
+                            default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                            items:
+                                type: number
+                                unit: none
+                                minItems: 6
+                                maxItems: 6
+                                uniqueItems: false
+                point_mass:
+                    type: object
+                    required:
+                        - grid
+                        - mass
+                    properties:
+                        grid:
+                            $ref: "#/definitions/distributed_data/grid_nd"
+                        mass:
+                            type: array
+                            description: Point masses distributed along the beam, expressed in kilogram. These can be used to model features such as flanges.
+                            default: [0.0, 0.0]
+                            items:
+                                type: number
+                                unit: kg
+                                minItems: 2
+                                uniqueItems: false
+
+
     filter:
         type: object
         description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined

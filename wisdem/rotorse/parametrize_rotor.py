@@ -79,6 +79,16 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             val=np.zeros(n_opt_chord),
             desc="1D array of the ratio between chord values and maximum chord along blade span.",
         )
+        self.add_output(
+            "slope_chord_constr",
+            val=np.zeros(n_opt_chord-1),
+            desc="1D array of the difference between one chord point and the other. It can be used as constraint to achieve monotically increasing and then decreasing chord",
+        )
+        self.add_output(
+            "slope_twist_constr",
+            val=np.zeros(n_opt_twist-1),
+            desc="1D array of the difference between one twist point and the other. It can be used as constraint to achieve monotically decreasing and then increasing chord",
+        )
 
     def compute(self, inputs, outputs):
         spline = PchipInterpolator
@@ -89,6 +99,18 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         chord_opt = spline(inputs["s"], outputs["chord_param"])
         max_chord = self.opt_options["constraints"]["blade"]["chord"]["max"]
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
+        # Define constraint to enforce monothonically increasing and then decreasing blade chord
+        # Constraint is satisfied when below 0
+        id_max_chord = np.argmax(inputs["chord_opt"])
+        slope_chord_constr = np.diff(inputs["chord_opt"])
+        # Up to max chord, chord must be increasing (positive diff), after max chord, decreasing (negative diff)
+        slope_chord_constr[:id_max_chord] *= -1 
+        outputs["slope_chord_constr"] = slope_chord_constr
+        # Similarly, define constraint to enforce monothonically decreasing and then increasing blade twist
+        id_min_twist = np.argmin(inputs["twist_opt"])
+        slope_twist_constr = np.diff(inputs["twist_opt"])
+        slope_twist_constr[id_min_twist:] *= -1 
+        outputs["slope_twist_constr"] = slope_twist_constr
 
 
 class ParametrizeBladeStruct(om.ExplicitComponent):
@@ -153,8 +175,8 @@ class ComputeReynolds(om.ExplicitComponent):
         self.add_input("r_blade", val=np.zeros(n_span), units="m",
             desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
         )
-        self.add_input("rotor_radius", val=0.0, units="m",
-            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+        self.add_input("rotor_diameter", val=0.0, units="m",
+            desc="Diameter of the wind turbine rotor specified by the user, defined as 2 x (Rhub + blade length along z) * cos(precone).",
         )
         self.add_input("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
         self.add_input("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
@@ -166,7 +188,7 @@ class ComputeReynolds(om.ExplicitComponent):
         # Note that we used to use ccblade outputs of local wind speed at the rated condition
         # This is more accurate, of course, but creates an implicit feedback loop in the code
         # This way gets an order-of-magnitude estimate for Reynolds number, which is really all that is needed
-        max_local_TS = inputs["max_TS"] / inputs["rotor_radius"] * inputs["r_blade"]
+        max_local_TS = inputs["max_TS"][0] / (inputs["rotor_diameter"][0] / 2.) * inputs["r_blade"][0]
         if np.all(max_local_TS == 0.0):
             max_local_TS = inputs["maxOmega"] * inputs["r_blade"]
 

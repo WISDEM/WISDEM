@@ -100,21 +100,18 @@ class CCAirfoil(object):
         # Check efficiency only between -20 and +40 deg
         aoa_start = -20.0
         aoa_end = 40
-        i_start = np.argmin(abs(self.alpha - np.deg2rad(aoa_start)))
-        i_end = np.argmin(abs(self.alpha - np.deg2rad(aoa_end)))
 
-        if len(self.alpha[i_start:i_end]) == 0:  # Cylinder
-            alpha_Emax = 0.0
+        alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
+        cl = np.array([self.cl_spline.ev(aoa, Re) for aoa in alpha])
+        cd = np.array([self.cd_spline.ev(aoa, Re) for aoa in alpha])
+
+        if np.max(cl) < 1.e-3:  # Cylinder
+            alpha_Emax = 0.
             cl_Emax = self.cl_spline.ev(alpha_Emax, Re)
             cd_Emax = self.cd_spline.ev(alpha_Emax, Re)
             Emax = cl_Emax / cd_Emax
-
         else:
-            alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
-            cl = [self.cl_spline.ev(aoa, Re) for aoa in alpha]
-            cd = [self.cd_spline.ev(aoa, Re) for aoa in alpha]
             Eff = [cli / cdi for cli, cdi, in zip(cl, cd)]
-
             i_max = np.argmax(Eff)
             alpha_Emax = alpha[i_max]
             cl_Emax = cl[i_max]
@@ -484,7 +481,7 @@ class CCBlade(object):
         Rhub : float (m)
             location of hub
         Rtip : float (m)
-            location of tip
+            distance between rotor center and blade tip along z axis of blade root c.s.
         B : int, optional
             number of blades
         rho : float, optional (kg/m^3)
@@ -578,11 +575,9 @@ class CCBlade(object):
         if presweepTip == presweep[-1]:
             self.presweep[-1] = np.interp(nd_tip, r_nd, presweep)
 
-        # # rotor radius
-        # if self.precurveTip != 0 and self.precone != 0.0:
-        # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
-
-        self.rotorR = Rtip * np.cos(self.precone) + self.precurveTip * np.sin(self.precone)
+        # # rotor radius is defined as Rtip * cos(cone). This definition is the 
+        # most common across commercial aeroelastic solvers. Rtip = D_hub/2 + (blade length along z)
+        self.rotorR = Rtip * np.cos(self.precone)
 
         # azimuthal discretization
         if self.tilt == 0.0 and self.yaw == 0.0 and self.shearExp == 0.0:
@@ -1188,8 +1183,8 @@ class CCBlade(object):
         CMy = My / (q * A * R)
         CMz = Mz / (q * A * R)
         CMb = Mb / (q * A * R)
-        The rotor radius R, may not actually be Rtip if precone and precurve are both nonzero
-        ``R = Rtip*cos(precone) + precurveTip*sin(precone)``
+        The rotor radius R, may not actually be Rtip if precone is nonzero
+        ``R = Rtip*cos(precone)``
         """
 
         # rename
@@ -1343,7 +1338,7 @@ class CCBlade(object):
                 # s = [precone, tilt, hubHt, Rhub, Rtip, precurvetip, presweeptip, yaw, shear, Uinf, Omega, pitch]
 
                 dR_ds = np.r_[
-                    np.deg2rad(-self.Rtip * np.sin(self.precone) + self.precurveTip * np.cos(self.precone)),
+                    np.deg2rad(-self.Rtip * np.sin(self.precone)),
                     0.0,
                     0.0,
                     0.0,

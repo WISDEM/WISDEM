@@ -22,5 +22,7 @@ All of these case studies below can be found in the `examples` directory.  For t
    examples/09_floating/tutorial
    examples/10_ccblade/tutorial
    examples/11_user_custom/tutorial
+   examples/11_user_custom/mass
    examples/12_pyframe3dd/tutorial
+   examples/13_doe/tutorial
    examples/16_inverse_design/tutorial

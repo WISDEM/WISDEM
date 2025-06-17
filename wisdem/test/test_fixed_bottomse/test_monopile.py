@@ -528,7 +528,6 @@ class TestMonopileSE(unittest.TestCase):
         # # --- run ---
         prob = fill_prob()
         prob.run_model()
-
         npt.assert_almost_equal(prob["z_full"], [0.0, 10.0, 20.0, 30.0, 43.33333333, 56.66666667, 70.0])
         npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 6.0, 6.0, 6.0, 5.833333333, 5.6666667, 5.5])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
@@ -539,38 +538,39 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [1.0, 0.9166667])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["f1"], [2.8398576087517053], 3)
-        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.04355821, 0.02954024], 3)
+        npt.assert_almost_equal(prob["f1"], [2.76468844], 3)
+        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.0459956, 0.03117663], 3)
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.03385147, 0.01624988, 0.11893221, 0.13589145, 0.05543162, 0.0103132 ],
-                [0.0341598 , 0.01988708, 0.08923635, 0.11635987, 0.04822173, 0.01055353],
+                [0.03629343, 0.01790444, 0.1231257 , 0.13828851, 0.05543313, 0.0103132 ],
+                [0.03660269, 0.02187838, 0.09140849, 0.11723732, 0.04804845, 0.01055353],
            ],
             3,
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [0.11201532, 0.12416107, 0.19921349, 0.17590641, 0.12969364, 0.08627106],
-                [0.11175936, 0.11925156, 0.17013531, 0.15228978, 0.12254481, 0.08627106],
+                [0.11195175, 0.12318715, 0.19842222, 0.17592564, 0.1296929 , 0.08627106],
+                [0.11171482, 0.11857103, 0.16958506, 0.1523028 , 0.12254343, 0.08627106],
             ],
             1,
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [3.08691592e-03, 1.15049491e-03, 5.89397300e-01, 1.76100515e+00, 6.40018188e-01, 8.86263582e-02],
-                [3.13317242e-03, 1.36025565e-03, 5.79068840e-01, 1.75232887e+00, 6.36781099e-01, 9.12750704e-02],
+                [3.49559758e-03, 1.30133175e-03, 5.91065050e-01, 1.76189058e+00, 6.40073292e-01, 8.86263584e-02],
+                [3.54514895e-03, 1.57721535e-03, 5.79699748e-01, 1.75253288e+00, 6.36853374e-01, 9.12750706e-02],
             ],
             3,
         )
-        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284980.175382  ,  930363.07603095 ], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284992.14390681,  930371.37678699], 2)
         npt.assert_array_less(np.abs(prob["monopile.mudline_F"][1, :]), 1e2, 2)
-        npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4732577.31059091, -4735037.20580716], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4732577.31059091, -4735037.20580715], 2)
         npt.assert_almost_equal(
             prob["monopile.mudline_M"].T,
-            [[3983126.23029407, 32107268.56484913,  -346819.26780544], [-1691961.71385695, 22367653.91976971,   147317.94383742]],
+            [[ 3984334.01374163, 32113997.51516917,  -346821.8991214 ],
+             [-1692478.33675859, 22372283.21623445,   147319.06211891]],
             0,
         )
 
@@ -589,38 +589,39 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [1.0, 0.9166667])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["f1"], [2.83985761], 3)
-        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.04355821, 0.02954024], 3)
+        npt.assert_almost_equal(prob["f1"], [2.76468844], 3)
+        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.0459956 , 0.03117663], 3)
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.03385147, 0.01624988, 0.11893221, 0.13589145, 0.05543162, 0.0103132 ],
-                [0.0341598 , 0.01988708, 0.08923635, 0.11635987, 0.04822173, 0.01055353],
+                [0.03629343, 0.01790444, 0.1231257 , 0.13828851, 0.05543313, 0.0103132 ],
+                [0.03660269, 0.02187838, 0.09140849, 0.11723732, 0.04804845, 0.01055353],
             ],
             2,
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [3.29521915e-02, 3.70069327e-02, 6.99117262e-02, 5.96692606e-02, 3.61803070e-02, 1.02510833e-10],
-                [3.27627239e-02, 3.33331034e-02, 4.83927465e-02, 4.33297244e-02, 3.11606296e-02, 5.44601822e-11],
+                [3.94666251e-02, 4.87423322e-02, 1.14742952e-01, 9.36498331e-02, 4.89077185e-02, 2.23941975e-10],
+                [3.27614138e-02, 3.33555347e-02, 4.97277191e-02, 4.43681620e-02, 3.14888158e-02, 6.58549177e-11],
             ],
             1,
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.03960002, 0.04474592, 0.57096438, 1.74890517, 0.8283988 , 0.16249855],
-                [0.03919867, 0.04176198, 0.56125835, 1.73421614, 0.81345437, 0.16628092],
+                [0.0395443 , 0.04453798, 0.57195478, 1.74908189, 0.82858381, 0.16249937],
+                [0.03915959, 0.04162512, 0.56193478, 1.73429118, 0.81353285, 0.16628148],
             ],
             2,
         )
-        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284980.175382  ,  930363.07603095], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284992.14390681,  930371.37678699], 2)
         npt.assert_array_less(np.abs(prob["monopile.mudline_F"][1, :]), 1e2, 2)
-        npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4732577.31, -4735037.21], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4732577.31059091, -4735037.20580715], 2)
         npt.assert_almost_equal(
             prob["monopile.mudline_M"].T,
-            [[3983126.23029407, 32107268.56484913,  -346819.26780544], [-1691961.71385695, 22367653.91976971,   147317.94383742]],
+            [[ 3984334.01374163, 32113997.51516917,  -346821.8991214 ],
+             [-1692478.33675859, 22372283.21623445,   147319.06211891]],
             0,
         )
 

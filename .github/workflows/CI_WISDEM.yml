@@ -16,15 +16,15 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-14, windows-latest]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
 
       - name: Install conda/mamba
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         # https://github.com/marketplace/actions/setup-miniconda
         with:
           # To use mamba, uncomment here, comment out the miniforge line
@@ -40,7 +40,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py gfortran
+          conda install -y petsc4py=3.22.2 gfortran
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -75,7 +75,7 @@ jobs:
 
       # Run coveralls
       - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
+        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.12')
         #uses: coverallsapp/github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,8 +93,8 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13] #mac-13 intel, mac-latest is arm
-        python-version: ["3.11"]
+        os: [ubuntu-latest, windows-latest, macos-14] #mac-13 intel, mac-latest is arm
+        python-version: ["3.12"]
 
     steps:
       - name: Setup GNU Fortran

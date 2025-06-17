@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+import logging
 
 import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
@@ -10,6 +11,7 @@ NELEM_MAX = 500  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
+logger = logging.getLogger("wisdem/weis")
 
 class PlatformFrame(om.ExplicitComponent):
     def initialize(self):
@@ -59,6 +61,12 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_cost", 0.0, units="USD")
+
+        # Rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            self.add_input(f"rigid_body_{k}_node", val=np.zeros(3), units="m", desc=f"location of rigid body {k}")
+            self.add_input(f"rigid_body_{k}_mass", val=0.0, units="kg", desc=f"point mass of rigid body {k}")
+            self.add_input(f"rigid_body_{k}_inertia", val=np.zeros(3), units="kg*m**2", desc=f"inertia of rigid body {k}")
 
         self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
 
@@ -277,6 +285,13 @@ class PlatformFrame(om.ExplicitComponent):
             cg_plat += imass * inputs[f"member{k}:center_of_mass"]
             cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
 
+
+        # Add rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            mass += inputs[f"rigid_body_{k}_mass"]
+            cg_plat += inputs[f"rigid_body_{k}_mass"] * inputs[f"rigid_body_{k}_node"]
+            
+        
         # Add transition piece
         m_trans = inputs["transition_piece_mass"]
         cg_trans = inputs["transition_node"]
@@ -318,6 +333,13 @@ class PlatformFrame(om.ExplicitComponent):
             m_added[:3] += m_add_k[:3]
             m_added[3:] += m_add_k[3:] + np.diag(m_add_k[0] * (np.dot(R, R) * np.eye(3) - np.outer(R, R)))
 
+        
+        # Add rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            R = cg_plat - inputs[f"rigid_body_{k}_node"]
+            I_rb = util.assembleI(np.r_[inputs[f"rigid_body_{k}_inertia"],0,0,0])
+            I_hull += I_rb + inputs[f"rigid_body_{k}_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        
         # Add in transition piece
         R = cg_plat - cg_trans
         I_hull += I_trans + m_trans * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
@@ -467,6 +489,9 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         outputs["variable_center_of_mass"] = cg_variable
 
         # Now find total system mass
+        if (np.sum(m_variable_member) == 0) and (m_variable != 0):
+            logger.warning(f'A variable ballast mass of {m_variable[0]} kg was calculated, but there are no variable ballast chambers in the floating platform.\nNo variable ballast will be used. Please define at least one variable ballast chamber.')
+        m_variable = np.sum(m_variable_member)
         outputs["platform_mass"] = m_platform + m_variable
         outputs["system_mass"] = m_sys_total = m_sys + m_variable
         outputs["system_center_of_mass"] = cg_sys_total = (
@@ -537,6 +562,10 @@ class FloatingSystem(om.Group):
 
     def setup(self):
         opt = self.options["modeling_options"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         self.add_subsystem("plat", PlatformFrame(options=opt), promotes=["*"])
         self.add_subsystem("mux", PlatformTurbineSystem(options=opt), promotes=["*"])
+
+        for k in range(n_member):
+            self.set_input_defaults(f"member{k}:nodes_xyz", val=NULL * np.ones((MEMMAX, 3)), units="m")

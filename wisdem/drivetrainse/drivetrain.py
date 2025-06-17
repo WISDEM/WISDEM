@@ -165,15 +165,15 @@ class DrivetrainSE(om.Group):
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
         self.set_input_defaults("machine_rating", units="kW")
-        self.set_input_defaults("planet_numbers", [3, 3, 0])
-        self.set_input_defaults("gear_configuration", "eep")
+        #self.set_input_defaults("planet_numbers", [3, 3, 0])
+        #self.set_input_defaults("gear_configuration", "eep")
         self.set_input_defaults("hvac_mass_coeff", 0.025, units="kg/kW/m")
         # self.set_input_defaults('mb1Type', 'CARB')
         # self.set_input_defaults('mb2Type', 'SRB')
-        self.set_input_defaults("uptower", True)
-        self.set_input_defaults("upwind", True)
-        self.set_input_defaults("n_blades", 3)
-
+        #self.set_input_defaults("uptower", True)
+        #self.set_input_defaults("upwind", True)
+        #self.set_input_defaults("n_blades", 3)
+       
         # Materials prep
         self.add_subsystem(
             "mat",
@@ -196,16 +196,17 @@ class DrivetrainSE(om.Group):
         self.add_subsystem("bear2", dc.MainBearing())
         self.add_subsystem("brake", dc.Brake(direct_drive=direct), promotes=["*"])
         self.add_subsystem("elec", dc.Electronics(), promotes=["*"])
-        self.add_subsystem("yaw", dc.YawSystem(), promotes=["yaw_mass", "yaw_I", "yaw_cm", "rotor_diameter", "D_top"])
+        self.add_subsystem("yaw", dc.YawSystem(), promotes=["yaw_mass", "yaw_mass_user", "yaw_I", "yaw_cm", "rotor_diameter", "D_top"])
 
         # Generator
         self.add_subsystem("rpm", dc.RPM_Input(n_pc=n_pc), promotes=["*"])
         if dogen:
-            gentype = self.options["modeling_options"]["WISDEM"]["GeneratorSE"]["type"]
+            gentype = self.options["modeling_options"]["WISDEM"]["DriveSE"]["generator"]["type"]
             self.add_subsystem(
                 "generator",
                 Generator(design=gentype, n_pc=n_pc),
                 promotes=[
+                    "generator_mass_user",
                     "generator_mass",
                     "generator_cost",
                     "generator_I",

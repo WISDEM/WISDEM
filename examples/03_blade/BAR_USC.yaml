@@ -1,6 +1,6 @@
 name: BAR_USC
 description: BAR-USC - Upwind segmented design - Spar caps with industry baseline CFRP - last updated on April 23rd 2021 by Pietro Bortolotti
-assembly: {turbine_class: III, turbulence_class: A, drivetrain: Constant_eff, rotor_orientation: Upwind, number_of_blades: 3, rotor_diameter: 205.9925356168168, hub_height: 140.0, rated_power: 5000000.0, lifetime: 25.0}
+assembly: {turbine_class: III, turbulence_class: A, drivetrain: Constant_eff, rotor_orientation: Upwind, number_of_blades: 3, rotor_diameter: 205.86705053, hub_height: 140.0, rated_power: 5000000.0, lifetime: 25.0}
 components:
     blade:
         outer_shape_bem:
@@ -415,6 +415,11 @@ components:
                        -  [10.132577637481155, 0.0, 0.0, 0.0, 0.0, 0.22902956968390698, 10.132577637481155, 0.0, 0.0, 0.0, 0.007135739831967342, 10.132577637481155, -0.22902956968390698, -0.007135739831967342, 0.0, 0.17800255921715422, 0.17800255921715422, 0.0, 0.0, 0.0, 0.18693989853637416]
     hub: {cone_angle: 0.03490658503988659, diameter: 6.0, drag_coefficient: 0.5, hub_material: steel, spinner_material: glass_biax, flange_t2shell_t: 4.0, flange_OD2hub_D: 0.5, flange_ID2OD: 0.8, hub_blade_spacing_margin: 1.2, hub_stress_concentration: 2.5, n_front_brackets: 3, n_rear_brackets: 3, clearance_hub_spinner: 0.75, spin_hole_incr: 1.2, pitch_system_scaling_factor: 0.54, spinner_gust_ws: 70.0}
     nacelle:
+        generator:
+            generator_length: 2.0
+            generator_rpm_efficiency_user:
+                grid: [0.0, 1.0]
+                values: [0.95, 0.95]
         drivetrain:
             diameter: 3.0
             uptilt: 0.06981317007977318
@@ -424,7 +429,6 @@ components:
             overhang: 7.0
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
-            generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
@@ -442,20 +446,12 @@ components:
             lss_material: steel
             hss_material: steel
             bedplate_material: steel
-            generator_mass_user: 0.0
-            generator_rpm_efficiency_user:
-                grid: [0.0, 1.0]
-                values: [0.95, 0.95]
             nose_diameter: [0.3, 0.3]
             nose_wall_thickness: [0.1, 0.1]
             bedplate_wall_thickness:
                 grid: [0.0, 1.0]
                 values: [0.05, 0.05]
-            brake_mass_user: 0.0
             hvac_mass_coefficient: 0.08
-            converter_mass_user: 0.0
-            transformer_mass_user: 0.0
-            generator_radius_user: 0.0
             damping_ratio: 0.005
     tower:
         outer_shape_bem:
@@ -892,11 +888,11 @@ materials:
    -  {name: steel, description: Steel of the tower and monopile ASTM A572 Grade 50, source: "'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'", orth: 0, rho: 7800, alpha: 0.0, E: 200000000000.0, nu: 0.3, G: 79300000000.0, GIc: 0, GIIc: 0, alp0: 0, Xt: 450000000.0, Xc: 450000000.0, S: 0, Xy: 345000000.0, m: 3, A: 3.5534648443719767e10, unit_cost: 0.7}
    -  {name: joint_insert, description: Stainless steel 440a tempered @315C, orth: 0.0, rho: 7800.0, alpha: 0.0, E: 210e9, nu: 0.283, G: 83.9e9, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 1790e6, Xc: 1790e6, S: 0.0, Xy: 1650e6, unit_cost: 2}
 control:
-    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0, minOmega: 0.0, maxOmega: 0.9927432785343746}
+    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0}
     pitch: {PC_zeta: 1.1, PC_omega: 0.2, ps_percent: 0.8, max_pitch: 1.57, max_pitch_rate: 0.03488888888888889, min_pitch: 0.0}
     torque: {control_type: tsr_tracking, tsr: 10.5, VS_zeta: 0.5, VS_omega: 0.1, max_torque_rate: 4500000.0, VS_minspd: 0.0, VS_maxspd: 2.0}
     setpoint_smooth: {ss_vsgain: 1, ss_pcgain: 0.001}
     shutdown: {limit_type: gen_speed, limit_value: 2.0}
 environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, weib_shape_parameter: 2.0, air_speed_sound: 340.0, shear_exp: 0.2, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, gravity: 9.80665, air_pressure: 103500.0, air_vapor_pressure: 1700.0, water_depth: 0.0, V_mean: 0.0}
-bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 50.0, distance_to_interconnection: 8.0, interconnect_voltage: 130, distance_to_landfall: 100, distance_to_site: 100, port_cost_per_month: 2000000.0, site_auction_price: 0.0, site_assessment_plan_cost: 0.0, site_assessment_cost: 0.0, construction_operations_plan_cost: 0.0, boem_review_cost: 0.0, design_install_plan_cost: 0.0}
+bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_cost_kW: 44.0, decommissioning_cost_kW: 58.0, distance_to_substation: 50.0, distance_to_interconnection: 8.0, interconnect_voltage: 130, distance_to_landfall: 100, distance_to_site: 100, port_cost_per_month: 2000000.0}
 costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.0578, bos_per_kW: 441.0, opex_per_kW: 43.0, turbine_number: 120, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_torque_cost: 50., hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0}

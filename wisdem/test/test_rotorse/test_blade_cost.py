@@ -26,6 +26,7 @@ class TestBC(unittest.TestCase):
         modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
+        modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
             reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
         )
@@ -64,6 +65,7 @@ class TestBC(unittest.TestCase):
         modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
+        modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
             reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
         )
@@ -73,22 +75,22 @@ class TestBC(unittest.TestCase):
         wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt.run_model()
 
-        self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 2120.114976619193, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 2118.4495567238464, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_non_gating_ct"][0], 232.7325246708642, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_metallic_parts_cost"][0], 7621.310200125126, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_consumable_cost_w_waste"][0], 12911.790488639614, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 203757.42484377683, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 125472.08278820755, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 3061.525355375679, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 332291.03298736, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_equipment"][0], 8926.999731580396, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_tooling"][0], 37096.29238681671, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_building"][0], 2863.937297439419, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_maintenance_cost"][0], 12942.931431450135, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0], 37641.624836462266, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.cost_capital"][0], 25877.288327010752, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 125349.07401075968, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 457640.10699811974, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_consumable_cost_w_waste"][0], 12903.087758681917, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 200427.1289042785, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 125371.85204955435, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 3046.3071042923843, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 328845.28805812524, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_equipment"][0], 8911.525526320545, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_tooling"][0], 36798.525167161235, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_building"][0], 2843.2346539960604, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_maintenance_cost"][0], 12864.255822069288, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0], 37611.5556148663, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.cost_capital"][0], 25699.379901434124, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 124728.47668584756, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 453573.7647439728, places=accuracy)
 
     def testBladeCostIEA15(self):
         fname_modeling_options = os.path.join(example_dir02, "modeling_options.yaml")
@@ -102,6 +104,7 @@ class TestBC(unittest.TestCase):
         modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
+        modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
             reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
         )
@@ -115,18 +118,18 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.total_non_gating_ct"][0], 286.8691726009284, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_metallic_parts_cost"][0], 8885.378951968672, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_consumable_cost_w_waste"][0], 15452.72272332480, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 373394.4858711899, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 190799.0839263441, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 4106.865948259457, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 568300.4357457935, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 373399.83288352477, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 190789.6172522483, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 4104.007661423962, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 568293.457797197, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_cost_equipment"][0], 26995.11322495800, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_cost_tooling"][0], 40526.55505925335, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_cost_building"][0], 3228.385949075586, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_maintenance_cost"][0], 21156.35723835444, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0], 57239.72517790324, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0],  57236.88517567449, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.cost_capital"][0], 42403.61902650416, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 191549.7556760488, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 759850.1914218423, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 191546.75158866012, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 759840.2093858572, places=accuracy)
 
     def testBladeCostBAR_USC(self):
         fname_modeling_options = os.path.join(example_dir03, "modeling_options.yaml")
@@ -139,6 +142,7 @@ class TestBC(unittest.TestCase):
         modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
+        modeling_options["user_elastic"]["blade"] = False
         wt_opt = om.Problem(
             reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
         )

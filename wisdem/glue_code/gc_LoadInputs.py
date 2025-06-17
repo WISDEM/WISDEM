@@ -20,58 +20,43 @@ class WindTurbineOntologyPython(object):
 
     def set_run_flags(self):
         # Create components flag struct
-        self.modeling_options["flags"] = {}
+        flags = self.modeling_options["flags"] = {}
 
         # Backwards compatibility
-        modules = ["RotorSE", "DriveSE", "GeneratorSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
+        modules = ["RotorSE", "DriveSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
         for m in modules:
             if m in self.modeling_options:
                 self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
 
         for k in ["blade", "hub", "nacelle", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA"]:
-            self.modeling_options["flags"][k] = k in self.wt_init["components"]
+            flags[k] = k in self.wt_init["components"]
 
         for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
-            self.modeling_options["flags"][k] = k in self.wt_init
+            flags[k] = k in self.wt_init
 
         # Generator flag
-        self.modeling_options["flags"]["generator"] = False
-        if self.modeling_options["flags"]["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]:
-            self.modeling_options["flags"]["generator"] = True
-            if not "GeneratorSE" in self.modeling_options["WISDEM"]:
-                self.modeling_options["WISDEM"]["GeneratorSE"] = {}
-            self.modeling_options["WISDEM"]["GeneratorSE"]["type"] = self.wt_init["components"]["nacelle"]["generator"][
-                "generator_type"
-            ].lower()
+        flags["generator"] = (flags["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]
+            and self.wt_init["components"]["nacelle"]["generator"]["h_s"] > 0.0)
+        if flags["generator"]:
+            self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] = self.wt_init["components"]["nacelle"]["generator"]["generator_type"].lower()
 
         # Offshore flags
-        self.modeling_options["flags"]["floating"] = self.modeling_options["flags"]["floating_platform"]
-        self.modeling_options["flags"]["offshore"] = (
-            self.modeling_options["flags"]["floating"]
-            or self.modeling_options["flags"]["monopile"]
-            or self.modeling_options["flags"]["jacket"]
-        )
-
-        # Put in some logic about what needs to be in there
-        flags = self.modeling_options["flags"]
+        flags["floating"] = self.modeling_options["flags"]["floating_platform"]
+        flags["offshore"] = (flags["floating"] or flags["monopile"] or flags["jacket"])
 
         # Even if the block is in the inputs, the user can turn off via modeling options
-        if flags["bos"]:
-            flags["bos"] = self.modeling_options["WISDEM"]["BOS"]["flag"]
-        if flags["blade"]:
-            flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"]
-        if flags["tower"]:
-            flags["tower"] = self.modeling_options["WISDEM"]["TowerSE"]["flag"]
-        if flags["monopile"]:
-            flags["monopile"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
-        if flags["jacket"]:
-            flags["jacket"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
-        if flags["hub"]:
-            flags["hub"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
-        if flags["nacelle"]:
-            flags["nacelle"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
-        if flags["generator"]:
-            flags["generator"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
+        # The "flags" here should come in as a string, not Boolean, to allow for the user_elastic option
+        self.modeling_options["user_elastic"] = {m:False for m in flags.keys()}
+        flag_pairings = [("bos","BOS"), ("blade","RotorSE"), ("tower","TowerSE"),
+            ("monopile","FixedBottomSE"), ("jacket","FixedBottomSE"),
+            ("hub","DriveSE"), ("nacelle","DriveSE"), ("generator","DriveSE")]
+        for i,j in flag_pairings:
+            if flags[i]:
+                if isinstance(self.modeling_options["WISDEM"][j]["flag"], bool):
+                    flags[i] = self.modeling_options["WISDEM"][j]["flag"]
+            if isinstance(self.modeling_options["WISDEM"][j]["flag"], str) and self.modeling_options["WISDEM"][j]["flag"].lower() == "user_elastic":
+                self.modeling_options["user_elastic"][i] = True
+                flags[i] = False
         flags["hub"] = flags["nacelle"] = flags["hub"] or flags["nacelle"]  # Hub and nacelle have to go together
 
         # Blades and airfoils
@@ -165,87 +150,66 @@ class WindTurbineOntologyPython(object):
 
         # Blade
         self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
-        if self.modeling_options["flags"]["blade"]:
+        if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             )  # Equally spaced non-dimensional spanwise grid
             self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = len(
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-            self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
-            )
-            self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] = len(
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False
-            self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed
 
-            self.modeling_options["WISDEM"]["RotorSE"]["layer_name"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_layers"
-            ] * [""]
-            self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_layers"
-            ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
-                self.modeling_options["WISDEM"]["RotorSE"]["layer_name"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["layers"][i]["name"]
-                self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["layers"][i]["material"]
+            self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False # Is this always false? It is not in the schema and not changed anywhere else.
+            self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed, this should be common so moved out of the conditional
+            if not self.modeling_options["user_elastic"]["blade"]:
+                self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
+                )
+                self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] = len(
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+                )
 
-            self.modeling_options["WISDEM"]["RotorSE"]["web_name"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_webs"
-            ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["webs"][i]["name"]
+
+                self.modeling_options["WISDEM"]["RotorSE"]["layer_name"] = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] * [""]
+                self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"] = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] * [""]
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
+                    self.modeling_options["WISDEM"]["RotorSE"]["layer_name"][i] = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["name"]
+                    self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i] = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["material"]
+
+                self.modeling_options["WISDEM"]["RotorSE"]["web_name"] = self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] * [""]
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
+                    self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i] = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["name"]
+                    joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
+                if joint_pos > 0.0:
+                    self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
+                    # Adjust grid to have grid point at join location
+                    closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
+                    self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
+                    self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
 
             # Distributed aerodynamic control devices along blade
             self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = 0
             if "aerodynamic_control" in self.wt_init["components"]["blade"]:
                 if "te_flaps" in self.wt_init["components"]["blade"]["aerodynamic_control"]:
-                    self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = len(
-                        self.wt_init["components"]["blade"]["aerodynamic_control"]["te_flaps"]
-                    )
+                    self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = len(self.wt_init["components"]["blade"]["aerodynamic_control"]["te_flaps"])
                     self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 3
                 else:
-                    raise RuntimeError(
-                        "A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem."
-                    )
+                    raise RuntimeError("A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.")
 
-            joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
-            if joint_pos > 0.0:
-                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
-                # Adjust grid to have grid point at join location
-                closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
-                self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
-                self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
-
-        # Drivetrain
-        if self.modeling_options["flags"]["nacelle"]:
-            self.modeling_options["WISDEM"]["DriveSE"]["direct"] = self.wt_init["assembly"]["drivetrain"].lower() in [
-                "direct",
-                "direct_drive",
-                "pm_direct_drive",
-            ]
+        # Drivetrain config
+        self.modeling_options["WISDEM"]["DriveSE"]["direct"] = self.wt_init["assembly"]["drivetrain"].lower() in ["direct", "direct_drive", "pm_direct_drive"]
 
         # Tower
         if self.modeling_options["flags"]["tower"]:
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(
-                self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
+            svec = np.unique(
+                np.r_[
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+                    self.wt_init["components"]["tower"]["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+                ]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = len(
-                self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
-                "n_height"
-            ]
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
-                "n_layers"
-            ]
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(svec)
+            self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = len(self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"])
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
@@ -258,16 +222,8 @@ class WindTurbineOntologyPython(object):
                     monopile["outer_shape_bem"]["reference_axis"]["z"]["grid"],
                 ]
             )
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = len(svec)
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = len(
-                self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = self.modeling_options["WISDEM"][
-                "FixedBottomSE"
-            ]["n_height"]
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = self.modeling_options["WISDEM"][
-                "FixedBottomSE"
-            ]["n_layers"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = len(svec)
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = len(self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"])
 
         # Jacket
         if self.modeling_options["flags"]["jacket"]:
@@ -352,7 +308,7 @@ class WindTurbineOntologyPython(object):
                             "grid"
                         ][:]
                     assert grid == grid_b, "Side length a and b don't have the same grid but they should."
-                    
+
                 # Grid for just diameter / thickness design
                 geom_grid = grid[:]
 
@@ -507,6 +463,11 @@ class WindTurbineOntologyPython(object):
             # Store joint info
             self.modeling_options["floating"]["joints"]["name2idx"] = name2idx
 
+            # Store rigid_bodies info
+            self.modeling_options["floating"]["rigid_bodies"] = {}
+            self.modeling_options["floating"]["rigid_bodies"]["n_bodies"] = len(self.wt_init['components']['floating_platform']['rigid_bodies'])
+            self.modeling_options["floating"]["rigid_bodies"]["joint1"] = [rb['joint1'] for rb in self.wt_init['components']['floating_platform']['rigid_bodies']]
+
             # Floating tower params
             self.modeling_options["floating"]["tower"] = {}
             self.modeling_options["floating"]["tower"]["n_ballasts"] = [0]
@@ -535,7 +496,7 @@ class WindTurbineOntologyPython(object):
             ]
             self.modeling_options["mooring"]["n_nodes"] = n_nodes
             self.modeling_options["mooring"]["n_lines"] = n_lines
-            self.modeling_options["mooring"]["n_anchors"] = n_lines
+            self.modeling_options["mooring"]["n_anchors"] = np.sum(np.array([n['node_type'] == 'fixed' for n in self.wt_init['components']['mooring']['nodes']]))
             self.modeling_options["mooring"]["n_line_types"] = n_line_types
             self.modeling_options["mooring"]["n_anchor_types"] = n_anchor_types
             self.modeling_options["mooring"]["node_type"] = [""] * n_nodes
@@ -652,7 +613,7 @@ class WindTurbineOntologyPython(object):
             self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
         if self.analysis_options["opt_flag"] == False and (
-            self.analysis_options["driver"]["step_size_study"]["flag"] == True or 
+            self.analysis_options["driver"]["step_size_study"]["flag"] == True or
             self.analysis_options["driver"]["design_of_experiments"]["flag"] == True
             ):
             self.analysis_options["opt_flag"] = True
@@ -720,14 +681,14 @@ class WindTurbineOntologyPython(object):
                 blade_opt_options["aero_shape"]["L/D"]["n_opt"],
             )
         # # Blade structural design variables
-        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"]:
+        if self.modeling_options["flags"]["blade"] and (not self.modeling_options["user_elastic"]["blade"]):
             n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
             layer_name = self.modeling_options["WISDEM"]["RotorSE"]["layer_name"]
             spars_tereinf = np.zeros(4, dtype=int)
             blade_opt_options["n_opt_struct"] = np.ones(n_layers, dtype=int)
             if "structure" in blade_opt_options:
                 n_layers_opt = len(blade_opt_options["structure"])
-                blade_opt_options["layer_index_opt"] = np.ones(n_layers_opt, dtype=int)
+                blade_opt_options["layer_index_opt"] = -np.ones(n_layers_opt, dtype=int)
                 for i in range(n_layers):
                     foundit = False
                     for j in range(n_layers_opt):
@@ -738,19 +699,28 @@ class WindTurbineOntologyPython(object):
                             break
                     if not foundit:
                         blade_opt_options["n_opt_struct"][i] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
                         spars_tereinf[0] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
                         spars_tereinf[1] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"].lower():
                         spars_tereinf[2] = i
-                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+                    if layer_name[i].lower() == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"].lower():
                         spars_tereinf[3] = i
+
+                index_not_found = np.where(blade_opt_options["layer_index_opt"] == -1)[0]
+                if len(index_not_found)>0:
+                    raise Exception(
+                        "WISDEM is set to optimize the thickness of blade composite layer {}, but this layer "
+                        "is not found in the input geometry yaml".format(
+                            blade_opt_options["structure"][index_not_found[0]]["layer_name"]
+                        )
+                    )
             else:
                 blade_opt_options["structure"] = []
                 blade_opt_options["n_opt_struct"] *= self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"] = spars_tereinf
-            
+
             if any(blade_opt_options["n_opt_struct"]>self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 raise ValueError("You are attempting to do a blade structural design optimization with more DVs than spanwise stations.")
             blade_opt_options["n_opt_struct"] = blade_opt_options["n_opt_struct"].tolist()
@@ -811,250 +781,204 @@ class WindTurbineOntologyPython(object):
 
     def write_ontology(self, wt_opt, fname_output):
         # Update blade
-        if self.modeling_options["flags"]["blade"]:
+        if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             # Update blade outer shape
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"] = wt_opt[
-                "blade.opt_var.af_position"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"] = wt_opt[
-                "blade.pa.chord_param"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"] = wt_opt["blade.opt_var.af_position"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"] = wt_opt["blade.pa.chord_param"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt["rotorse.theta"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["values"] = wt_opt[
-                "blade.outer_shape_bem.pitch_axis"
-            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["values"] = wt_opt["blade.outer_shape_bem.pitch_axis"].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"] = {}
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt[
-                "blade.interp_airfoils.r_thick_interp"
-            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt["blade.interp_airfoils.r_thick_interp"].tolist()
             if self.modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[
-                    "blade.outer_shape_bem.s"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt[
-                    "rotorse.rp.powercurve.L_D"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"] = wt_opt[
-                    "blade.outer_shape_bem.s"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"] = wt_opt[
-                    "rotorse.rp.powercurve.cd_regII"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"] = wt_opt[
-                    "blade.outer_shape_bem.s"
-                ].tolist()
-                stall_margin = np.deg2rad(
-                    wt_opt["rotorse.stall_check.stall_angle_along_span"] - wt_opt["rotorse.stall_check.aoa_along_span"]
-                )
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt["rotorse.rp.powercurve.L_D"].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"] = wt_opt["rotorse.rp.powercurve.cd_regII"].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+                stall_margin = np.deg2rad(wt_opt["rotorse.stall_check.stall_angle_along_span"] - wt_opt["rotorse.stall_check.aoa_along_span"])
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"] = stall_margin.tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["values"] = wt_opt[
-                "blade.high_level_blade_props.blade_ref_axis"
-            ][:, 0].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["values"] = wt_opt[
-                "blade.high_level_blade_props.blade_ref_axis"
-            ][:, 1].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"] = wt_opt[
-                "blade.high_level_blade_props.blade_ref_axis"
-            ][:, 2].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["values"] = wt_opt["blade.high_level_blade_props.blade_ref_axis"][:, 0].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["values"] = wt_opt["blade.high_level_blade_props.blade_ref_axis"][:, 1].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"] = wt_opt["blade.high_level_blade_props.blade_ref_axis"][:, 2].tolist()
 
             # Update blade structure
+            # TODO_YL: conditional?
             # Reference axis from blade outer shape
-            self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"] = self.wt_init[
-                "components"
-            ]["blade"]["outer_shape_bem"]["reference_axis"]
-            # Webs positions
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                if "rotation" in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]:
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["rotation"][
+            if not self.modeling_options["user_elastic"]["blade"]:
+                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"] = self.wt_init[
+                    "components"
+                ]["blade"]["outer_shape_bem"]["reference_axis"]
+                # Webs positions
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
+                    if "rotation" in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]:
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["rotation"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["rotation"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.web_rotation"][i, :].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["offset_y_pa"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["offset_y_pa"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.web_offset_y_pa"][i, :].tolist()
+                    if "start_nd_arc" not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]:
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"] = {}
+                    if "end_nd_arc" not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]:
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"] = {}
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"][
                         "grid"
                     ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["rotation"][
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"][
                         "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.web_rotation"][i, :].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["offset_y_pa"][
+                    ] = wt_opt["blade.internal_structure_2d_fem.web_start_nd"][i, :].tolist()
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"][
                         "grid"
                     ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["offset_y_pa"][
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"][
                         "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.web_offset_y_pa"][i, :].tolist()
-                if "start_nd_arc" not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]:
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"] = {}
-                if "end_nd_arc" not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]:
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"] = {}
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"][
-                    "grid"
-                ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"][
-                    "values"
-                ] = wt_opt["blade.internal_structure_2d_fem.web_start_nd"][i, :].tolist()
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"][
-                    "grid"
-                ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"][
-                    "values"
-                ] = wt_opt["blade.internal_structure_2d_fem.web_end_nd"][i, :].tolist()
+                    ] = wt_opt["blade.internal_structure_2d_fem.web_end_nd"][i, :].tolist()
 
-            # Structural layers
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                    "grid"
-                ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                    "values"
-                ] = wt_opt["blade.ps.layer_thickness_param"][i, :].tolist()
-                if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] != 10:
-                    if (
-                        "start_nd_arc"
-                        not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
-                    ):
-                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i][
+                # Structural layers
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                        "grid"
+                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                        "values"
+                    ] = wt_opt["blade.ps.layer_thickness_param"][i, :].tolist()
+                    if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] != 10:
+                        if (
                             "start_nd_arc"
-                        ] = {}
+                            not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
+                        ):
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i][
+                                "start_nd_arc"
+                            ] = {}
+                        if (
+                            "end_nd_arc"
+                            not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
+                        ):
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"] = {}
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_start_nd"][i, :].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_end_nd"][i, :].tolist()
+
+                        # Check for start and end nd layers outside the 0 to 1 range
+                        for j in range(len(self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                            "layers"][i]["start_nd_arc"]["grid"])):
+                            if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                    "layers"][i]["start_nd_arc"]["values"][j] < 0.:
+                                self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                    "layers"][i]["start_nd_arc"]["values"][j] = 0.
+                            if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                    "layers"][i]["end_nd_arc"]["values"][j] > 1.:
+                                self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                    "layers"][i]["end_nd_arc"]["values"][j] = 1.
+
                     if (
-                        "end_nd_arc"
-                        not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
+                        wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] > 1
+                        and wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 6
                     ):
-                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"] = {}
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"][
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["width"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["width"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_width"][i, :].tolist()
+                    if (
+                        wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 2
+                        or wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 3
+                    ):
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["rotation"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["rotation"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_rotation"][i, :].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["offset_y_pa"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["offset_y_pa"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_offset_y_pa"][i, :].tolist()
+                    if (
+                        wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 4
+                        or wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 5
+                    ):
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["midpoint_nd_arc"][
+                            "grid"
+                        ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
+                        self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["midpoint_nd_arc"][
+                            "values"
+                        ] = wt_opt["blade.internal_structure_2d_fem.layer_midpoint_nd"][i, :].tolist()
+
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"] = {}
+
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"][
                         "grid"
                     ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"][
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"][
                         "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_start_nd"][i, :].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
-                        "grid"
-                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
-                        "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_end_nd"][i, :].tolist()
+                    ] = np.zeros(len(wt_opt["blade.internal_structure_2d_fem.s"])).tolist()
 
-                    # Check for start and end nd layers outside the 0 to 1 range
-                    for j in range(len(self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
-                        "layers"][i]["start_nd_arc"]["grid"])):
-                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
-                                "layers"][i]["start_nd_arc"]["values"][j] < 0.:
-                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
-                                "layers"][i]["start_nd_arc"]["values"][j] = 0.
-                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
-                                "layers"][i]["end_nd_arc"]["values"][j] > 1.:
-                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
-                                "layers"][i]["end_nd_arc"]["values"][j] = 1.
+                # TODO assign joint mass to wt_init from rs.bjs
+                # Elastic properties of the blade
+                if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = wt_opt["rotorse.rs.bjs.joint_mass"][0]
 
-                if (
-                    wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] > 1
-                    and wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 6
-                ):
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["width"][
-                        "grid"
-                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["width"][
-                        "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_width"][i, :].tolist()
-                if (
-                    wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 2
-                    or wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 3
-                ):
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["rotation"][
-                        "grid"
-                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["rotation"][
-                        "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_rotation"][i, :].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["offset_y_pa"][
-                        "grid"
-                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["offset_y_pa"][
-                        "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_offset_y_pa"][i, :].tolist()
-                if (
-                    wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 4
-                    or wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 5
-                ):
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["midpoint_nd_arc"][
-                        "grid"
-                    ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["midpoint_nd_arc"][
-                        "values"
-                    ] = wt_opt["blade.internal_structure_2d_fem.layer_midpoint_nd"][i, :].tolist()
+            self.wt_init["components"]["blade"]["elastic_properties"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"] = {}
+            if not self.modeling_options["user_elastic"]["blade"]:
+                self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["reference_axis"] = self.wt_init[
+                "components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]
+            else:
+                # TODO YL: need to confirm this is ok
+                self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["reference_axis"] = self.wt_init[
+                "components"]["blade"]["outer_shape_bem"]["reference_axis"]
 
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"] = {}
-
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"][
-                    "grid"
-                ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"][
-                    "values"
-                ] = np.zeros(len(wt_opt["blade.internal_structure_2d_fem.s"])).tolist()
-
-            # TODO assign joint mass to wt_init from rs.bjs
-            # Elastic properties of the blade
-            if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = float(
-                    wt_opt["rotorse.rs.bjs.joint_mass"]
-                )
-
-            self.wt_init["components"]["blade"]["elastic_properties_mb"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["reference_axis"] = self.wt_init[
-                "components"
-            ]["blade"]["internal_structure_2d_fem"]["reference_axis"]
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["twist"] = self.wt_init[
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["twist"] = self.wt_init[
                 "components"
             ]["blade"]["outer_shape_bem"]["twist"]
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"]["grid"] = wt_opt[
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"] = {}
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
-            K = []
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
-                Ki = np.zeros(21)
-                Ki[11] = wt_opt["rotorse.EA"][i]
-                Ki[15] = wt_opt["rotorse.EIxx"][i]
-                Ki[18] = wt_opt["rotorse.EIyy"][i]
-                Ki[20] = wt_opt["rotorse.GJ"][i]
-                K.append(Ki.tolist())
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["stiff_matrix"]["values"] = K
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"] = {}
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"][
-                "grid"
-            ] = wt_opt["blade.outer_shape_bem.s"].tolist()
-            I = []
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
-                Ii = np.zeros(21)
-                Ii[0] = wt_opt["rotorse.rhoA"][i]
-                Ii[5] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
-                Ii[6] = wt_opt["rotorse.rhoA"][i]
-                Ii[10] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
-                Ii[11] = wt_opt["rotorse.rhoA"][i]
-                Ii[12] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
-                Ii[13] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
-                Ii[15] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                # Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                Ii[18] = wt_opt["rotorse.re.precomp.flap_iner"][i]
-                Ii[20] = wt_opt["rotorse.rhoJ"][i]
-                I.append(Ii.tolist())
-            self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"]["values"] = I
+
+            stiff_terms = [11, 12, 13, 14, 15, 16, 22, 23, 24, 25, 26, 33, 34, 35, 36, 44, 45, 46, 55, 56, 66]
+            for term in stiff_terms:
+                 self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["stiff_matrix"]["K"+str(term)] = np.array(wt_opt["rotorse.re.K"][:,int(term//10-1),int(term%10-1)]).tolist()
+
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"] = {}
+
+            I = {}
+            I["grid"] = wt_opt["blade.outer_shape_bem.s"].tolist()
+            I["mass"] = wt_opt["rotorse.re.I"][:,0,0].tolist()
+            I["cm_x"] = wt_opt["rotorse.re.x_cg"].tolist()
+            I["cm_y"] = wt_opt["rotorse.re.y_cg"].tolist()
+            I["i_edge"] = wt_opt["rotorse.re.I"][:,3,3].tolist()
+            I["i_flap"] = wt_opt["rotorse.re.I"][:,4,4].tolist()
+            I["i_plr"] = (np.asarray(I["i_edge"]) + np.asarray(I["i_flap"])).tolist()
+            I["i_cp"] = wt_opt["rotorse.re.I"][:,3,4].tolist()
+
+            self.wt_init["components"]["blade"]["elastic_properties"]["six_x_six"]["inertia_matrix"] = I
 
         # Update hub
         if self.modeling_options["flags"]["hub"]:
@@ -1074,9 +998,16 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["hub"]["pitch_system_scaling_factor"] = float(
                 wt_opt["hub.pitch_system_scaling_factor"][0]
             )
+            # WindIO v1
             self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
             self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
             # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_center_mass'] = wt_opt["drivese.hub_system_cm"].tolist()
+            # WindIO v2
+            #self.wt_init["components"]["hub"]["elastic_properties"]['mass'] = float(wt_opt["drivese.hub_system_mass"][0])
+            #self.wt_init["components"]["hub"]["elastic_properties"]['inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
+            # self.wt_init["components"]["hub"]["elastic_properties"]['location'] = wt_opt["drivese.hub_system_cm"].tolist()
 
         # Update nacelle
         if self.modeling_options["flags"]["nacelle"]:
@@ -1092,22 +1023,6 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["distance_mb_mb"] = float(
                 wt_opt["nacelle.distance_mb_mb"][0]
             )
-            self.wt_init["components"]["nacelle"]["drivetrain"]["generator_length"] = float(
-                wt_opt["nacelle.L_generator"][0]
-            )
-            if not self.modeling_options["flags"]["generator"]:
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_mass_user"] = float(
-                    wt_opt["generator.generator_mass_user"][0]
-                )
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_radius_user"] = float(
-                    wt_opt["generator.generator_radius_user"][0]
-                )
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["grid"] = wt_opt[
-                    "generator.generator_efficiency_user"
-                ][:, 0].tolist()
-                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["values"] = wt_opt[
-                    "generator.generator_efficiency_user"
-                ][:, 1].tolist()
             s_lss = np.linspace(0.0, 1.0, len(wt_opt["nacelle.lss_diameter"])).tolist()
             self.wt_init["components"]["nacelle"]["drivetrain"]["lss_diameter"] = wt_opt[
                 "nacelle.lss_diameter"
@@ -1126,11 +1041,22 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["bedplate_material"] = wt_opt[
                 "nacelle.bedplate_material"
             ]
+            # WindIO v1
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.above_yaw_mass"][0])
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["yaw_mass"] = float(wt_opt["drivese.yaw_mass"][0])
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
             self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_center_mass"] = wt_opt["drivese.above_yaw_cm"].tolist()
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["spring_constant"] = float(wt_opt["drivese.drivetrain_spring_constant"][0])
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["damping_coefficient"] = float(wt_opt["drivese.drivetrain_damping_coefficient"][0])
+            # WindIO v2
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["mass"] = float(wt_opt["drivese.above_yaw_mass"][0])
+            #self.wt_init["components"]["nacelle"]["yaw"]["elastic_properties"]["mass"] = float(wt_opt["drivese.yaw_mass"][0])
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["location"] = wt_opt["drivese.above_yaw_cm"].tolist()
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["spring_constant"] = float(wt_opt["drivese.drivetrain_spring_constant"][0])
+            #self.wt_init["components"]["nacelle"]["elastic_properties"]["damping_coefficient"] = float(wt_opt["drivese.drivetrain_damping_coefficient"][0])
 
             if self.modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only
@@ -1175,6 +1101,16 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["nacelle"]["drivetrain"]["hss_material"] = wt_opt["nacelle.hss_material"]
 
         # Update generator
+        if self.modeling_options["flags"]["nacelle"] and "generator" in self.wt_init["components"]["nacelle"]:
+            self.wt_init["components"]["nacelle"]["generator"]["generator_length"] = float(wt_opt["generator.L_generator"][0])
+            self.wt_init["components"]["nacelle"]["generator"]["generator_mass_user"] = float(wt_opt["generator.generator_mass_user"][0])
+            if not self.modeling_options["flags"]["generator"]:
+                self.wt_init["components"]["nacelle"]["generator"]["generator_radius_user"] = float(wt_opt["generator.generator_radius_user"][0])
+                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["grid"] = wt_opt["generator.generator_efficiency_user"][:, 0].tolist()
+                self.wt_init["components"]["nacelle"]["generator"]["generator_rpm_efficiency_user"]["values"] = wt_opt["generator.generator_efficiency_user"][:, 1].tolist()
+            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.generator_mass"][0])
+            self.wt_init["components"]["nacelle"]["generator"]["elastic_properties_mb"]["rotor_inertia"] = wt_opt["drivese.generator_rotor_I"].tolist()
+
         if self.modeling_options["flags"]["generator"]:
             self.wt_init["components"]["nacelle"]["generator"]["B_r"] = float(wt_opt["generator.B_r"][0])
             self.wt_init["components"]["nacelle"]["generator"]["P_Fe0e"] = float(wt_opt["generator.P_Fe0e"][0])
@@ -1232,7 +1168,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["generator"]["C_Fes"] = float(wt_opt["generator.C_Fes"][0])
             self.wt_init["components"]["nacelle"]["generator"]["C_PM"] = float(wt_opt["generator.C_PM"][0])
 
-            if self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
+            if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
                 self.wt_init["components"]["nacelle"]["generator"]["N_c"] = float(wt_opt["generator.N_c"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["b"] = float(wt_opt["generator.b"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["c"] = float(wt_opt["generator.c"][0])
@@ -1255,13 +1191,13 @@ class WindTurbineOntologyPython(object):
                 )
                 self.wt_init["components"]["nacelle"]["generator"]["B_tmax"] = float(wt_opt["generator.B_tmax"][0])
 
-            if self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+            if self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                 self.wt_init["components"]["nacelle"]["generator"]["tau_p"] = float(wt_opt["generator.tau_p"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["h_ys"] = float(wt_opt["generator.h_ys"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["h_yr"] = float(wt_opt["generator.h_yr"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["b_arm"] = float(wt_opt["generator.b_arm"][0])
 
-            elif self.modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
+            elif self.modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
                 self.wt_init["components"]["nacelle"]["generator"]["B_symax"] = float(wt_opt["generator.B_symax"][0])
                 self.wt_init["components"]["nacelle"]["generator"]["S_Nmax"] = float(wt_opt["generator.S_Nmax"][0])
 
@@ -1478,6 +1414,7 @@ class WindTurbineOntologyPython(object):
         # Update controller
         if self.modeling_options["flags"]["control"]:
             self.wt_init["control"]["torque"]["tsr"] = float(wt_opt["control.rated_TSR"][0])
+            self.wt_init["control"]["pitch"]["ps_percent"] = float(wt_opt["control.ps_percent"][0])
 
         # Update cost coefficients
         if self.modeling_options["flags"]["costs"]:

@@ -210,35 +210,23 @@ class RunFrame3DD(ExplicitComponent):
             "EIxx",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)",
+            desc="Section lag (edgewise) bending stiffness about the XE axis",
         )
         self.add_input(
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flapwise stiffness (bending about y-axis of airfoil aligned coordinate system)",
+            desc="Section flap bending stiffness about the YE axis",
         )
-        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
+        self.add_input("EIxy", val=np.zeros(n_span), units="N*m**2", desc="Coupled flap-lag stiffness with respect to the XE-YE frame")
         self.add_input(
             "GJ",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="torsional stiffness (about axial z-direction of airfoil aligned coordinate system)",
+            desc="Section torsional stiffness with respect to the XE-YE frame",
         )
         self.add_input("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
         self.add_input("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
-        self.add_input(
-            "x_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)",
-        )
-        self.add_input(
-            "y_ec",
-            val=np.zeros(n_span),
-            units="m",
-            desc="y-distance to elastic center from point about which above structural properties are computed",
-        )
 
         # outputs
         n_freq2 = int(n_freq / 2)
@@ -352,8 +340,6 @@ class RunFrame3DD(ExplicitComponent):
         y_az = inputs["y_az"]
         z_az = inputs["z_az"]
         theta = inputs["theta"]
-        x_ec = inputs["x_ec"]
-        y_ec = inputs["y_ec"]
         A = inputs["A"]
         rhoA = inputs["rhoA"]
         rhoJ = inputs["rhoJ"]
@@ -372,13 +358,7 @@ class RunFrame3DD(ExplicitComponent):
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
         EIxx_cs, EIyy_cs = EIyy.copy(), EIxx.copy()
-        x_ec_cs, y_ec_cs = y_ec.copy(), x_ec.copy()
         EIxy_cs = EIxy.copy()
-
-        # translate to elastic center
-        EIxx_cs -= y_ec_cs**2 * EA
-        EIyy_cs -= x_ec_cs**2 * EA
-        EIxy_cs -= x_ec_cs * y_ec_cs * EA
 
         # get rotation angle
         alpha = 0.5 * np.arctan2(2 * EIxy_cs, (EIyy_cs - EIxx_cs))
@@ -1144,8 +1124,8 @@ class BladeJointSizing(ExplicitComponent):
         self.nd_span = rotorse_options["nd_span"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        # self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        # self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         self.layer_name = rotorse_options["layer_name"]
         self.layer_mat = rotorse_options["layer_mat"]
 
@@ -1898,8 +1878,6 @@ class RotorStructure(Group):
             "GJ",
             "rhoA",
             "rhoJ",
-            "x_ec",
-            "y_ec",
         ]
         self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
         promoteListStrains = [
@@ -1915,6 +1893,7 @@ class RotorStructure(Group):
             "yu_te",
             "yl_te",
         ]
+
         self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=promoteListStrains)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
         self.add_subsystem(
@@ -1922,18 +1901,22 @@ class RotorStructure(Group):
             CCBladeEvaluate(modeling_options=modeling_options),
             promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
-        self.add_subsystem(
-            "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
-        )
-        self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if not modeling_options["user_elastic"]["blade"]:
+
             self.add_subsystem(
-                "bjs",
-                BladeJointSizing(
-                    rotorse_options=modeling_options["WISDEM"]["RotorSE"],
-                    n_mat=self.options["modeling_options"]["materials"]["n_mat"],
-                ),
+                "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
             )
+
+            # Can't do sizing with user defined blade elastic properties
+            self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
+            if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+                self.add_subsystem(
+                    "bjs",
+                    BladeJointSizing(
+                        rotorse_options=modeling_options["WISDEM"]["RotorSE"],
+                        n_mat=self.options["modeling_options"]["materials"]["n_mat"],
+                    ),
+                )
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
         #     promoteListFatigue = ['r', 'gamma_f', 'gamma_m', 'E', 'Xt', 'Xc', 'x_tc', 'y_tc', 'EIxx', 'EIyy', 'pitch_axis', 'chord', 'layer_name', 'layer_mat', 'definition_layer', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats','rthick']
@@ -1973,16 +1956,19 @@ class RotorStructure(Group):
         self.connect("3d_curv", "tip_pos.3d_curv_tip", src_indices=[-1])
 
         # Strains from frame3dd to constraint
-        self.connect("strains.strainU_spar", "constr.strainU_spar")
-        self.connect("strains.strainL_spar", "constr.strainL_spar")
-        self.connect("strains.strainU_te", "constr.strainU_te")
-        self.connect("strains.strainL_te", "constr.strainL_te")
-        self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
-        self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
-        self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
+        if not modeling_options["user_elastic"]["blade"]:
+            # TODO YL: no constr component, remove the above conditional when the constr component is enabled for user defined blade
+            self.connect("strains.strainU_spar", "constr.strainU_spar")
+            self.connect("strains.strainL_spar", "constr.strainL_spar")
+            self.connect("strains.strainU_te", "constr.strainU_te")
+            self.connect("strains.strainL_te", "constr.strainL_te")
 
-        # Blade root moment to blade root sizing
-        self.connect("frame.root_M", "brs.root_M")
+            self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
+            self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
+            self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
+
+            # Blade root moment to blade root sizing
+            self.connect("frame.root_M", "brs.root_M")
 
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             # Moments to joint sizing

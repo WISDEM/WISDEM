@@ -9,6 +9,13 @@ The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a
 
 Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov)
 
+## Part of the WETO Stack
+
+WISDEM is primarily developed with the support of the U.S. Department of Energy and is part of the [WETO Software Stack](https://nrel.github.io/WETOStack). For more information and other integrated modeling software, see:
+- [Portfolio Overview](https://nrel.github.io/WETOStack/portfolio_analysis/overview.html)
+- [Entry Guide](https://nrel.github.io/WETOStack/_static/entry_guide/index.html)
+- [Systems Engineering Workshop](https://nrel.github.io/WETOStack/workshops/user_workshops_2024.html#systems-engineering)
+
 ## Documentation
 
 See local documentation in the `docs`-directory or access the online version at <https://wisdem.readthedocs.io/en/master/>
@@ -61,7 +68,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        conda install -y petsc4py mpi4py                 # (Mac / Linux only)
+        conda install -y petsc4py=3.22.2 mpi4py                 # (Mac / Linux only)
         conda install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
         conda install -y m2w64-toolchain libpython       # (Windows only)
         pip install --no-deps -e . -v

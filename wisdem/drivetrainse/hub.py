@@ -68,6 +68,8 @@ class HubShell(om.ExplicitComponent):
         Unit cost metal
     hub_diameter : float, [m]
         Outer diameter of the hub
+    hub_shell_mass_user : float, [kg]
+        User override of the mass of the hub shell, including the flanges
 
     Returns
     -------
@@ -99,6 +101,7 @@ class HubShell(om.ExplicitComponent):
         self.add_input("blade_root_diameter", val=0.0, units="m")
         self.add_input("hub_in2out_circ", val=1.2)
         self.add_discrete_input("n_blades", val=3)
+        self.add_input("hub_shell_mass_user", val=0.0, units="kg")
 
         # Outputs
         self.add_output("hub_mass", val=0.0, units="kg")
@@ -145,7 +148,8 @@ class HubShell(om.ExplicitComponent):
         main_flange_mass = main_flange_vol * inputs["rho"]
 
         # Sum masses flange and hub
-        hub_mass = main_flange_mass + sph_hub_mass
+        hub_mass_user = float(inputs["hub_shell_mass_user"][0])
+        hub_mass = main_flange_mass + sph_hub_mass if hub_mass_user == 0.0 else hub_mass_user
 
         # Compute cost
         hub_cost = hub_mass * inputs["metal_cost"]
@@ -201,6 +205,8 @@ class Spinner(om.ExplicitComponent):
         Unit cost composite of the shell
     metal_cost : float, [USD/kg]
         Unit cost metal
+    spinner_mass_user : float, [m]
+        User override of spinner mass
 
     Returns
     -------
@@ -238,6 +244,7 @@ class Spinner(om.ExplicitComponent):
         self.add_input("metal_rho", val=0.0, units="kg/m**3")
         self.add_input("composite_cost", val=0.0, units="USD/kg")
         self.add_input("metal_cost", val=0.0, units="USD/kg")
+        self.add_input("spinner_mass_user", val=0.0, units="kg")
 
         # Outputs
         self.add_output("spinner_diameter", val=0.0, units="m")
@@ -333,7 +340,8 @@ class Spinner(om.ExplicitComponent):
         bracket_mass = bracket_volume * inputs["metal_rho"]
         bracket_mass_total = bracket_mass * (discrete_inputs["n_front_brackets"] + discrete_inputs["n_rear_brackets"])
 
-        mass = spin_shell_mass + bracket_mass_total
+        mass_user = float(inputs["spinner_mass_user"][0])
+        mass = spin_shell_mass + bracket_mass_total if mass_user == 0.0 else mass_user
 
         # Compute outputs and assign them to openmdao outputs
         outputs["spinner_diameter"] = sph_spin_diam
@@ -391,6 +399,8 @@ class PitchSystem(om.ExplicitComponent):
         self.add_input("pitch_system_scaling_factor", val=0.0)
         self.add_input("BRFM", val=0.0, units="N*m")
         self.add_input("hub_diameter", val=0.0, units="m")
+        self.add_input("pitch_system_mass_user", val=0.0, units="kg")
+        
         # Outputs
         self.add_output("pitch_mass", val=0.0, units="kg")
         self.add_output("pitch_cost", val=0.0, units="USD")
@@ -401,6 +411,9 @@ class PitchSystem(om.ExplicitComponent):
             0.22 * inputs["blade_mass"] * discrete_inputs["n_blades"]
             + 12.6 * np.abs(inputs["BRFM"]) * inputs["rho"] / inputs["Xy"]
         )
+        mass_user = float(inputs["pitch_system_mass_user"][0])
+        mass = mass if mass_user == 0.0 else mass_user
+
         r_hub = 0.5 * inputs["hub_diameter"]
         I = np.r_[mass * r_hub**2 * np.array([1.0, 0.5, 0.5]), np.zeros(3)]
 
@@ -474,6 +487,10 @@ class Hub_Adder(om.ExplicitComponent):
         self.add_input("spinner_cm", val=0.0, units="m")
         self.add_input("spinner_I", val=np.zeros(6), units="kg*m**2")
 
+        self.add_input("hub_system_mass_user", val=0.0, units="kg")
+        self.add_input("hub_system_cm_user", val=0.0, units="m")
+        self.add_input("hub_system_I_user", val=np.zeros(6), units="kg*m**2")
+
         self.add_output("hub_system_mass", val=0.0, units="kg")
         self.add_output("hub_system_cost", val=0.0, units="USD")
         self.add_output("hub_system_cm", val=0.0, units="m")
@@ -484,16 +501,23 @@ class Hub_Adder(om.ExplicitComponent):
         m_pitch = float(inputs["pitch_mass"][0])
         m_hub = float(inputs["hub_mass"][0])
         m_spin = float(inputs["spinner_mass"][0])
+        m_user = float(inputs["hub_system_mass_user"][0])
         cm_hub = float(inputs["hub_cm"][0])
         cm_spin = float(inputs["spinner_cm"][0])
+        cm_user = inputs["hub_system_cm_user"]
+        I_user = inputs["hub_system_cm_user"]
 
         # Mass and cost totals
         m_total = m_pitch + m_hub + m_spin
-        c_total = inputs["pitch_cost"] + inputs["hub_cost"] + inputs["spinner_cost"]
+        coeff = 1.0 if m_user == 0.0 else m_user / m_total
+        m_total *= coeff
+        c_total = coeff * inputs["pitch_cost"] + inputs["hub_cost"] + inputs["spinner_cost"]
 
         # CofM total
         cm_total = ((m_pitch + m_hub) * cm_hub + m_spin * cm_spin) / m_total
-
+        if cm_user != 0.0:
+            cm_total = cm_user
+        
         # I total
         I_total = util.assembleI(np.zeros(6))
         r = np.array([cm_hub - cm_total, 0.0, 0.0])
@@ -501,7 +525,10 @@ class Hub_Adder(om.ExplicitComponent):
         I_total += util.assembleI(inputs["pitch_I"]) + m_pitch * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
         r = np.array([cm_spin - cm_total, 0.0, 0.0])
         I_total += util.assembleI(inputs["spinner_I"]) + m_spin * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
-
+        I_total *= coeff
+        if np.any(I_user):
+            I_total = I_user
+        
         # Outputs
         outputs["hub_system_mass"] = m_total
         outputs["hub_system_cost"] = c_total
@@ -539,6 +566,7 @@ class Hub_System(om.Group):
                 "hub_stress_concentration",
                 "max_torque",
                 "constr_hub_diameter",
+                "hub_shell_mass_user",
             ],
         )
         self.add_subsystem(
@@ -548,6 +576,7 @@ class Hub_System(om.Group):
                 "n_blades",
                 "hub_diameter",
                 "spinner_mass",
+                "spinner_mass_user",
                 "spinner_cost",
                 "spinner_cm",
                 "spinner_I",
@@ -570,6 +599,7 @@ class Hub_System(om.Group):
                 "pitch_I",
                 "blade_mass",
                 "pitch_system_scaling_factor",
+                "pitch_system_mass_user",
             ],
         )
         self.add_subsystem(
@@ -587,6 +617,9 @@ class Hub_System(om.Group):
                 "pitch_mass",
                 "pitch_cost",
                 "pitch_I",
+                "hub_system_mass_user",
+                "hub_system_cm_user",
+                "hub_system_I_user",
                 "hub_system_mass",
                 "hub_system_cost",
                 "hub_system_cm",

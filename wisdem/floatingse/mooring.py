@@ -157,7 +157,7 @@ class Mooring(om.ExplicitComponent):
         heel = float(inputs["operational_heel"][0])
         max_heel = float(inputs["survival_heel"][0])
         d = float(inputs["line_diameter"][0])
-        L_mooring = inputs["line_length"]
+        L_mooring = float(inputs["line_length"][0])
         gamma = self.options["gamma"]
         n_attach = self.options["options"]["n_attach"]
         n_lines = self.options["options"]["n_anchors"]

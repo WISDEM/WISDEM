@@ -1,6 +1,8 @@
 import os
 import re
 from typing import Any, Dict, List, Union
+import pandas as pd
+import numpy as np
 
 try:
     import dearpygui.dearpygui as dpg
@@ -31,7 +33,7 @@ def _hsv_to_rgb(h, s, v):
         return (255 * t, 255 * p, 255 * v)
     if i == 5:
         return (255 * v, 255 * p, 255 * q)
-
+    
 
 class DPGLineEdit(object):
     """
@@ -250,6 +252,8 @@ class GUI_Master(object):
         self.modeling_dict = {}
         self.analysis_dict = {}
 
+        self.output_data = None
+        
     def _on_demo_close(self):
         pass
 
@@ -324,17 +328,82 @@ class GUI_Master(object):
     def _export_root(self, sender, app_data):
         self.froot_export = app_data
 
-    def _mode_set(self):
-        if dpg.get_value("mode_dropdown") == "Input Editor":
-            self._input_mode = True
-        elif dpg.get_value("mode_dropdown") == "Output Viewer":
-            self._input_mode = False
-        else:
-            print(dpg.get_value("mode_dropdown"), self._input_mode)
-            raise ValueError("Shouldn't get here")
+    def _read_output(self, sender, app_data):
+        if app_data is not None:
+            # Grab the filename selected
+            temp_dict = app_data["selections"]
+            fname = [temp_dict[m] for m in temp_dict][0]
+
+            # Read in the file
+            if fname.lower().endswith('.pkl'):
+                temp_data = pd.read_pickle(fname)
+            elif fname.lower().endswith('.csv'):
+                temp_data = pd.read_csv(fname)
+            elif fname.lower().endswith('.xlsx'):
+                temp_data = pd.read_excel(fname)
+
+            # Fancy way of dropping openmdao duplicates
+            self.output_data = temp_data.loc[temp_data.astype(str).drop_duplicates(subset=['units','values']).index]
+
+            # Loop over all data and cleanup
+            temp_size = np.zeros(len(self.output_data), dtype=np.int_)
+            temp_val = [0]*len(self.output_data)
+            var_full  = ['']*len(self.output_data)
+            to_delete = []
+            for k in range(len(self.output_data)):
+                ivar = self.output_data['variables'].iloc[k]
+                ival = self.output_data['values'].iloc[k]
+                iunit = self.output_data['units'].iloc[k]
+
+                # csv and xlsx bring in values as string- convert to python types
+                if isinstance(ival, str):
+                    try:
+                        temp_val[k] = eval(ival)
+                        ival = temp_val[k]
+                    except:
+                        to_delete.append(self.output_data.index[k])
+                else:
+                    temp_val[k] = ival
+
+                # Cleanup no-unit entries
+                if str(iunit).lower() in ['','na','n/a','none','nan']:
+                    iunit = '-'
+
+                # Identify size
+                try:
+                    temp_size[k] = len(ival)
+                except:
+                    temp_size[k] = 1
+
+                # Variable axis/listbox name
+                var_full[k] = f'{ivar} [{iunit}] ({temp_size[k]})'
+
+            # Store clean data
+            self.output_data['size'] = temp_size
+            self.output_data['variables_full'] = var_full
+            self.output_data['values'] = temp_val
+
+            # Drop bad data, then sort
+            self.output_data.drop(index=to_delete, inplace=True)
+            self.output_data.sort_values('variables_full', inplace=True)
+
+            # Update list box
+            dpg.configure_item("xylistlabel", show=True)
+            dpg.configure_item("xylist", show=True)
+            dpg.configure_item("plotbutton", show=True)
+            dpg.configure_item("xlist", items=self.output_data['variables_full'].to_list(), show=True)
+            dpg.configure_item("ylist", items=self.output_data['variables_full'].to_list(), show=True)
+            
+    def _load_output(self):
+        with dpg.file_dialog(label="WISDEM Output File Selector", directory_selector=False, show=True,
+                             callback=self._read_output, width=500, height=400, default_path=self.working_dir):
+            dpg.add_file_extension(".*")
+            dpg.add_file_extension(".xlsx", color=(0, 255, 0, 255), custom_text="[Excel]")
+            dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
+            dpg.add_file_extension(".pkl", color=(0, 255, 0, 255), custom_text="[Pickle]")
 
     def _set_workdir(self, sender, app_data):
-        if not app_data is None:
+        if app_data is not None:
             self.working_dir = app_data["current_path"].strip()
         dpg.configure_item("workdir_field", default_value=f"Working directory: {self.working_dir}")
 
@@ -346,6 +415,7 @@ class GUI_Master(object):
             width=500,
             height=400,
             callback=self._set_workdir,
+            default_path=self.working_dir,
         )
 
     def _set_file_field(self, sender, app_data, user_data):
@@ -385,10 +455,47 @@ class GUI_Master(object):
             dpg.add_file_extension("YAML Files (*.yml *.yaml){.yml,.yaml}", color=(0, 255, 255, 255))
             dpg.add_file_extension(".*", color=(255, 255, 255, 255))
 
+    def _variable_list(self, sender, app_data, user_data):
+        # When enter x-value in listbox, reduce y-values to equivalent size kosher for plotting
+        xval_full = dpg.get_value("xselected")
+        xdf = self.output_data[ self.output_data['variables_full'] == xval_full ]
+        xsize = int(xdf['size'].iloc[0])
+        yreduced = self.output_data[ self.output_data['size']==xsize ]
+        dpg.configure_item("ylist", items=yreduced['variables_full'].to_list(), show=True)
+
+    def _gen_plot(self, sender, app_data, user_data):
+        # Build the plot, reset the axis
+        xval_full = dpg.get_value("xselected")
+        yval_full = dpg.get_value("yselected")
+        xstr = " ".join(xval_full.split()[:-1])
+        ystr = " ".join(yval_full.split()[:-1])
+        xdf = self.output_data[ self.output_data['variables_full'] == xval_full ]
+        ydf = self.output_data[ self.output_data['variables_full'] == yval_full ]
+        xx = np.array(xdf['values'].to_list()).flatten()
+        yy = np.array(ydf['values'].to_list()).flatten()
+        dpg.configure_item("xaxis", label=xstr)
+        dpg.configure_item("yaxis", label=ystr)
+        dpg.configure_item("lineseries", x=xx, y=yy)
+        dpg.reset_axis_zoom_constraints('xaxis')
+        dpg.reset_axis_zoom_constraints('yaxis')
+        dpg.reset_axis_limits_constraints('xaxis')
+        dpg.reset_axis_limits_constraints('yaxis')
+        dpg.fit_axis_data('xaxis')
+        dpg.fit_axis_data('yaxis')
+        dpg.reset_axis_ticks('xaxis')
+        dpg.reset_axis_ticks('yaxis')
+        dpg.configure_item("myplot", show=True)
+                      
+    
     def show_gui(self):
         def _log(sender, app_data, user_data):
             print(f"sender: {sender}, \t app_data: {app_data}, \t user_data: {user_data}")
 
+        # GUI variables for selectors
+        with dpg.value_registry():
+            dpg.add_string_value(default_value="x-axis string", tag="xselected")
+            dpg.add_string_value(default_value="y-axis string", tag="yselected")
+            
         # Make buttons stand out a big more
         with dpg.theme(tag="button_theme"):
             with dpg.theme_component(dpg.mvButton):
@@ -398,10 +505,10 @@ class GUI_Master(object):
                 dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5)
                 dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
 
-        with dpg.window(width=1200, height=1000, on_close=self._on_demo_close, pos=(0, 0), no_title_bar=True):
+        # INPUT WINDOW
+        with dpg.window(width=750, height=800, on_close=self._on_demo_close, pos=(0, 0), label='Input'):
             with dpg.menu_bar():
-                # with dpg.menu(label="Mode"):
-
+                #with dpg.menu(label="Mode"):
                 #    dpg.add_combo( ("Input Editor", "Output Viewer"), width=140, default_value="Input Editor",
                 #                   label="Mode", tag="mode_dropdown", callback=self._mode_set)
 
@@ -420,18 +527,17 @@ class GUI_Master(object):
                     dpg.add_menu_item(label="Run WISDEM/WEIS...", callback=self._run_program)
 
             # Display and/or change working directory
+            dpg.add_text("")
+            
             with dpg.group(horizontal=True):
                 dpg.add_text("Temp", tag="workdir_field")
                 dpg.add_button(label="Change", callback=self._choose_workdir)
                 dpg.bind_item_theme(dpg.last_item(), "button_theme")
 
-            dpg.add_input_text(
-                label="Export Prefix",
-                default_value=self.froot_export,
-                width=300,
-                callback=self._export_root,
-                tag="export_field",
-            )
+            with dpg.group(horizontal=True):
+                dpg.add_text("Export Prefix:")
+                dpg.add_input_text(label="", default_value=self.froot_export, width=200, callback=self._export_root, tag="export_field")
+                
             dpg.add_text("")
             dpg.add_text("WISDEM/WEIS YAML-Based Input Files:", color=(255, 255, 0))
 
@@ -469,11 +575,40 @@ class GUI_Master(object):
         self._set_file_field(None, {"file_path_name": temp_model}, "modeling_field")
         self._set_file_field(None, {"file_path_name": temp_anal}, "analysis_field")
 
+        # OUTPUT WINDOW
+        with dpg.window(width=900, height=800, on_close=self._on_demo_close, pos=(750, 0), label='Output'):
+            
+            with dpg.menu_bar():
+                with dpg.menu(label="Load"):
+                    dpg.add_menu_item(label="Select output file", callback=self._load_output)
+
+            with dpg.group(horizontal=True, tag='xylistlabel', show=False):
+                dpg.add_text("X-Axis Variable")
+                dpg.add_text(" "*50)
+                dpg.add_text("Y-Axis Variable")
+                
+            with dpg.group(horizontal=True, tag='xylist', show=False):
+                dpg.add_listbox([], label='', tag='xlist', width=450, source="xselected", num_items=15, callback=self._variable_list)
+                dpg.add_listbox([], label='', tag='ylist', width=450, source="yselected", num_items=15)
+
+            with dpg.group(horizontal=True, tag='plotbutton', show=False):
+                dpg.add_button(label="Line Plot", callback=self._gen_plot, user_data="line")
+                dpg.bind_item_theme(dpg.last_item(), "button_theme")
+                #dpg.add_button(label="Bar Plot", callback=self._gen_plot, user_data="bar")
+                #dpg.bind_item_theme(dpg.last_item(), "button_theme")
+
+            with dpg.plot(label="WISDEM Plot", height=400, width=-1, show=False, tag='myplot'):
+                #dpg.add_plot_legend()
+                dpg.add_plot_axis(dpg.mvXAxis, label="x", tag='xaxis')
+                with dpg.plot_axis(dpg.mvYAxis, label="y", tag='yaxis'):
+                    # GUI crashes if these are numpy arrays, but lists seem to work.  Don't know why.
+                    dpg.add_line_series(np.arange(10).tolist(), np.arange(10).tolist(), parent='yaxis', tag='lineseries')
+
 
 def run():
     if GUI_AVAIL:
         dpg.create_context()
-        dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=600, height=600)
+        dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=1650, height=800)
 
         mygui = GUI_Master()
         mygui.show_gui()
