@@ -379,10 +379,11 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.drivetrain_damping_coefficient_user", "drivese.drivetrain_damping_coefficient_user")
             self.connect('nacelle.yaw_mass_user', 'drivese.yaw_mass_user')
             self.connect('nacelle.above_yaw_mass_user', 'drivese.above_yaw_mass_user')
+            
+            self.connect('nacelle.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
+            self.connect('nacelle.above_yaw_I_user', 'drivese.above_yaw_I_user')
             # Not yet implemented
-            #self.connect('nacelle.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
-            #self.connect('nacelle.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
-            #self.connect('nacelle.above_yaw_I_user', 'drivese.above_yaw_I_user')
+            # self.connect('nacelle.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 

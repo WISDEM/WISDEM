@@ -829,6 +829,16 @@ properties:
                                 units: kg
                                 description: Override regular summary calculation of total nacelle mass (above the yaw drive) with this value
                                 minimum: 0.0
+                            above_yaw_I_user:
+                                type: array
+                                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                                units: kgm2
+                                description: Override regular summary calculation of total nacelle I (above the yaw drive) with this value
+                            above_yaw_cm_user:
+                                type: array
+                                default: [0.0, 0.0, 0.0]
+                                units: m
+                                description: Override regular summary calculation of total nacelle cm (above the yaw drive) with this value
                             spring_constant_user:
                                 type: number
                                 default: 0.0

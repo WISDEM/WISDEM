@@ -467,7 +467,7 @@ class YawSystem(om.ExplicitComponent):
         self.add_input("rotor_diameter", 0.0, units="m")
         self.add_input("D_top", 0.0, units="m")
         self.add_input("rho", 0.0, units="kg/m**3")
-        self.add_input("yaw_mass_user", 0.0, units="kg")
+        self.add_input("yaw_mass_user", -1.0, units="kg")
 
         self.add_output("yaw_mass", 0.0, units="kg")
         self.add_output("yaw_cm", np.zeros(3), units="m")
@@ -490,7 +490,7 @@ class YawSystem(om.ExplicitComponent):
         m_frictionPlate = rho * np.pi * D_top * (0.1 * D_top) * (1e-3 * D_rotor)
 
         # Total mass estimate
-        outputs["yaw_mass"] = m_yaw_usr if m_yaw_usr > 0.0 else m_frictionPlate + n_motors * m_motor
+        outputs["yaw_mass"] = m_yaw_usr if not m_yaw_usr < 0.0 else m_frictionPlate + n_motors * m_motor
 
         # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
         outputs["yaw_cm"] = np.zeros(3)
@@ -850,6 +850,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("x_bedplate", val=np.zeros(12), units="m")
         self.add_input("constr_height", 0.0, units="m")
         self.add_input("above_yaw_mass_user", 0.0, units="kg")
+        self.add_input("above_yaw_cm_user", np.zeros(3), units="m")
+        self.add_input("above_yaw_I_user", np.zeros(6), units="kg*m**2")
 
         self.add_output("shaft_start", np.zeros(3), units="m")
         self.add_output("other_mass", 0.0, units="kg")
@@ -952,8 +954,9 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         m_nac *= coeff
         I_nac *= coeff
         outputs["above_yaw_mass"] = copy.copy(m_nac)
-        outputs["above_yaw_cm"] = R = cm_nac.copy()
-        outputs["above_yaw_I"] = I_nac.copy()
+        R = cm_nac.copy()
+        outputs["above_yaw_cm"] = inputs["above_yaw_cm_user"] if not inputs["above_yaw_cm_user"].all == 0 else R
+        outputs["above_yaw_I"] = inputs["above_yaw_I_user"] if not inputs["above_yaw_I_user"].all == 0 else I_nac.copy()
         parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["above_yaw_I_TT"] = util.unassembleI(util.assembleI(I_nac) + parallel_axis)
 
