@@ -953,6 +953,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         coeff = 1.0 if m_nac_usr == 0.0 else m_nac_usr / m_nac
         m_nac *= coeff
         I_nac *= coeff
+        if not inputs["above_yaw_I_user"].all == 0:
+            I_nac = inputs["above_yaw_I_user"]
         outputs["above_yaw_mass"] = copy.copy(m_nac)
         R = cm_nac.copy()
         outputs["above_yaw_cm"] = inputs["above_yaw_cm_user"] if not inputs["above_yaw_cm_user"].all == 0 else R
