@@ -152,10 +152,10 @@ def create_all_plots(
         pass
 
     # Struct Layers Blade
-    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
-    layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"]
-    for i in range(n_layers):
-        try:
+    try:
+        n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+        layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"]
+        for i in range(n_layers):
             f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
             for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
                 ax.plot(
@@ -176,8 +176,8 @@ def create_all_plots(
             fig_name = "blade_layer_%d_thick"%i + extension
             f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
             plt.close()
-        except KeyError:
-            pass
+    except KeyError:
+        pass
 
     # Strains spar caps
     try:

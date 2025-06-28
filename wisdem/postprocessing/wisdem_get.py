@@ -100,7 +100,7 @@ def get_structural_cost(prob):
 
 def get_tower_freqs(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.structural_frequencies"], prob["towerse.tower.structural_frequencies"]]
+        return prob["fixedse.structural_frequencies"]
     else:
         return prob["towerse.tower.structural_frequencies"]
 
@@ -140,16 +140,14 @@ def get_blade_elasticity(prob):
                          prob.get_val('rotorse.GJ','N*m**2'),
                          prob.get_val('rotorse.rhoA','kg/m'),
                          prob.get_val('rotorse.rhoJ','kg*m'),
-                         prob.get_val('rotorse.x_ec','mm'),
-                         prob.get_val('rotorse.y_ec','mm'),
                          prob.get_val('rotorse.re.x_tc','mm'),
                          prob.get_val('rotorse.re.y_tc','mm'),
-                         prob.get_val('rotorse.re.x_sc','mm'),
-                         prob.get_val('rotorse.re.y_sc','mm'),
+                         prob.get_val('rotorse.re.precomp.x_sc','mm'),
+                         prob.get_val('rotorse.re.precomp.y_sc','mm'),
                          prob.get_val('rotorse.re.x_cg','mm'),
                          prob.get_val('rotorse.re.y_cg','mm'),
-                         prob.get_val('rotorse.re.precomp.flap_iner','kg/m'),
-                         prob.get_val('rotorse.re.precomp.edge_iner','kg/m')]
+                         prob.get_val('rotorse.re.flap_iner','kg/m'),
+                         prob.get_val('rotorse.re.edge_iner','kg/m')]
     blade_stiff_col = ['Blade Span [m]',
                        'Cross-sectional area [m^2]',
                        'Axial stiffness [N]',
@@ -159,8 +157,6 @@ def get_blade_elasticity(prob):
                        'Torsional stiffness [Nm^2]',
                        'Mass density [kg/m]',
                        'Polar moment of inertia density [kg*m]',
-                       'X-distance to elastic center [mm]',
-                       'Y-distance to elastic center [mm]',
                        'X-distance to tension center [mm]',
                        'Y-distance to tension center [mm]',
                        'X-distance to shear center [mm]',
