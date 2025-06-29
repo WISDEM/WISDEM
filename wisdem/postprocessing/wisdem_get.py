@@ -251,7 +251,6 @@ def get_tower_table(prob):
     towDF = pd.DataFrame(data=towdata, columns=colstr)
     mycomments = ['']*towdata.shape[0]
     if not float_flag:
-        #breakpoint()
         mycomments[0] = 'Monopile start'
         mycomments[np.where(towdata[:,0] == -water_depth)[0][0]] = 'Mud line'
         mycomments[np.where(towdata[:,0] == 0.0)[0][0]] = 'Water line'
