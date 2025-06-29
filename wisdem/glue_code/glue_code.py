@@ -13,11 +13,7 @@ from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
-
-try:
-    from wisdem.orbit.orbit_api import Orbit
-except ImportError:
-    print("WARNING: Be sure to pip install simpy and marmot-agents for offshore BOS runs")
+from wisdem.orbit.orbit_api import Orbit
 
 
 class WT_RNTA_Prop(om.Group):
