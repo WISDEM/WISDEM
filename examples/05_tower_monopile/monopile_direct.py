@@ -49,8 +49,8 @@ modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
 # safety factors
-modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.35
-modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.3
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.3
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.2
 modeling_options["WISDEM"]["FixedBottomSE"]["gamma_n"] = 1.0
 modeling_options["WISDEM"]["FixedBottomSE"]["gamma_b"] = 1.1
 modeling_options["WISDEM"]["FixedBottomSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
@@ -79,6 +79,7 @@ if opt_flag:
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
     prob.driver.options["maxiter"] = 40
+    prob.driver.options["tol"] = 1e-2
 
     # Add objective
     # prob.model.add_objective('tower_mass', ref=1e6) # Only tower
@@ -93,11 +94,11 @@ if opt_flag:
     prob.model.add_constraint("post.constr_stress", upper=1.0)
     prob.model.add_constraint("post.constr_global_buckling", upper=1.0)
     prob.model.add_constraint("post.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0, ref=1e2)
+    #prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0, ref=1e2)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("f1", lower=0.13, upper=0.40, ref=0.1)
+    #prob.model.add_constraint("f1", lower=0.13, upper=0.40, ref=0.1)
     # ---
 
 # Set up the OpenMDAO problem
@@ -167,7 +168,7 @@ prob["turbine_M"] = np.c_[
 # ---------------
 
 # run the analysis or optimization
-prob.model.approx_totals()
+prob.model.approx_totals(form='forward',step=1e-5)
 if opt_flag:
     prob.run_driver()
 else:
