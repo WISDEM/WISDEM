@@ -45,7 +45,7 @@ modeling_options["flags"]["monopile"] = True
 modeling_options["flags"]["tower"] = False
 
 # Monopile foundation
-modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = True
+modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = False #True
 modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
 # safety factors
@@ -123,8 +123,8 @@ prob["monopile_top_diameter"] = 8.0
 prob["yaw"] = 0.0
 
 # offshore specific
-prob["G_soil"] = 140e6
-prob["nu_soil"] = 0.4
+#prob["G_soil"] = 140e6
+#prob["nu_soil"] = 0.4
 
 # material properties
 prob["E_mat"] = 210e9 * np.ones((n_materials, 3))
