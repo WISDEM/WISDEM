@@ -61,7 +61,7 @@ dependencies = [
   "python-benedict",
   "pyyaml",
   "ruamel.yaml",
-  "scipy",
+  "scipy<1.16",
   "simpy",
   "sortedcontainers",
   "statsmodels",
