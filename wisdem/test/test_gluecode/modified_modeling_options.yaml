@@ -9,11 +9,12 @@ WISDEM:
         te_ss: TE_reinforcement_SS # Name in the yaml of the spar cap laminate on the suction side
         te_ps: TE_reinforcement_PS # Name in the yaml of the spar cap laminate on the suction side
         n_pc: 15
-        peak_thrust_shaving: True
-        thrust_shaving_coeff: 0.9
     DriveSE:
         flag: True
     TowerSE:             # Options of TowerSE module
         flag: True
+    FixedBottomSE:
+        flag: True
+        soil_springs: True
     BOS:
         flag: True
