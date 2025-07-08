@@ -544,8 +544,8 @@ class GearedLayout(Layout):
         s_hss = s_drive[2:5]
 
         # Store outputs
-        outputs["s_stator"] = s_generator
-        outputs["s_rotor"] = s_generator
+        outputs["s_stator"] = s_stator
+        outputs["s_rotor"] = s_rotor
         outputs["s_generator"] = s_generator
         outputs["s_gearbox"] = s_gearbox
         outputs["s_mb1"] = s_mb1

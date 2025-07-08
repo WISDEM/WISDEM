@@ -393,7 +393,9 @@ class TestGearedLayout(unittest.TestCase):
             self.outputs["s_drive"],
             np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds,
         )
-        npt.assert_almost_equal(self.outputs["s_generator"], 0.625 - ds)
+        npt.assert_almost_equal(self.outputs["s_stator"], 0.0 - ds)
+        npt.assert_almost_equal(self.outputs["s_rotor"], 0.625 - ds)
+        npt.assert_almost_equal(self.outputs["s_generator"], 0.5*0.625 - ds)
         npt.assert_almost_equal(self.outputs["s_gearbox"], 3.3 - ds)
         npt.assert_almost_equal(self.outputs["s_mb1"], 5.95 - ds)
         npt.assert_almost_equal(self.outputs["s_mb2"], 3.95 - ds)
@@ -414,7 +416,9 @@ class TestGearedLayout(unittest.TestCase):
             self.outputs["s_drive"],
             np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds,
         )
-        npt.assert_almost_equal(self.outputs["s_generator"], 0.625 - ds)
+        npt.assert_almost_equal(self.outputs["s_stator"], 0.0 - ds)
+        npt.assert_almost_equal(self.outputs["s_rotor"], 0.625 - ds)
+        npt.assert_almost_equal(self.outputs["s_generator"], 0.5*0.625 - ds)
         npt.assert_almost_equal(self.outputs["s_gearbox"], 3.3 - ds)
         npt.assert_almost_equal(self.outputs["s_mb1"], 5.95 - ds)
         npt.assert_almost_equal(self.outputs["s_mb2"], 3.95 - ds)
