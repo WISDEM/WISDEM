@@ -48,20 +48,6 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
-      # Checkout development version of windio
-      - name: Checkout windIO
-        uses: actions/checkout@v4
-        with:
-            repository: IEAWindSystems/windIO
-            path: windIO
-            ref: floating_fixes
-
-      # Install development version of windio
-      - name: Install windIO
-        run: |
-            cd windIO
-            pip install --no-build-isolation --no-deps . -v
-
       - name: Debug config
         run: |
           conda list
