@@ -1060,6 +1060,21 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["tower"]["structure"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["tower.layer_thickness"][i, :].tolist()
+            # Update elastic properties of the tower
+            if "elastic_properties" not in self.wt_init["components"]["tower"]["structure"]:
+                self.wt_init["components"]["tower"]["structure"]["elastic_properties"] = {}
+                self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["stiffness_matrix"] = {}
+                self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["inertia_matrix"] = {}
+                self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["structural_damping"] = {}
+                self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["structural_damping"]["mu"] = np.zeros(6).tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["stiffness_matrix"]["grid"] = wt_opt[
+                "tower_grid.s"
+            ].tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["stiffness_matrix"]["K44"] = wt_opt["towerse.member.sideside_stff"].tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["stiffness_matrix"]["K55"] = np.array(wt_opt["towerse.member.foreaft_stff"]).tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["stiffness_matrix"]["K66"] = np.array(wt_opt["towerse.member.tor_stff"]).tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["inertia_matrix"]["grid"] = wt_opt["tower_grid.s"].tolist()
+            self.wt_init["components"]["tower"]["structure"]["elastic_properties"]["inertia_matrix"]["mass"] = wt_opt["towerse.member.mass_den"].tolist()
 
         # Update monopile
         if self.modeling_options["flags"]["monopile"]:
@@ -1097,6 +1112,21 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["monopile"]["structure"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["monopile.layer_thickness"][i, :].tolist()
+                        # Update elastic properties of the tower
+            if "elastic_properties" not in self.wt_init["components"]["monopile"]["structure"]:
+                self.wt_init["components"]["monopile"]["structure"]["elastic_properties"] = {}
+                self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["stiffness_matrix"] = {}
+                self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["inertia_matrix"] = {}
+                self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["structural_damping"] = {}
+                self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["structural_damping"]["mu"] = np.zeros(6).tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["stiffness_matrix"]["grid"] = wt_opt[
+                "fixedse.member.s"
+            ].tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["stiffness_matrix"]["K44"] = wt_opt["fixedse.member.sideside_stff"].tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["stiffness_matrix"]["K55"] = np.array(wt_opt["fixedse.member.foreaft_stff"]).tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["stiffness_matrix"]["K66"] = np.array(wt_opt["fixedse.member.tor_stff"]).tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["inertia_matrix"]["grid"] = wt_opt["fixedse.member.s"].tolist()
+            self.wt_init["components"]["monopile"]["structure"]["elastic_properties"]["inertia_matrix"]["mass"] = wt_opt["fixedse.member.added_mass"].tolist()
 
         # Update jacket
         if self.modeling_options["flags"]["jacket"]:
