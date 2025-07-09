@@ -127,19 +127,6 @@ jobs:
             python-version: ${{ matrix.python-version }}
             update-environment: true
 
-      - name: Checkout windIO
-        uses: actions/checkout@v4
-        with:
-            repository: IEAWindSystems/windIO
-            path: windIO
-            ref: floating_fixes
-
-      - name: Install windIO
-        run: |
-            cd windIO
-            '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
-            '${{ steps.cp.outputs.python-path }}' -m pip install -v .
-
       - name: Set compilers
         if: false == contains( matrix.os, 'windows')
         run: |
