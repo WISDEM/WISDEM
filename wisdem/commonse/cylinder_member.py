@@ -2899,7 +2899,7 @@ class CylinderPostFrame(om.ExplicitComponent):
         V = np.sqrt(Vx**2 + Vy**2)
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
-        outputs["axial_stress"] = axial_stress = Fz / Az + M * r_sec / Iyy
+        outputs["axial_stress"] = axial_stress = np.abs(Fz) / Az + M * r_sec / Iyy
         outputs["shear_stress"] = shear_stress = np.abs(Mzz) / Jz * r_sec + V / Asx
         outputs["hoop_stress"] = hoop_stress = util_con.hoopStress(d_sec, t, qdyn)
         outputs["constr_stress"] = util_con.TubevonMisesStressUtilization(

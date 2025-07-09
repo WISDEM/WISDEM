@@ -147,6 +147,8 @@ class Layout(om.ExplicitComponent):
         self.add_output("bedplate_I", val=np.zeros(6), units="kg*m**2")
         self.add_output("s_mb1", val=0.0, units="m")
         self.add_output("s_mb2", val=0.0, units="m")
+        self.add_output("s_stator", val=0.0, units="m")
+        self.add_output("s_rotor", val=0.0, units="m")
         self.add_output("s_gearbox", val=0.0, units="m")
         self.add_output("s_generator", val=0.0, units="m")
         self.add_output("hss_mass", val=0.0, units="kg")
@@ -237,8 +239,6 @@ class DirectLayout(Layout):
         self.add_output("z_bedplate_outer", val=np.zeros(12), units="m")
         self.add_output("D_bedplate", val=np.zeros(12), units="m")
         self.add_output("t_bedplate", val=np.zeros(12), units="m")
-        self.add_output("s_stator", val=0.0, units="m")
-        self.add_output("s_rotor", val=0.0, units="m")
         self.add_output("constr_access", np.zeros((2, 2)), units="m")
         self.add_output("constr_ecc", 0.0, units="m")
 
@@ -538,7 +538,9 @@ class GearedLayout(Layout):
         outputs["s_drive"] = s_drive
 
         # Discretize the drivetrain from generator to hub
-        s_generator = s_drive[1]
+        s_stator = s_drive[0]
+        s_rotor = s_drive[1]
+        s_generator = 0.5*(s_rotor + s_stator)
         s_mb1 = s_drive[9]
         s_mb2 = s_drive[7]
         s_gearbox = s_drive[5]
@@ -547,6 +549,8 @@ class GearedLayout(Layout):
         s_hss = s_drive[2:5]
 
         # Store outputs
+        outputs["s_stator"] = s_stator
+        outputs["s_rotor"] = s_rotor
         outputs["s_generator"] = s_generator
         outputs["s_gearbox"] = s_gearbox
         outputs["s_mb1"] = s_mb1

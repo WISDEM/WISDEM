@@ -28,7 +28,7 @@ dependencies:
   - python-benedict
   - pyyaml
   - ruamel.yaml
-  - scipy
+  - scipy<1.16 #statsmodels needs update for 1.16+
   - setuptools
   - simpy
   - sortedcontainers

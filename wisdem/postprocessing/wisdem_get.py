@@ -100,7 +100,7 @@ def get_structural_cost(prob):
 
 def get_tower_freqs(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.structural_frequencies"], prob["towerse.tower.structural_frequencies"]]
+        return prob["fixedse.structural_frequencies"]
     else:
         return prob["towerse.tower.structural_frequencies"]
 
@@ -142,12 +142,12 @@ def get_blade_elasticity(prob):
                          prob.get_val('rotorse.rhoJ','kg*m'),
                          prob.get_val('rotorse.re.x_tc','mm'),
                          prob.get_val('rotorse.re.y_tc','mm'),
-                         prob.get_val('rotorse.re.x_sc','mm'),
-                         prob.get_val('rotorse.re.y_sc','mm'),
+                         prob.get_val('rotorse.re.precomp.x_sc','mm'),
+                         prob.get_val('rotorse.re.precomp.y_sc','mm'),
                          prob.get_val('rotorse.re.x_cg','mm'),
                          prob.get_val('rotorse.re.y_cg','mm'),
-                         prob.get_val('rotorse.re.precomp.flap_iner','kg/m'),
-                         prob.get_val('rotorse.re.precomp.edge_iner','kg/m')]
+                         prob.get_val('rotorse.re.flap_iner','kg/m'),
+                         prob.get_val('rotorse.re.edge_iner','kg/m')]
     blade_stiff_col = ['Blade Span [m]',
                        'Cross-sectional area [m^2]',
                        'Axial stiffness [N]',
@@ -251,7 +251,6 @@ def get_tower_table(prob):
     towDF = pd.DataFrame(data=towdata, columns=colstr)
     mycomments = ['']*towdata.shape[0]
     if not float_flag:
-        #breakpoint()
         mycomments[0] = 'Monopile start'
         mycomments[np.where(towdata[:,0] == -water_depth)[0][0]] = 'Mud line'
         mycomments[np.where(towdata[:,0] == 0.0)[0][0]] = 'Water line'

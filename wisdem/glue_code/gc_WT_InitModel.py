@@ -84,7 +84,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         jacket = {}
 
-    if modeling_options["flags"]["floating_platform"]:
+    if modeling_options["flags"]["floating"]:
         floating_platform = wt_init["components"]["floating_platform"]
         wt_opt = assign_floating_values(wt_opt, modeling_options, floating_platform, opt_options)
         mooring = wt_init["components"]["mooring"]

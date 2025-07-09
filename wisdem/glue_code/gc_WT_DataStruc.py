@@ -269,7 +269,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("jacket", Jacket(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
 
         # Floating substructure inputs
-        if modeling_options["flags"]["floating_platform"]:
+        if modeling_options["flags"]["floating"]:
             self.add_subsystem(
                 "floating",
                 Floating(floating_init_options=modeling_options["floating"], opt_options=self.options["opt_options"]),
