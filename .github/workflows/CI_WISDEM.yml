@@ -65,7 +65,7 @@ jobs:
       - name: Run all tests
         if: contains( matrix.os, 'ubuntu')
         run: |
-          pytest -p no:warnings --disable-warnings --cov=wisdem wisdem
+          pytest -p no:warnings --disable-warnings --cov=wisdem
 
       - name: Limited test for non Linux
         if: false == contains( matrix.os, 'ubuntu')
@@ -137,7 +137,7 @@ jobs:
         env:
             MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       - name: Limited test
         run: |
