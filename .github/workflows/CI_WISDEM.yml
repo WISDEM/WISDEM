@@ -35,7 +35,7 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
-      
+
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
@@ -137,7 +137,7 @@ jobs:
         env:
             MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
 
       - name: Limited test
         run: |
