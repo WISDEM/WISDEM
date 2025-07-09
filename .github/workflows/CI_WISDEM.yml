@@ -138,6 +138,7 @@ jobs:
             MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       - name: Limited test
         run: |
