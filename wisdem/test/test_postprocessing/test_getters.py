@@ -11,7 +11,7 @@ test_dir = os.path.join(
     "examples",
     "02_reference_turbines")
 
-fname_modeling_options = os.path.join(test_dir, "modeling_options.yaml")
+fname_modeling_options = os.path.join(test_dir, "modeling_options_iea15.yaml")
 fname_analysis_options = os.path.join(test_dir, "analysis_options.yaml")
 
 
