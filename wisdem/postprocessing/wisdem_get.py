@@ -114,18 +114,21 @@ def get_tower_cg(prob):
 
 
 def get_blade_shape(prob):
-    blade_shape  = np.c_[prob.get_val('blade.outer_shape_bem.s'),
-                         prob.get_val('blade.outer_shape_bem.ref_axis','m')[:,2],
-                         prob.get_val('blade.outer_shape_bem.chord','m'),
-                         prob.get_val('blade.outer_shape_bem.twist', 'deg'),
-                         prob.get_val('blade.interp_airfoils.r_thick_interp')*100,
-                         prob.get_val('blade.outer_shape_bem.pitch_axis')*100,
-                         prob.get_val('blade.outer_shape_bem.ref_axis','m')[:,0],
-                         prob.get_val('blade.outer_shape_bem.ref_axis','m')[:,1],
+    blade_shape  = np.c_[prob.get_val('blade.outer_shape.s'),
+                         prob.get_val('blade.ref_axis','m')[:,2],
+                         prob.get_val('blade.outer_shape.chord','m'),
+                         prob.get_val('blade.outer_shape.twist', 'deg'),
+                         prob.get_val('blade.interp_airfoils.rthick_interp')*100,
+                         prob.get_val('blade.outer_shape.section_offset_x'),
+                         prob.get_val('blade.outer_shape.section_offset_y'),
+                         prob.get_val('blade.ref_axis','m')[:,0],
+                         prob.get_val('blade.ref_axis','m')[:,1],
                          ]
     blade_shape_col = ['Blade Span','Rotor Coordinate [m]',
                        'Chord [m]', 'Twist [deg]',
-                       'Relative Thickness [%]', 'Pitch Axis Chord Location [%]',
+                       'Relative Thickness [%]',
+                       'Airfoil LE x-shift from reference axis',
+                       'Airfoil LE y-shift from reference axis',
                        'Prebend [m]', 'Sweep [m]']
     return pd.DataFrame(data=blade_shape, columns=blade_shape_col)
 
@@ -203,7 +206,7 @@ def get_nacelle_mass(prob):
     nacDF = prob.model.wt.wt_rna.drivese.nac._mass_table
     hub_cm = prob["drivese.hub_system_cm"][0]
     L_drive = prob["drivese.L_drive"][0]
-    tilt = prob.get_val('nacelle.uptilt', 'rad')[0]
+    tilt = prob.get_val('drivetrain.uptilt', 'rad')[0]
     shaft0 = prob["drivese.shaft_start"]
     Cup = -1.0
     hub_cm = R = shaft0 + (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
