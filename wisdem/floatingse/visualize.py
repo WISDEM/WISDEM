@@ -1,14 +1,6 @@
 import numpy as np
 from mayavi import mlab
-
-
-def sectional2nodal(x):
-    return np.r_[x[0], np.convolve(x, [0.5, 0.5], "valid"), x[-1]]
-
-
-def nodal2sectional(x):
-    return 0.5 * (x[:-1] + x[1:])
-
+from wisdem.commonse.utilities import sectional2nodal
 
 def set_axes_equal(ax):
     """Make axes of 3D plot have equal scale so that spheres appear as spheres,
