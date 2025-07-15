@@ -55,6 +55,7 @@ class WindTurbineOntologyPython(object):
                          ("mooring","FloatingSE"),
                          ("hub","DriveSE"),
                          ("nacelle","DriveSE"),
+                         ("RNA","DriveSE"),
                          ("generator","DriveSE")]
         for i,j in flag_pairings:
             if flags[i]:
