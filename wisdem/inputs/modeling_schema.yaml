@@ -512,199 +512,6 @@ properties:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
-            Loading:
-                type: object
-                # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
-                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only analysis
-                properties:
-                    mass:
-                        type: number
-                        default: 0.0
-                        units: kilogram
-                        description: Mass at external boundary of the system.  For the tower, this would be the RNA mass.
-                    center_of_mass:
-                        type: array
-                        default: [0.0, 0.0, 0.0]
-                        items:
-                            type: number
-                            unit: meter
-                            minItems: 3
-                            maxItems: 3
-                            uniqueItems: false
-                        description: Distance from system boundary to center of mass of the applied load.  For the tower, this would be the RNA center of mass in tower-top coordinates.
-                    moment_of_inertia:
-                        type: array
-                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                        items:
-                            type: number
-                            unit: kg*m^2
-                            minItems: 6
-                            maxItems: 6
-                            uniqueItems: false
-                        description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
-                    loads:
-                        type: array
-                        default: []
-                        description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
-                        items:
-                            type: object
-                            properties:
-                                force:
-                                    type: array
-                                    default: [0.0, 0.0, 0.0]
-                                    description: Force vector applied at system boundary
-                                    items:
-                                        type: number
-                                        unit: Newton
-                                        minItems: 3
-                                        maxItems: 3
-                                        uniqueItems: false
-                                moment:
-                                    type: array
-                                    default: [0.0, 0.0, 0.0]
-                                    description: Force vector applied at system boundary
-                                    items:
-                                        type: number
-                                        unit: N*m
-                                        minItems: 3
-                                        maxItems: 3
-                                        uniqueItems: false
-                                velocity:
-                                    type: number
-                                    description: Applied wind reference velocity, if necessary
-                                    default: 0.0
-                                    unit: meter
-            Environment:
-                type: object
-                default: {}
-                description: The field :code:`environment` includes the data characterizing air and water where the wind turbine operates.
-                optional:
-                    - air_density
-                    - air_dyn_viscosity
-                    - air_speed_sound
-                    - shear_exp
-                    - gravity
-                    - weib_shape_parameter
-                    - water_density
-                    - water_dyn_viscosity
-                    - water_depth
-                    - soil_shear_modulus
-                    - soil_poisson
-                    - air_pressure
-                    - air_vapor_pressure
-                    - significant_wave_height
-                    - significant_wave_period
-                properties:
-                    gravity:
-                        type: number
-                        description: Gravitational acceleration
-                        units: m/s^2
-                        minimum: 0
-                        maximum: 100.0
-                        default: 9.80665
-                    air_density:
-                        type: number
-                        description: Density of air.
-                        units: kg/m^3
-                        minimum: 0
-                        maximum: 1.5
-                        default: 1.225
-                    air_dyn_viscosity:
-                        type: number
-                        description: Dynamic viscosity of air.
-                        units: kg/(m*s)
-                        minimum: 0
-                        maximum: 2.e-5
-                        default: 1.81e-5
-                    air_pressure:
-                        type: number
-                        description: Atmospheric pressure of air
-                        units: kg/(m*s^2)
-                        minimum: 0
-                        maximum: 1.e+6
-                        default: 1.035e+5
-                    air_vapor_pressure:
-                        type: number
-                        description: Vapor pressure of fluid
-                        units: kg/(m*s^2)
-                        minimum: 0
-                        maximum: 1.e+6
-                        default: 1.7e+3
-                    weib_shape_parameter:
-                        type: number
-                        description: Shape factor of the Weibull wind distribution.
-                        units: dimensionless
-                        minimum: 1
-                        maximum: 3
-                        default: 2.
-                    air_speed_sound:
-                        type: number
-                        description: Speed of sound in air.
-                        units: m/s
-                        minimum: 330.
-                        maximum: 350.
-                        default: 340.
-                    shear_exp:
-                        type: number
-                        description: Shear exponent of the atmospheric boundary layer.
-                        units: dimensionless
-                        minimum: 0
-                        maximum: 1
-                        default: 0.2
-                    water_density:
-                        type: number
-                        description: Density of water.
-                        units: kg/m^3
-                        minimum: 950
-                        maximum: 1100
-                        default: 1025.0
-                    water_dyn_viscosity:
-                        type: number
-                        description: Dynamic viscosity of water.
-                        units: kg/(m*s)
-                        minimum: 1.e-3
-                        maximum: 2.e-3
-                        default: 1.3351e-3
-                    water_depth:
-                        type: number
-                        description: Water depth for offshore environment.
-                        units: m
-                        minimum: 0.0
-                        maximum: 1.e+4
-                        default: 0.0
-                    soil_shear_modulus:
-                        type: number
-                        description: Shear modulus of the soil.
-                        units: Pa
-                        minimum: 10.e+6
-                        maximum: 500.e+6
-                        default: 140.e+6
-                    soil_poisson:
-                        type: number
-                        description: Poisson ratio of the soil.
-                        units: dimensionless
-                        minimum: 0
-                        maximum: 0.6
-                        default: 0.4
-                    V_mean:
-                        type: number
-                        units: m/s
-                        default: 0.
-                        minimum: 0.
-                        maximum: 2.e+1
-                        description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
-                    significant_wave_height:
-                        type: number
-                        default: 4.52
-                        minimum: 0.01
-                        maximum: 200
-                        description: Average height of the highest one-third of waves in a wave record or time series (meters)
-                    significant_wave_period:
-                        type: number
-                        default: 9.45
-                        minimum: 0.05
-                        maximum: 1000.0
-                        description: Average period of the highest one-third of waves in a wave record or time series (seconds)
             LCOE:
                 type: object
                 description: Data for a levelized cost of energy analysis.
@@ -934,3 +741,196 @@ properties:
                         minimum: 0.
                         maximum: 1.
                         default: 0.071
+            Loading:
+                type: object
+                # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
+                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only analysis
+                properties:
+                    mass:
+                        type: number
+                        default: 0.0
+                        units: kilogram
+                        description: Mass at external boundary of the system.  For the tower, this would be the RNA mass.
+                    center_of_mass:
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        items:
+                            type: number
+                            unit: meter
+                            minItems: 3
+                            maxItems: 3
+                            uniqueItems: false
+                        description: Distance from system boundary to center of mass of the applied load.  For the tower, this would be the RNA center of mass in tower-top coordinates.
+                    moment_of_inertia:
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        items:
+                            type: number
+                            unit: kg*m^2
+                            minItems: 6
+                            maxItems: 6
+                            uniqueItems: false
+                        description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
+                    loads:
+                        type: array
+                        default: []
+                        description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
+                        items:
+                            type: object
+                            properties:
+                                force:
+                                    type: array
+                                    default: [0.0, 0.0, 0.0]
+                                    description: Force vector applied at system boundary
+                                    items:
+                                        type: number
+                                        unit: Newton
+                                        minItems: 3
+                                        maxItems: 3
+                                        uniqueItems: false
+                                moment:
+                                    type: array
+                                    default: [0.0, 0.0, 0.0]
+                                    description: Force vector applied at system boundary
+                                    items:
+                                        type: number
+                                        unit: N*m
+                                        minItems: 3
+                                        maxItems: 3
+                                        uniqueItems: false
+                                velocity:
+                                    type: number
+                                    description: Applied wind reference velocity, if necessary
+                                    default: 0.0
+                                    unit: meter
+    Environment:
+        type: object
+        default: {}
+        description: The field :code:`environment` includes the data characterizing air and water where the wind turbine operates.
+        optional:
+            - air_density
+            - air_dyn_viscosity
+            - air_speed_sound
+            - shear_exp
+            - gravity
+            - weib_shape_parameter
+            - water_density
+            - water_dyn_viscosity
+            - water_depth
+            - soil_shear_modulus
+            - soil_poisson
+            - air_pressure
+            - air_vapor_pressure
+            - significant_wave_height
+            - significant_wave_period
+        properties:
+            gravity:
+                type: number
+                description: Gravitational acceleration
+                units: m/s^2
+                minimum: 0
+                maximum: 100.0
+                default: 9.80665
+            air_density:
+                type: number
+                description: Density of air.
+                units: kg/m^3
+                minimum: 0
+                maximum: 1.5
+                default: 1.225
+            air_dyn_viscosity:
+                type: number
+                description: Dynamic viscosity of air.
+                units: kg/(m*s)
+                minimum: 0
+                maximum: 2.e-5
+                default: 1.81e-5
+            air_pressure:
+                type: number
+                description: Atmospheric pressure of air
+                units: kg/(m*s^2)
+                minimum: 0
+                maximum: 1.e+6
+                default: 1.035e+5
+            air_vapor_pressure:
+                type: number
+                description: Vapor pressure of fluid
+                units: kg/(m*s^2)
+                minimum: 0
+                maximum: 1.e+6
+                default: 1.7e+3
+            weib_shape_parameter:
+                type: number
+                description: Shape factor of the Weibull wind distribution.
+                units: dimensionless
+                minimum: 1
+                maximum: 3
+                default: 2.
+            air_speed_sound:
+                type: number
+                description: Speed of sound in air.
+                units: m/s
+                minimum: 330.
+                maximum: 350.
+                default: 340.
+            shear_exp:
+                type: number
+                description: Shear exponent of the atmospheric boundary layer.
+                units: dimensionless
+                minimum: 0
+                maximum: 1
+                default: 0.2
+            water_density:
+                type: number
+                description: Density of water.
+                units: kg/m^3
+                minimum: 950
+                maximum: 1100
+                default: 1025.0
+            water_dyn_viscosity:
+                type: number
+                description: Dynamic viscosity of water.
+                units: kg/(m*s)
+                minimum: 1.e-3
+                maximum: 2.e-3
+                default: 1.3351e-3
+            water_depth:
+                type: number
+                description: Water depth for offshore environment.
+                units: m
+                minimum: 0.0
+                maximum: 1.e+4
+                default: 0.0
+            soil_shear_modulus:
+                type: number
+                description: Shear modulus of the soil.
+                units: Pa
+                minimum: 10.e+6
+                maximum: 500.e+6
+                default: 140.e+6
+            soil_poisson:
+                type: number
+                description: Poisson ratio of the soil.
+                units: dimensionless
+                minimum: 0
+                maximum: 0.6
+                default: 0.4
+            V_mean:
+                type: number
+                units: m/s
+                default: 0.
+                minimum: 0.
+                maximum: 2.e+1
+                description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
+            significant_wave_height:
+                type: number
+                default: 4.52
+                minimum: 0.01
+                maximum: 200
+                description: Average height of the highest one-third of waves in a wave record or time series (meters)
+            significant_wave_period:
+                type: number
+                default: 9.45
+                minimum: 0.05
+                maximum: 1000.0
+                description: Average period of the highest one-third of waves in a wave record or time series (seconds)
