@@ -24,16 +24,6 @@ WISDEM:
         distance_to_substation: 50.0
         distance_to_interconnection: 8.
         interconnect_voltage: 130
-    Environment:
-        air_density: 1.225
-        air_dyn_viscosity: 1.81e-5
-        weib_shape_parameter: 2.
-        air_speed_sound: 340.
-        shear_exp: 0.2
-        water_density: 1025.0
-        water_dyn_viscosity: 1.3351e-3
-        soil_shear_modulus: 140.e+6
-        soil_poisson: 0.4
     LCOE:
         flag: True
         wake_loss_factor: 0.15
@@ -63,3 +53,13 @@ WISDEM:
         tower_mass_cost_coeff: 2.9
         controls_machine_rating_cost_coeff: 21.15
         crane_cost: 12e3
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4

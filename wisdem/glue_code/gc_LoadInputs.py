@@ -26,7 +26,10 @@ class WindTurbineOntologyPython(object):
         modules = ["RotorSE", "DriveSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "Environment", "BOS", "LCOE"]
         for m in modules:
             if m in self.modeling_options:
-                self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
+                if m in self.modeling_options["WISDEM"]:
+                    self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
+                else:
+                    self.modeling_options["WISDEM"][m] = self.modeling_options[m]
 
         for k in ["blade", "hub", "drivetrain", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA"]:
             flags[k] = k in self.wt_init["components"]

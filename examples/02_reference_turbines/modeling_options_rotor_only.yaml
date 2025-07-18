@@ -17,13 +17,13 @@ WISDEM:
         soil_springs: True
     BOS:
         flag: False
-    Environment:
-        air_density: 1.225
-        air_dyn_viscosity: 1.81e-5
-        weib_shape_parameter: 2.
-        air_speed_sound: 340.
-        shear_exp: 0.2
-        soil_shear_modulus: 140.e+6
-        soil_poisson: 0.4
     LCOE:
         flag: True
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
