@@ -164,6 +164,7 @@ def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, 
         finput (dict or str): Dictionary or path to the YAML file to be validated.
         fschema (dict or str): Dictionary or path to the schema file to validate against.
         defaults (bool, optional): Flag to indicate if default values should be integrated.
+        removal (bool, optional): Flag to indicate if entries outside of the schema should be removed
         restrictive (bool, optional): Flag to indicate if strict adherence to schema (no additions)
         rank_0 (bool, optional): Flag that should be set to true when the _validate function is
         called with MPI turned on and rank=0. Otherwise it can be kept as default to False
