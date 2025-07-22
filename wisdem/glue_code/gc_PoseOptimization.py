@@ -3,7 +3,7 @@ import os
 import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
-
+from nsga2_weis.driver.nsga2_om import NSGA2Driver
 
 class PoseOptimization(object):
     def __init__(self, wt_init, modeling_options, analysis_options):
@@ -34,12 +34,12 @@ class PoseOptimization(object):
         self.pyoptsparse_methods = [
             "SNOPT",
             "CONMIN",
-            "NSGA2",
+            # "NSGA2",
         ]
 
         self.floating_solve_component = 'floatingse'
         self.floating_period_solve_component = 'floatingse'
-        
+
     def _get_step_size(self):
         # If a step size for the driver-level finite differencing is provided, use that step size. Otherwise use a default value.
         return (
@@ -169,13 +169,30 @@ class PoseOptimization(object):
                         wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
                     else:
                         wt_opt.driver.opt_settings["Verify level"] = -1
-                        
+
                 # below are pyoptsparse options
                 wt_opt.driver.options["output_dir"] = folder_output # Directory location of pyopt_sparse output files.Default is {prob_name}_out/reports. OpenMDAO overwrties SNOPT output file locations.
                 if "hist_file_name" in opt_options:
                     wt_opt.driver.options["hist_file"] = os.path.join(folder_output, opt_options["hist_file_name"]) # File location for saving pyopt_sparse optimization history. Default is None for no output.
                 if "hotstart_file" in opt_options:
                     wt_opt.driver.options["hotstart_file"] = opt_options["hotstart_file"] # File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
+
+            elif opt_options["solver"] == "NSGA2":
+                wt_opt.driver = NSGA2Driver()
+                options_keys = [
+                    "max_gen",
+                    "pop_size",
+                    "run_parallel",
+                    "procs_per_model",
+                    "penalty_parameter",
+                    "penalty_exponent",
+                    "Pc",
+                    "eta_c",
+                    "Pm",
+                    "eta_m",
+                    "compute_pareto",
+                ]
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
 
             elif opt_options["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
@@ -291,7 +308,7 @@ class PoseOptimization(object):
         if isinstance(self.opt['merit_figure'], str):
             self.opt['merit_figure'] = [self.opt['merit_figure']]
 
-        for merit_figure in self.opt['merit_figure']:       
+        for merit_figure in self.opt['merit_figure']:
             wt_opt = self.set_merit_figure(wt_opt, merit_figure)
 
     def set_merit_figure_user(self, wt_opt, merit_figure_user):
@@ -303,7 +320,7 @@ class PoseOptimization(object):
 
 
 
-            
+
     def set_merit_figure(self, wt_opt, merit_figure):
         # Set a single merit figure
         # merit_figure is a single string
@@ -328,7 +345,7 @@ class PoseOptimization(object):
 
         elif merit_figure == "tower_cost":
             wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
-            
+
         elif merit_figure == "monopile_mass":
             wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
 
@@ -1064,7 +1081,7 @@ class PoseOptimization(object):
             upper_value = target + error
             lower_value = target - error
             wt_opt.model.add_constraint("rotorse.rp.powercurve.rated_V", upper = upper_value, lower = lower_value, ref = 10.0)
-            
+
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
                 "rotorse.ccblade.CM",
@@ -1180,7 +1197,7 @@ class PoseOptimization(object):
             upper_value = target + error
             lower_value = target - error
             wt_opt.model.add_constraint("towerse.tower_mass", upper = upper_value, lower = lower_value, ref = 1.e+6)
-            
+
         if monopile_constr["stress"]["flag"] and tower_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_stress", upper=1.0)
         elif monopile_constr["stress"]["flag"]:
@@ -1225,7 +1242,7 @@ class PoseOptimization(object):
 
         if monopile_constr["tower_diameter_coupling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
-            
+
         if monopile_constr["mass"]["flag"]:
             target = monopile_constr["mass"]["target"]
             error = monopile_constr["mass"]["acceptable_error"]
@@ -1364,7 +1381,7 @@ class PoseOptimization(object):
                 idx_k = user_constr[k]["indices"]
             else:
                 idx_k = None
-            
+
             if "ref" in user_constr[k]:
                 ref_k = user_constr[k]["ref"]
             else:
@@ -1447,7 +1464,7 @@ class PoseOptimization(object):
                 )
                 init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
-            
+
             if not self.modeling["user_elastic"]["blade"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
                 layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
