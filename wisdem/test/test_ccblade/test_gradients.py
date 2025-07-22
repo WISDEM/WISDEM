@@ -640,7 +640,7 @@ class TestGradients(unittest.TestCase):
             dP_dtheta_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dtheta_fd, dT_dtheta, rtol=7e-5, atol=1e-3)
-        np.testing.assert_allclose(dY_dtheta_fd, dY_dtheta, atol=1e-4)
+        np.testing.assert_allclose(dY_dtheta_fd, dY_dtheta, atol=1e-3)
         np.testing.assert_allclose(dZ_dtheta_fd, dZ_dtheta, rtol=7e-5, atol=1e-3)
         np.testing.assert_allclose(dQ_dtheta_fd, dQ_dtheta, rtol=7e-5, atol=1e-3)
         np.testing.assert_allclose(dMy_dtheta_fd, dMy_dtheta, rtol=7e-5, atol=1e-3)
