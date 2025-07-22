@@ -279,13 +279,18 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_objective(self, wt_opt):
+        
+        # Check that merit_figure and merit_figure_user are not both set
+        if self.opt['merit_figure_user']['name'] != "" and len(self.opt['merit_figure']) > 0:
+            raise Exception('Please set either merit_figure or merit_figure_user, not both.')
+        
+        
         # Set merit figure. Each objective has its own scaling.  Check first for user override
         if self.opt["merit_figure_user"]["name"] != "":
             coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
             wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
-                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
-            
-        assert(self.opt["merit_figure_user"]["name"] == "")
+                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))    
+        
 
         # make merit figure a list if it is not already
         if isinstance(self.opt['merit_figure'], str):
