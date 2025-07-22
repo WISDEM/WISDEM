@@ -284,87 +284,102 @@ class PoseOptimization(object):
             coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
             wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
                                        ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
+            
+        assert(self.opt["merit_figure_user"]["name"] == "")
 
-        elif self.opt["merit_figure"].lower() == "aep":
+        # make merit figure a list if it is not already
+        if isinstance(self.opt['merit_figure'], str):
+            self.opt['merit_figure'] = [self.opt['merit_figure']]
+
+        for merit_figure in self.opt['merit_figure']:       
+            wt_opt = self.set_merit_figure(wt_opt, merit_figure)
+
+
+            
+    def set_merit_figure(self, wt_opt, merit_figure):
+        # Set a single merit figure
+        # merit_figure is a single string
+
+        if merit_figure.lower() == "aep":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
-        elif self.opt["merit_figure"] == "blade_mass":
+        elif merit_figure == "blade_mass":
             wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e6)
 
-        elif self.opt["merit_figure"] == "blade_cost":
+        elif merit_figure == "blade_cost":
             wt_opt.model.add_objective("rotorse.total_bc.total_blade_cost", ref=1.0e6)
 
-        elif self.opt["merit_figure"].lower() == "lcoe":
+        elif merit_figure.lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
 
-        elif self.opt["merit_figure"] == "blade_tip_deflection":
+        elif merit_figure == "blade_tip_deflection":
             wt_opt.model.add_objective("tcons.tip_deflection_ratio")
 
-        elif self.opt["merit_figure"] == "tower_mass":
+        elif merit_figure == "tower_mass":
             wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "tower_cost":
+        elif merit_figure == "tower_cost":
             wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
             
-        elif self.opt["merit_figure"] == "monopile_mass":
+        elif merit_figure == "monopile_mass":
             wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "monopile_cost":
+        elif merit_figure == "monopile_cost":
             wt_opt.model.add_objective("fixedse.monopile_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "jacket_mass":
+        elif merit_figure == "jacket_mass":
             wt_opt.model.add_objective("fixedse.jacket_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "structural_mass":
+        elif merit_figure == "structural_mass":
             if not self.modeling["flags"]["floating"]:
                 wt_opt.model.add_objective("fixedse.structural_mass", ref=1e6)
             else:
                 wt_opt.model.add_objective("floatingse.system_structural_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "hub_mass":
+        elif merit_figure == "hub_mass":
             wt_opt.model.add_objective("drivese.hub_system_mass", ref=1e5)
 
-        elif self.opt["merit_figure"] == "nacelle_mass":
+        elif merit_figure == "nacelle_mass":
             wt_opt.model.add_objective("drivese.nacelle_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "nacelle_cost":
+        elif merit_figure == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_hull_mass":
+        elif merit_figure == "platform_hull_mass":
             wt_opt.model.add_objective("floatingse.platform_hull_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_mass":
+        elif merit_figure == "platform_mass":
             wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_cost":
+        elif merit_figure == "platform_cost":
             wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "mooring_mass":
+        elif merit_figure == "mooring_mass":
             wt_opt.model.add_objective("floatingse.mooring_mass", ref=1e4)
 
-        elif self.opt["merit_figure"] == "mooring_cost":
+        elif merit_figure == "mooring_cost":
             wt_opt.model.add_objective("floatingse.mooring_cost", ref=1e4)
 
-        elif self.opt["merit_figure"] == "Cp":
+        elif merit_figure == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
 
-        elif self.opt["merit_figure"] in ["turbine_cost", "turbine_capex"]:
+        elif merit_figure in ["turbine_cost", "turbine_capex"]:
             wt_opt.model.add_objective("tcc.turbine_cost_kW", ref=1e3)
 
-        elif self.opt["merit_figure"] in ["bos", "bos_cost", "bos_capex"]:
+        elif merit_figure in ["bos", "bos_cost", "bos_capex"]:
             if self.modeling["flags"]["offshore"]:
                 wt_opt.model.add_objective("orbit.total_capex_kW", ref=1e3)
             else:
                 wt_opt.model.add_objective("landbosse.total_capex_kW", ref=1e3)
 
-        elif self.opt["merit_figure"] == "inverse_design":
+        elif merit_figure == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
 
         else:
-            raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
+            raise ValueError("The merit figure " + merit_figure + " is unknown or not supported.")
 
         return wt_opt
 
