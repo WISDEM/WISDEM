@@ -732,41 +732,42 @@ class WT_RNTA(om.Group):
             n_member = modeling_options["floating"]["members"]["n_members"]
             for k in range(n_member):
                 member_shape = modeling_options["floating"]["members"]["outer_shape"][k]
+                kname = modeling_options["floating"]["members"]["name"][k]
 
-                self.connect(f"floatingse.member{k}.nodes_xyz_all", f"floatingse.member{k}:nodes_xyz")
-                self.connect(f"floatingse.member{k}.constr_ballast_capacity", f"floatingse.member{k}:constr_ballast_capacity")
+                self.connect(f"floatingse.member{k}_{kname}.nodes_xyz_all", f"floatingse.member{k}_{kname}:nodes_xyz")
+                self.connect(f"floatingse.member{k}_{kname}.constr_ballast_capacity", f"floatingse.member{k}_{kname}:constr_ballast_capacity")
 
                 if member_shape == "circular":
-                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
-                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
-                    self.connect(f"floatingse.member{k}.outer_diameter_full", f"floatingse.memload{k}.outer_diameter_full")
+                    self.connect(f"floatingse.member{k}_{kname}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.outer_diameter_full", f"floatingse.memload{k}.outer_diameter_full")
                 elif member_shape == "rectangular":
-                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
-                    self.connect(f"floatingse.member{k}.cay_usr_grid_full", f"floatingse.memload{k}.cay_usr")
-                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
-                    self.connect(f"floatingse.member{k}.cdy_usr_grid_full", f"floatingse.memload{k}.cdy_usr")
-                    self.connect(f"floatingse.member{k}.side_length_a_full", f"floatingse.memload{k}.side_length_a_full")
-                    self.connect(f"floatingse.member{k}.side_length_b_full", f"floatingse.memload{k}.side_length_b_full")
+                    self.connect(f"floatingse.member{k}_{kname}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.cay_usr_grid_full", f"floatingse.memload{k}.cay_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.cdy_usr_grid_full", f"floatingse.memload{k}.cdy_usr")
+                    self.connect(f"floatingse.member{k}_{kname}.side_length_a_full", f"floatingse.memload{k}.side_length_a_full")
+                    self.connect(f"floatingse.member{k}_{kname}.side_length_b_full", f"floatingse.memload{k}.side_length_b_full")
 
                 for var in ["z_global", "s_full", "s_all"]:
-                    self.connect(f"floatingse.member{k}.{var}", f"floatingse.memload{k}.{var}")
+                    self.connect(f"floatingse.member{k}_{kname}.{var}", f"floatingse.memload{k}.{var}")
 
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
                 if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
-                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
-                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}_{kname}.outer_diameter_in")
+                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}_{kname}.ca_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}_{kname}.cd_usr_grid")
                 elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
-                    self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
-                    self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
-                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"floatingse.member{k}.cay_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
-                    self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"floatingse.member{k}.cdy_usr_grid")
-                self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
-                self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
-                self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
+                    self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}_{kname}.side_length_a_in")
+                    self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}_{kname}.side_length_b_in")
+                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}_{kname}.ca_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"floatingse.member{k}_{kname}.cay_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}_{kname}.cd_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"floatingse.member{k}_{kname}.cdy_usr_grid")
+                self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}_{kname}.layer_thickness")
+                self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}_{kname}.outfitting_factor_in")
+                self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}_{kname}.s_in")
 
                 for var in [
                     "layer_materials",
@@ -787,15 +788,15 @@ class WT_RNTA(om.Group):
                     "axial_stiffener_flange_thickness",
                     "axial_stiffener_spacing",
                 ]:
-                    self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
+                    self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}_{kname}.{var}")
 
-                self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}:mass_user")
+                self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}_{kname}:mass_user")
 
                 for var in ["joint1", "joint2"]:
-                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
+                    self.connect(f"floating.member{k}_{kname}:{var}", f"floatingse.member{k}_{kname}:{var}")
 
                 for var in ["s_ghost1", "s_ghost2"]:
-                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}.{var}")
+                    self.connect(f"floating.member{k}_{kname}:{var}", f"floatingse.member{k}_{kname}.{var}")
 
             # Mooring connections
             self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])

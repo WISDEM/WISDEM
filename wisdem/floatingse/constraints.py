@@ -22,9 +22,10 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("survival_heel", 0.0, units="rad")
         tot_ball = 0
         for k in range(n_member):
+            kname = opt["floating"]["members"]["name"][k]
             n_ball = opt["floating"]["members"]["n_ballasts"][k]
-            self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
-            self.add_input(f"member{k}:constr_ballast_capacity", np.zeros(n_ball))
+            self.add_input(f"member{k}_{kname}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+            self.add_input(f"member{k}_{kname}:constr_ballast_capacity", np.zeros(n_ball))
             tot_ball += n_ball
         self.add_input("platform_Iwaterx", 0.0, units="m**4")
         self.add_input("platform_Iwatery", 0.0, units="m**4")
@@ -66,9 +67,10 @@ class FloatingConstraints(om.ExplicitComponent):
         draft_margin = np.zeros(n_member)
         ballast_margin = []
         for k in range(n_member):
-            ballast_margin.extend(inputs[f"member{k}:constr_ballast_capacity"].tolist())
+            kname = opt["floating"]["members"]["name"][k]
+            ballast_margin.extend(inputs[f"member{k}_{kname}:constr_ballast_capacity"].tolist())
 
-            xyz = inputs[f"member{k}:nodes_xyz"]
+            xyz = inputs[f"member{k}_{kname}:nodes_xyz"]
             inodes = np.where(xyz[:, 0] == NULL)[0][0]
             xyz = xyz[:inodes, :]
             xyz1 = xyz[0, :]  # Should be the draft

@@ -2531,15 +2531,15 @@ class Floating(om.Group):
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
-            self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect(f"memgrp{idx}.grid_axial_joints", f"member{i}_{name_member}:grid_axial_joints")
             if floating_init_options["members"]["outer_shape"][i] == "circular":
-                self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+                self.connect(f"memgrid{idx}.outer_diameter", f"member{i}_{name_member}:outer_diameter")
             elif floating_init_options["members"]["outer_shape"][i] == "rectangular":
                 # TODO: AggregatedJoints hasn't included rectangular yet, so no connection now
                 print("WARNING: AggregatedJoints hasn't included rectangular yet")
-                # self.connect(f"memgrid{idx}.side_length_a", "member_" + name_member + ":side_length_a")
-                # self.connect(f"memgrid{idx}.side_length_b", "member_" + name_member + ":side_length_b")
-            self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
+                # self.connect(f"memgrid{idx}.side_length_a", f"member{i}_{name_member}:side_length_a")
+                # self.connect(f"memgrid{idx}.side_length_b", f"member{i}_{name_member}:side_length_b")
+            self.connect(f"memgrp{idx}.s", f"member{i}_{name_member}:s")
 
 
 # Component that links certain nodes together in a specific dimension for optimization
@@ -2661,15 +2661,15 @@ class AggregateJoints(om.ExplicitComponent):
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             i_grid = len(floating_init_options["members"]["grid_member_" + iname])
 
-            self.add_input("member_" + iname + ":s", val=np.zeros(i_grid))
-            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid), units="m")
-            self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
+            self.add_input(f"member{i}_{iname}:s", val=np.zeros(i_grid))
+            self.add_input(f"member{i}_{iname}:outer_diameter", val=np.zeros(i_grid), units="m")
+            self.add_input(f"member{i}_{iname}:grid_axial_joints", val=np.zeros(i_axial_joints))
 
-            self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
-            self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
-            self.add_output("member_" + iname + ":height", val=0.0, units="m")
-            self.add_output("member_" + iname + ":s_ghost1", val=0.0)
-            self.add_output("member_" + iname + ":s_ghost2", val=1.0)
+            self.add_output(f"member{i}_{iname}:joint1", val=np.zeros(3), units="m")
+            self.add_output(f"member{i}_{iname}:joint2", val=np.zeros(3), units="m")
+            self.add_output(f"member{i}_{iname}:height", val=0.0, units="m")
+            self.add_output(f"member{i}_{iname}:s_ghost1", val=0.0)
+            self.add_output(f"member{i}_{iname}:s_ghost2", val=1.0)
 
         self.add_output("joints_xyz", val=np.zeros((n_joints_tot, 3)), units="m")
 
@@ -2735,12 +2735,12 @@ class AggregateJoints(om.ExplicitComponent):
                     continue
 
                 iname = memopt["name"][k]
-                s = 0.5 * inputs["member_" + iname + ":s"]
-                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                s = 0.5 * inputs[f"member{k}_{iname}:s"]
+                Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
                 dxyz = joint2xyz - joint1xyz
 
                 for a in range(i_axial_joints):
-                    s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
+                    s_axial = inputs[f"member{k}_{iname}:grid_axial_joints"][a]
                     joints_xyz[count, :] = joint1xyz + s_axial * dxyz
 
                     Ra = PchipInterpolator(s, Rk)(s_axial)
@@ -2758,16 +2758,16 @@ class AggregateJoints(om.ExplicitComponent):
             joint1xyz = joints_xyz[joint1id, :]
             joint2xyz = joints_xyz[joint2id, :]
             hk = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
-            outputs["member_" + iname + ":joint1"] = joint1xyz
-            outputs["member_" + iname + ":joint2"] = joint2xyz
-            outputs["member_" + iname + ":height"] = hk
+            outputs[f"member{k}_{iname}:joint1"] = joint1xyz
+            outputs[f"member{k}_{iname}:joint2"] = joint2xyz
+            outputs[f"member{k}_{iname}:height"] = hk
 
             # Largest radius at connection points for this member,
             # Don't check radius and add an intersection if the member is parallel to the one it's connecting to
             # The ghost node calculations pre-suppose that joints join orthogonal members, but if the member is parallel to another, the
             # no_intersect flag should be used.  no_intersect should be used for modeling heave plates 
             if not floating_init_options['members']['no_intersect'][k]:
-                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
                 node_r[joint1id] = max(node_r[joint1id], Rk[0])
                 node_r[joint2id] = max(node_r[joint2id], Rk[-1])
                 intersects[joint1id] += 1
@@ -2778,16 +2778,16 @@ class AggregateJoints(om.ExplicitComponent):
             iname = memopt["name"][k]
             joint1id = name2idx[memopt["joint1"][k]]
             joint2id = name2idx[memopt["joint2"][k]]
-            hk = outputs["member_" + iname + ":height"]
-            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            hk = outputs[f"member{k}_{iname}:height"]
+            Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
             s_ghost1 = 0.0
             s_ghost2 = 1.0
             if intersects[joint1id] > 1 and node_r[joint1id] > Rk[0]:
                 s_ghost1 = node_r[joint1id] / hk
             if intersects[joint2id] > 1 and node_r[joint2id] > Rk[-1]:
                 s_ghost2 = 1.0 - node_r[joint2id] / hk
-            outputs["member_" + iname + ":s_ghost1"] = s_ghost1
-            outputs["member_" + iname + ":s_ghost2"] = s_ghost2
+            outputs[f"member{k}_{iname}:s_ghost1"] = s_ghost1
+            outputs[f"member{k}_{iname}:s_ghost2"] = s_ghost2
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
