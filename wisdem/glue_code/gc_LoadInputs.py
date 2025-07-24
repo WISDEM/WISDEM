@@ -623,34 +623,7 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
                 blade_opt_options["aero_shape"]["chord"]["n_opt"],
             )
-
-        if not blade_opt_options["aero_shape"]["rthick"]["flag"]:
-            blade_opt_options["aero_shape"]["rthick"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize rthick with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than aero_shape->rthick->n_opt in the analysis options yaml. n_span and rthick n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["aero_shape"]["rthick"]["n_opt"],
-            )
-
-        if not blade_opt_options["aero_shape"]["L/D"]["flag"]:
-            blade_opt_options["aero_shape"]["L/D"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["aero_shape"]["L/D"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["aero_shape"]["L/D"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize L/D with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["L/D"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than aero_shape->L/D->n_opt in the analysis options yaml. n_span and L/D n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["aero_shape"]["L/D"]["n_opt"],
-            )
+        
         # # Blade structural design variables
         if self.modeling_options["flags"]["blade"] and (not self.modeling_options["user_elastic"]["blade"]):
             n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
