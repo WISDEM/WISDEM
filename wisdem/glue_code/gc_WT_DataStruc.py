@@ -2724,15 +2724,9 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                         inputs["chord"][i] / inputs["r_blade"][i],
                         inputs["rated_TSR"],
                     )
-                    cl_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cl)(
-                        inputs["aoa"]
-                    )
-                    cd_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cd)(
-                        inputs["aoa"]
-                    )
-                    cm_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cm)(
-                        inputs["aoa"]
-                    )
+                    cl_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cl)(inputs["aoa"])
+                    cd_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cd)(inputs["aoa"])
+                    cm_corrected[i, :, j] = PchipInterpolator(polar3d.alpha, polar3d.cm)(inputs["aoa"])
             else:
                 cl_corrected[i, :, :] = inputs["cl"][i, :, :]
                 cd_corrected[i, :, :] = inputs["cd"][i, :, :]

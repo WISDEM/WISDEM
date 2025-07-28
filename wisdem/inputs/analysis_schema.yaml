@@ -4,6 +4,9 @@ title: WISDEM wind turbine optimization options schema
 description: Schema that describes the analysis and optimization options for WISDEM
 type: object
 properties:
+    fname_input_analysis:
+        type: string
+        description: Used to store file name of analysis options file
     general:
         type: object
         default: {}
@@ -1529,6 +1532,13 @@ properties:
                     catol:
                         type: number
                         description: Some type of tolerance?
+                        default: 1e-6
+                        minimum: 1e-12
+                        maximum: 1.0
+                        unit: none
+                    xtol:
+                        type: number
+                        description: Convergence tolerance based on changes in design variables instead of objective function (NLOpt driver only)
                         default: 1e-6
                         minimum: 1e-12
                         maximum: 1.0

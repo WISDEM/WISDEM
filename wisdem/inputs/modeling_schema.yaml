@@ -10,6 +10,9 @@ title: WISDEM wind turbine modeling options schema
 description: Schema that describes the modeling options for WISDEM
 type: object
 properties:
+    fname_input_modeling:
+        type: string
+        description: Used to store file name of modeling options file
     General:
         type: object
         default: {}
