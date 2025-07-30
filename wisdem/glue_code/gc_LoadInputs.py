@@ -42,14 +42,21 @@ class WindTurbineOntologyPython(object):
 
         # Offshore flags
         flags["floating"] = self.modeling_options["flags"]["floating_platform"]
-        flags["offshore"] = (flags["floating"] or flags["monopile"] or flags["jacket"])
 
         # Even if the block is in the inputs, the user can turn off via modeling options
         # The "flags" here should come in as a string, not Boolean, to allow for the user_elastic option
         self.modeling_options["user_elastic"] = {m:False for m in flags.keys()}
-        flag_pairings = [("bos","BOS"), ("blade","RotorSE"), ("tower","TowerSE"),
-            ("monopile","FixedBottomSE"), ("jacket","FixedBottomSE"),
-            ("hub","DriveSE"), ("nacelle","DriveSE"), ("generator","DriveSE")]
+        flag_pairings = [("bos","BOS"),
+                         ("blade","RotorSE"),
+                         ("tower","TowerSE"),
+                         ("monopile","FixedBottomSE"),
+                         ("jacket","FixedBottomSE"),
+                         ("floating","FloatingSE"),
+                         ("mooring","FloatingSE"),
+                         ("hub","DriveSE"),
+                         ("nacelle","DriveSE"),
+                         ("RNA","DriveSE"),
+                         ("generator","DriveSE")]
         for i,j in flag_pairings:
             if flags[i]:
                 if isinstance(self.modeling_options["WISDEM"][j]["flag"], bool):
@@ -58,6 +65,7 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["user_elastic"][i] = True
                 flags[i] = False
         flags["hub"] = flags["nacelle"] = flags["hub"] or flags["nacelle"]  # Hub and nacelle have to go together
+        flags["offshore"] = (flags["floating"] or flags["monopile"] or flags["jacket"])
 
         # Blades and airfoils
         if flags["blade"] and not flags["airfoils"]:
@@ -76,15 +84,15 @@ class WindTurbineOntologyPython(object):
             raise ValueError("Jacket analysis is requested but no environment input found")
         if flags["jacket"] and flags["monopile"]:
             raise ValueError("Cannot specify both monopile and jacket support structures")
-        if flags["floating_platform"] and not flags["environment"]:
+        if flags["floating"] and not flags["environment"]:
             raise ValueError("Floating analysis is requested but no environment input found")
         if flags["environment"] and not (
-            flags["blade"] or flags["tower"] or flags["monopile"] or flags["jacket"] or flags["floating_platform"]
+            flags["blade"] or flags["tower"] or flags["monopile"] or flags["jacket"] or flags["floating"]
         ):
             print("WARNING: Environment provided but no related component found found")
 
         # Floating/monopile
-        if flags["floating_platform"] and (flags["monopile"] or flags["jacket"]):
+        if flags["floating"] and (flags["monopile"] or flags["jacket"]):
             raise ValueError("Cannot have both floating and fixed-bottom components")
 
         # Water depth check
@@ -236,7 +244,7 @@ class WindTurbineOntologyPython(object):
 
         # Floating platform
         self.modeling_options["floating"] = {}
-        if self.modeling_options["flags"]["floating_platform"]:
+        if self.modeling_options["flags"]["floating"]:
             n_joints = len(self.wt_init["components"]["floating_platform"]["joints"])
             self.modeling_options["floating"]["joints"] = {}
             self.modeling_options["floating"]["joints"]["n_joints"] = n_joints
