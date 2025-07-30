@@ -1085,6 +1085,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
     wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    if "lumped_mass" in tower:
+        wt_opt["tower.lumped_mass"] = tower["lumped_mass"]["values"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []

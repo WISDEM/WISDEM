@@ -1335,6 +1335,7 @@ properties:
                 optional:
                     - tower_mass_user
                     - elastic_properties_mb
+                    - lumped_mass
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1424,6 +1425,16 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
+                    lumped_mass:
+                        type: object
+                        required:
+                            - grid
+                            - values
+                        properties:
+                            grid:
+                                $ref: "#/definitions/distributed_data/grid_nd"
+                            values:
+                                $ref: "#/definitions/distributed_data/mass"
             monopile:
                 type: object
                 required:
@@ -3293,6 +3304,15 @@ definitions:
             items:
                 type: number
                 unit: kg/m
+                minItems: 2
+                uniqueItems: false
+        mass:
+            type: array
+            description: Concentrted mass along a beam, expressed in kilogram
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: kg
                 minItems: 2
                 uniqueItems: false
         area:

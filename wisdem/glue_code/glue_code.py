@@ -596,6 +596,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.unit_cost", "towerse.unit_cost_mat")
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
+            self.connect("tower.lumped_mass", "towerse.lumped_mass_in")
 
         if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
             self.connect("materials.E", "fixedse.E_mat")

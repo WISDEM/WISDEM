@@ -326,6 +326,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 val=[],
                 desc="1D array of the names of the materials of each layer modeled in the tower structure.",
             )
+            ivc.add_output(
+                "lumped_mass",
+                val=np.zeros(n_height_tower),
+                units="kg",
+                desc="1D array of the lumped mass values defined along the tower axis.",
+            )
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
