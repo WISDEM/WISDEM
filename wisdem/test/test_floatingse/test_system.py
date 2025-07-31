@@ -23,6 +23,7 @@ class TestPlatform(unittest.TestCase):
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
         self.opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        self.opt["floating"]["members"]["name"] = [chr(ord('a') + i) for i in range(n_member)]  # a though f
         self.opt["floating"]["rigid_bodies"] = {}
         self.opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
@@ -39,8 +40,9 @@ class TestPlatform(unittest.TestCase):
         self.opt["mooring"]["n_attach"] = 3
 
         for k in range(n_member):
-            self.inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
-            self.inputs[f"member{k}:nodes_r"] = NULL * np.ones(MEMMAX)
+            kname = self.opt["floating"]["members"]["name"][k]
+            self.inputs[f"member{k}_{kname}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
+            self.inputs[f"member{k}_{kname}:nodes_r"] = NULL * np.ones(MEMMAX)
 
         for var in [
             "D",
@@ -58,47 +60,49 @@ class TestPlatform(unittest.TestCase):
             "sigma_y",
         ]:
             for k in range(n_member):
-                self.inputs[f"member{k}:section_{var}"] = NULL * np.ones(MEMMAX)
+                kname = self.opt["floating"]["members"]["name"][k]
+                self.inputs[f"member{k}_{kname}:section_{var}"] = NULL * np.ones(MEMMAX)
 
-        self.inputs["member0:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
-        self.inputs["member1:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
-        self.inputs["member2:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
-        self.inputs["member3:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
-        self.inputs["member4:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
-        self.inputs["member5:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
+        self.inputs["member0_a:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
+        self.inputs["member1_b:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
+        self.inputs["member2_c:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
+        self.inputs["member3_d:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
+        self.inputs["member4_e:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
+        self.inputs["member5_f:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
         for k in range(n_member):
-            L = np.sqrt(np.sum(np.diff(self.inputs[f"member{k}:nodes_xyz"][:2, :], axis=0) ** 2))
-            self.inputs[f"member{k}:nodes_r"][:2] = 0.1 * k * np.ones(2)
-            self.inputs[f"member{k}:section_D"][:1] = 2.0
-            self.inputs[f"member{k}:section_t"][:1] = 0.1
-            self.inputs[f"member{k}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_J0"][:1] = 2 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
-            self.inputs[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
-            self.inputs[f"member{k}:buoyancy_force"] = np.array([ 1e2 ])
-            self.inputs[f"member{k}:displacement"] = np.array([ 1e1 ])
-            self.inputs[f"member{k}:center_of_buoyancy"] = self.inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            self.inputs[f"member{k}:center_of_mass"] = self.inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            self.inputs[f"member{k}:total_mass"] = np.array([ 1e3 ])
-            self.inputs[f"member{k}:total_cost"] = np.array([ 2e3 ])
-            self.inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
-            self.inputs[f"member{k}:Awater"] = np.array([ 5.0 ])
-            self.inputs[f"member{k}:Iwaterx"] = np.array([ 15.0 ])
-            self.inputs[f"member{k}:Iwatery"] = np.array([ 15.0 ])
-            self.inputs[f"member{k}:added_mass"] = np.arange(6)
-            self.inputs[f"member{k}:ballast_mass"] = np.array([ 1e2 ])
-            self.inputs[f"member{k}:variable_ballast_capacity"] = np.array([ 10 + k ])
-            self.inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
-            self.inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
-            self.inputs[f"member{k}:waterline_centroid"] = self.inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
+            kname = self.opt["floating"]["members"]["name"][k]
+            L = np.sqrt(np.sum(np.diff(self.inputs[f"member{k}_{kname}:nodes_xyz"][:2, :], axis=0) ** 2))
+            self.inputs[f"member{k}_{kname}:nodes_r"][:2] = 0.1 * k * np.ones(2)
+            self.inputs[f"member{k}_{kname}:section_D"][:1] = 2.0
+            self.inputs[f"member{k}_{kname}:section_t"][:1] = 0.1
+            self.inputs[f"member{k}_{kname}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_J0"][:1] = 2 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
+            self.inputs[f"member{k}_{kname}:section_E"][:1] = 3 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
+            self.inputs[f"member{k}_{kname}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
+            self.inputs[f"member{k}_{kname}:buoyancy_force"] = np.array([ 1e2 ])
+            self.inputs[f"member{k}_{kname}:displacement"] = np.array([ 1e1 ])
+            self.inputs[f"member{k}_{kname}:center_of_buoyancy"] = self.inputs[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            self.inputs[f"member{k}_{kname}:center_of_mass"] = self.inputs[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            self.inputs[f"member{k}_{kname}:total_mass"] = np.array([ 1e3 ])
+            self.inputs[f"member{k}_{kname}:total_cost"] = np.array([ 2e3 ])
+            self.inputs[f"member{k}_{kname}:I_total"] = 1e2 + np.arange(6)
+            self.inputs[f"member{k}_{kname}:Awater"] = np.array([ 5.0 ])
+            self.inputs[f"member{k}_{kname}:Iwaterx"] = np.array([ 15.0 ])
+            self.inputs[f"member{k}_{kname}:Iwatery"] = np.array([ 15.0 ])
+            self.inputs[f"member{k}_{kname}:added_mass"] = np.arange(6)
+            self.inputs[f"member{k}_{kname}:ballast_mass"] = np.array([ 1e2 ])
+            self.inputs[f"member{k}_{kname}:variable_ballast_capacity"] = np.array([ 10 + k ])
+            self.inputs[f"member{k}_{kname}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
+            self.inputs[f"member{k}_{kname}:variable_ballast_Vpts"] = np.arange(10)
+            self.inputs[f"member{k}_{kname}:waterline_centroid"] = self.inputs[f"member{k}_{kname}:nodes_xyz"][:2, :2].mean(axis=0)
 
         myones = np.ones(2)
 
@@ -108,7 +112,7 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_neutral_load"][:, 2] = -1e3
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         self.inputs["mooring_stiffness"] = 5 * np.eye(6)
-        self.inputs["transition_node"] = self.inputs["member5:nodes_xyz"][1, :]
+        self.inputs["transition_node"] = self.inputs["member5_f:nodes_xyz"][1, :]
         self.inputs["turbine_mass"] = np.array([ 1e4 ])
         self.inputs["turbine_cg"] = np.array([0, 0, 50])
         self.inputs["turbine_I"] = 1e6 * np.ones(6)
@@ -167,12 +171,12 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
         R = np.zeros((6, 2))
-        R[0,] = self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        R[1,] = self.inputs["member1:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        R[2,] = self.inputs["member2:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        R[3,] = self.inputs["member3:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        R[4,] = self.inputs["member4:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        R[5,] = self.inputs["member5:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[0,] = self.inputs["member0_a:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[1,] = self.inputs["member1_b:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[2,] = self.inputs["member2_c:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[3,] = self.inputs["member3_d:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[4,] = self.inputs["member4_e:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[5,] = self.inputs["member5_f:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
@@ -198,7 +202,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
             self.discrete_inputs[k] = self.discrete_outputs[k]
-        myobj = sys.PlatformTurbineSystem()
+        myobj = sys.PlatformTurbineSystem(options=self.opt)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["system_structural_mass"], 6e3 + 1e4 + 1e3)
@@ -220,9 +224,10 @@ class TestPlatform(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["member_variable_height"], s_end)
         cg_mem = np.zeros((6, 3))
         for k in range(6):
+            kname = self.opt["floating"]["members"]["name"][k]
             cg_mem[k, :] = (
-                s_cg[k] * np.diff(self.inputs[f"member{k}:nodes_xyz"][:2, :], axis=0)
-                + self.inputs[f"member{k}:nodes_xyz"][0, :]
+                s_cg[k] * np.diff(self.inputs[f"member{k}_{kname}:nodes_xyz"][:2, :], axis=0)
+                + self.inputs[f"member{k}_{kname}:nodes_xyz"][0, :]
             )
         cg_var = np.dot(V_frac, cg_mem) / (self.outputs["variable_ballast_mass"] / 1e3)
         npt.assert_allclose(self.outputs["system_mass"], 6e3 + 1e4 + 1e3 + self.outputs["variable_ballast_mass"], 1e-6)
@@ -252,6 +257,7 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        opt["floating"]["members"]["name"] = [chr(ord('a') + i) for i in range(n_member)]  # a though f
         opt["floating"]["rigid_bodies"] = {}
         opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         opt["mooring"] = {}
@@ -265,39 +271,40 @@ class TestGroup(unittest.TestCase):
         prob.model = sys.FloatingSystem(modeling_options=opt)
         prob.setup()
 
-        prob["member0:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
-        prob["member1:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
-        prob["member2:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
-        prob["member3:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
-        prob["member4:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
-        prob["member5:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
+        prob["member0_a:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
+        prob["member1_b:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
+        prob["member2_c:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
+        prob["member3_d:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
+        prob["member4_e:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
+        prob["member5_f:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
         for k in range(n_member):
-            L = np.sqrt(np.sum(np.diff(prob[f"member{k}:nodes_xyz"][:, 2], axis=0) ** 2))
-            prob[f"member{k}:nodes_r"][:2] = 0.1 * k * np.ones(2)
-            prob[f"member{k}:section_D"][:1] = 2.0
-            prob[f"member{k}:section_t"][:1] = 0.1
-            prob[f"member{k}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
-            prob[f"member{k}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
-            prob[f"member{k}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
-            prob[f"member{k}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
-            prob[f"member{k}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
-            prob[f"member{k}:section_J0"][:1] = 2 * k * np.ones(1) + 1
-            prob[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
-            prob[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
-            prob[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
-            prob[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
-            prob[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
-            prob[f"member{k}:idx_cb"] = 0
-            prob[f"member{k}:buoyancy_force"] = 1e2
-            prob[f"member{k}:displacement"] = 1e1
-            prob[f"member{k}:center_of_buoyancy"] = prob[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            prob[f"member{k}:center_of_mass"] = prob[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            prob[f"member{k}:total_mass"] = 1e3
-            prob[f"member{k}:total_cost"] = 2e3
-            prob[f"member{k}:Awater"] = 5.0
-            prob[f"member{k}:Iwaterx"] = 15.0
-            prob[f"member{k}:Iwatery"] = 15.0
-            prob[f"member{k}:added_mass"] = np.arange(6)
+            kname = opt["floating"]["members"]["name"][k]
+            L = np.sqrt(np.sum(np.diff(prob[f"member{k}_{kname}:nodes_xyz"][:, 2], axis=0) ** 2))
+            prob[f"member{k}_{kname}:nodes_r"][:2] = 0.1 * k * np.ones(2)
+            prob[f"member{k}_{kname}:section_D"][:1] = 2.0
+            prob[f"member{k}_{kname}:section_t"][:1] = 0.1
+            prob[f"member{k}_{kname}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_J0"][:1] = 2 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
+            prob[f"member{k}_{kname}:section_E"][:1] = 3 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
+            prob[f"member{k}_{kname}:idx_cb"] = 0
+            prob[f"member{k}_{kname}:buoyancy_force"] = 1e2
+            prob[f"member{k}_{kname}:displacement"] = 1e1
+            prob[f"member{k}_{kname}:center_of_buoyancy"] = prob[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            prob[f"member{k}_{kname}:center_of_mass"] = prob[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            prob[f"member{k}_{kname}:total_mass"] = 1e3
+            prob[f"member{k}_{kname}:total_cost"] = 2e3
+            prob[f"member{k}_{kname}:Awater"] = 5.0
+            prob[f"member{k}_{kname}:Iwaterx"] = 15.0
+            prob[f"member{k}_{kname}:Iwatery"] = 15.0
+            prob[f"member{k}_{kname}:added_mass"] = np.arange(6)
 
         # Set environment to that used in OC3 testing campaign
         prob["rho_water"] = 1025.0  # Density of water [kg/m^3]
@@ -308,7 +315,7 @@ class TestGroup(unittest.TestCase):
         prob["mooring_neutral_load"][:, 2] = -1e3
         prob["transition_piece_mass"] = 1e3
         prob["transition_piece_cost"] = 1e4
-        prob["transition_node"] = prob["member4:nodes_xyz"][0, :]
+        prob["transition_node"] = prob["member4_e:nodes_xyz"][0, :]
 
         prob.run_model()
         self.assertTrue(True)
