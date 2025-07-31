@@ -21,10 +21,11 @@ class PlatformLoads(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         for k in range(n_member):
-            self.add_input(f"member{k}:Px", np.zeros((MEMMAX, n_dlc)), units="N/m")
-            self.add_input(f"member{k}:Py", np.zeros((MEMMAX, n_dlc)), units="N/m")
-            self.add_input(f"member{k}:Pz", np.zeros((MEMMAX, n_dlc)), units="N/m")
-            self.add_input(f"member{k}:qdyn", np.zeros((MEMMAX, n_dlc)), units="Pa")
+            kname = opt["floating"]["members"]["name"][k]
+            self.add_input(f"member{k}_{kname}:Px", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}_{kname}:Py", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}_{kname}:Pz", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}_{kname}:qdyn", np.zeros((MEMMAX, n_dlc)), units="Pa")
 
         self.add_output("platform_elem_Px1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
         self.add_output("platform_elem_Px2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
@@ -51,28 +52,29 @@ class PlatformLoads(om.ExplicitComponent):
 
         # Append all member data
         for k in range(n_member):
-            n = np.where(inputs[f"member{k}:qdyn"][:, 0] == NULL)[0][0]
-            mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n, :])
+            kname = opt["floating"]["members"]["name"][k]
+            n = np.where(inputs[f"member{k}_{kname}:qdyn"][:, 0] == NULL)[0][0]
+            mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}_{kname}:qdyn"][:n, :])
 
             # The loads should come in with length n+1
             if n > 0:
                 # Avoid the case that has null starting from first element
                 n -= 1
             if k == 0:
-                elem_Px1 = inputs[f"member{k}:Px"][:n, :]
-                elem_Px2 = inputs[f"member{k}:Px"][1 : (n + 1), :]
-                elem_Py1 = inputs[f"member{k}:Py"][:n, :]
-                elem_Py2 = inputs[f"member{k}:Py"][1 : (n + 1), :]
-                elem_Pz1 = inputs[f"member{k}:Pz"][:n, :]
-                elem_Pz2 = inputs[f"member{k}:Pz"][1 : (n + 1), :]
+                elem_Px1 = inputs[f"member{k}_{kname}:Px"][:n, :]
+                elem_Px2 = inputs[f"member{k}_{kname}:Px"][1 : (n + 1), :]
+                elem_Py1 = inputs[f"member{k}_{kname}:Py"][:n, :]
+                elem_Py2 = inputs[f"member{k}_{kname}:Py"][1 : (n + 1), :]
+                elem_Pz1 = inputs[f"member{k}_{kname}:Pz"][:n, :]
+                elem_Pz2 = inputs[f"member{k}_{kname}:Pz"][1 : (n + 1), :]
                 elem_qdyn = mem_qdyn
             else:
-                elem_Px1 = np.vstack((elem_Px1, inputs[f"member{k}:Px"][:n, :]))
-                elem_Px2 = np.vstack((elem_Px2, inputs[f"member{k}:Px"][1 : (n + 1), :]))
-                elem_Py1 = np.vstack((elem_Py1, inputs[f"member{k}:Py"][:n, :]))
-                elem_Py2 = np.vstack((elem_Py2, inputs[f"member{k}:Py"][1 : (n + 1), :]))
-                elem_Pz1 = np.vstack((elem_Pz1, inputs[f"member{k}:Pz"][:n, :]))
-                elem_Pz2 = np.vstack((elem_Pz2, inputs[f"member{k}:Pz"][1 : (n + 1), :]))
+                elem_Px1 = np.vstack((elem_Px1, inputs[f"member{k}_{kname}:Px"][:n, :]))
+                elem_Px2 = np.vstack((elem_Px2, inputs[f"member{k}_{kname}:Px"][1 : (n + 1), :]))
+                elem_Py1 = np.vstack((elem_Py1, inputs[f"member{k}_{kname}:Py"][:n, :]))
+                elem_Py2 = np.vstack((elem_Py2, inputs[f"member{k}_{kname}:Py"][1 : (n + 1), :]))
+                elem_Pz1 = np.vstack((elem_Pz1, inputs[f"member{k}_{kname}:Pz"][:n, :]))
+                elem_Pz2 = np.vstack((elem_Pz2, inputs[f"member{k}_{kname}:Pz"][1 : (n + 1), :]))
                 elem_qdyn = np.vstack((elem_qdyn, mem_qdyn))
 
         # Store outputs
@@ -733,5 +735,6 @@ class FloatingFrame(om.Group):
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], shape = opt["floating"]["members"]["outer_shape"], n_dlc=nLC), promotes=["*"])
 
         for k in range(n_member):
+            kname = opt['floating']['members']['name'][k]
             for var in mem_vars:
-                self.connect(f"memload{k}.{var}", f"member{k}:{var}")
+                self.connect(f"memload{k}.{var}", f"member{k}_{kname}:{var}")
