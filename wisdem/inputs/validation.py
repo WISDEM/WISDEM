@@ -47,8 +47,10 @@ def write_yaml(instance : dict, foutput : str) -> None:
     yaml.width = float("inf")
     yaml.indent(mapping=4, sequence=6, offset=3)
     yaml.allow_unicode = False
-    with open(foutput, "w", encoding="utf-8") as f:
-        yaml.dump(instance, f)
+    rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+    if rank == 0:
+        with open(foutput, "w", encoding="utf-8") as f:
+            yaml.dump(instance, f)
 
 
 # ---------------------
@@ -191,7 +193,10 @@ def _validate(finput, fschema, defaults=True, rank_0 = False):
     # schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
     # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
     validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
-    validator(schema_dict).validate(input_dict)
+    if MPI and rank_0 == 0:
+        validator(schema_dict).validate(input_dict)
+    elif not MPI:
+        validator(schema_dict).validate(input_dict)
 
     # Deep copy to ensure no shared references from yaml pointers and anchors
     unique_input_dict = deep_copy_without_shared_refs(input_dict)
