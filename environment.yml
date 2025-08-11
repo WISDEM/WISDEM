@@ -25,11 +25,11 @@ dependencies:
   - python-benedict
   - pyyaml
   - ruamel.yaml
-  - scipy<1.16 #statsmodels needs update for 1.16+
+  - scipy
   - setuptools
   - simpy
   - sortedcontainers
-  - statsmodels
+  - statsmodels>=0.14.5
   - swig
   - pip:
     - orbit-nrel>=1.2.1
