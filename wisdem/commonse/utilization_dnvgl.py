@@ -26,7 +26,7 @@ class CylinderBuckling:
         E=200e9,
         G=79.3e9,
         sigma_y=345e6,
-        gamma_m=1.15,
+        gamma=0.0,
         mod_length=0.0,
         **kwargs,
     ):
@@ -56,8 +56,8 @@ class CylinderBuckling:
         sigma_y : int | float
             Yield Stress (Pa).
             Default: 345e6
-        gamma_m : int | float
-            Material factor.
+        gamma : int | float
+            Material partial safety factor.
         """
 
         self._l = np.array(l)
@@ -66,7 +66,7 @@ class CylinderBuckling:
         self.E = E
         self.G = G
         self.sigma_y = sigma_y
-        self.gamma_m = gamma_m
+        self.gamma = gamma
         self.mod_length = mod_length
 
         self.A = kwargs.get("A", np.zeros(len(self.t)))
@@ -290,7 +290,7 @@ class CylinderBuckling:
         sigma_a = Fz / (2 * np.pi * self.r * self.te)
         sigma_m = M * self.r / self.Ic
 
-        shell_utilization, material_factors = self.utilization_shell(sigma_a, sigma_m, sigma_h, sigma_t)
+        shell_utilization = self.utilization_shell(sigma_a, sigma_m, sigma_h, sigma_t)
         fak = self.get_fak(sigma_a, sigma_m, sigma_h, sigma_t)
         global_utilization = self.utilization_global(sigma_a, sigma_m, fak)
 
@@ -308,16 +308,18 @@ class CylinderBuckling:
 
         lambda_s = np.sqrt((self.sigma_y / vm) * ((axial + bending) / self.fea + shear / self.fet + hoop / self.feh))
 
+        # Use DNV gamma unless specified by user
         gamma_m = 0.85 + 0.6 * lambda_s
         gamma_m[lambda_s < 0.5] = 1.15
         gamma_m[lambda_s >= 1.0] = 1.45
+        gamma = self.gamma if self.gamma > 0.0 else gamma_m
 
         fks = self.sigma_y / np.sqrt(1 + lambda_s**4.0)
-        fksd = fks / np.array(gamma_m)
+        fksd = fks / np.array(gamma)
 
         shell_util = vm / fksd
 
-        return shell_util, gamma_m
+        return shell_util
 
     def get_fak(self, axial, bending, hoop, shear):
 
@@ -330,7 +332,7 @@ class CylinderBuckling:
 
     def _fak_wrapper(self, axial, *data):
         bending, hoop, shear = data
-        util, _ = self.utilization_shell(axial, bending, hoop, shear)
+        util = self.utilization_shell(axial, bending, hoop, shear)
 
         return util - 1
 
@@ -350,12 +352,14 @@ class CylinderBuckling:
         # ls
         lambda_s = k * L / (np.pi * np.sqrt(self.Ic / self.Ac)) * np.sqrt(fak / self.E)
 
+        # Use DNV gamma unless specified by user
         gamma_m = 0.85 + 0.6 * lambda_s
         gamma_m[lambda_s < 0.5] = 1.15
         gamma_m[lambda_s >= 1.0] = 1.45
+        gamma = self.gamma if self.gamma > 0.0 else gamma_m
 
         # fak
-        fakd = fak / gamma_m
+        fakd = fak / gamma
 
         fkc = (1 - 0.28 * lambda_s**2)
         fkc[lambda_s > 1.34] = 0.9 / (lambda_s[lambda_s > 1.34] ** 2)

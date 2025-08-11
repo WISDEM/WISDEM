@@ -223,7 +223,7 @@ class DrivetrainSE(om.Group):
             self.add_subsystem("gensimp", dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=["*"])
 
         # Final tallying
-        self.add_subsystem("misc", dc.MiscNacelleComponents(), promotes=["*"])
+        self.add_subsystem("misc", dc.MiscNacelleComponents(direct_drive=direct), promotes=["*"])
         self.add_subsystem("nac", dc.NacelleSystemAdder(direct_drive=direct), promotes=["*"])
         self.add_subsystem("rna", dc.RNA_Adder(), promotes=["*"])
 

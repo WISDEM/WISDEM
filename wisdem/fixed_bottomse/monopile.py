@@ -520,7 +520,7 @@ class MonopileFrame(om.ExplicitComponent):
 
         # ------- enable dynamic analysis ----------
         lump = 0
-        shift = 0.0
+        shift = 1e2 if self.options["soil_springs"] else 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
         self.frame.enableDynamics(2 * NFREQ, frame3dd_opt["modal_method"], lump, frame3dd_opt["tol"], shift)
         # ----------------------------

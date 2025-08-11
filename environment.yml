@@ -29,7 +29,7 @@ dependencies:
   - setuptools
   - simpy
   - sortedcontainers
-  - statsmodels
+  - statsmodels>=0.14.5
   - swig
   - pip:
     - orbit-nrel>=1.2.1
