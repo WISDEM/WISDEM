@@ -467,7 +467,7 @@ class YawSystem(om.ExplicitComponent):
         self.add_input("rotor_diameter", 0.0, units="m")
         self.add_input("D_top", 0.0, units="m")
         self.add_input("rho", 0.0, units="kg/m**3")
-        self.add_input("yaw_mass_user", -1.0, units="kg")
+        self.add_input("yaw_mass_user", 0.0, units="kg")
 
         self.add_output("yaw_mass", 0.0, units="kg")
         self.add_output("yaw_cm", np.zeros(3), units="m")
@@ -490,7 +490,7 @@ class YawSystem(om.ExplicitComponent):
         m_frictionPlate = rho * np.pi * D_top * (0.1 * D_top) * (1e-3 * D_rotor)
 
         # Total mass estimate
-        outputs["yaw_mass"] = m_yaw_usr if not m_yaw_usr < 0.0 else m_frictionPlate + n_motors * m_motor
+        outputs["yaw_mass"] = m_yaw_usr if m_yaw_usr > 0.0 else m_frictionPlate + n_motors * m_motor
 
         # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
         outputs["yaw_cm"] = np.zeros(3)
