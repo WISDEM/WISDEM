@@ -855,6 +855,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
         wt_opt["nacelle.yaw_mass_user"]          = nacelle["drivetrain"]["yaw_mass_user"]
         wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["drivetrain"]["above_yaw_mass_user"]
+        wt_opt["nacelle.above_yaw_I_user"]    = nacelle["drivetrain"]["above_yaw_I_user"]
+        wt_opt["nacelle.above_yaw_cm_user"]    = nacelle["drivetrain"]["above_yaw_cm_user"]
         wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["drivetrain"]["spring_constant_user"]
         wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["drivetrain"]["damping_coefficient_user"]
 
@@ -916,9 +918,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic
         wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
         MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["elastic_properties_mb"]["system_inertia_tt"])
         MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["elastic_properties_mb"]["system_inertia"])
-        wt_opt["drivese.rna_mass"] = wt_opt["drivese.above_yaw_mass"] + wt_opt["drivese.yaw_mass"]
-        wt_opt["drivese.rna_cm"]   = wt_opt["drivese.above_yaw_cm"]
-        wt_opt["drivese.rna_I_TT"] = wt_opt["drivese.above_yaw_I_TT"]
 
     return wt_opt
 
@@ -1086,6 +1085,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
     wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    if "lumped_mass" in tower:
+        wt_opt["tower.lumped_mass"] = tower["lumped_mass"]["values"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []
