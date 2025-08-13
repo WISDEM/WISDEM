@@ -848,10 +848,11 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("cover_cm", np.zeros(3), units="m")
         self.add_input("cover_I", np.zeros(3), units="m")
         self.add_input("x_bedplate", val=np.zeros(12), units="m")
-        self.add_input("constr_height", 0.0, units="m")
         self.add_input("above_yaw_mass_user", 0.0, units="kg")
         self.add_input("above_yaw_cm_user", np.zeros(3), units="m")
         self.add_input("above_yaw_I_user", np.zeros(6), units="kg*m**2")
+        self.add_input("constr_height", 0.0, units="m")
+
 
         self.add_output("shaft_start", np.zeros(3), units="m")
         self.add_output("other_mass", 0.0, units="kg")
@@ -953,12 +954,12 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         coeff = 1.0 if m_nac_usr == 0.0 else m_nac_usr / m_nac
         m_nac *= coeff
         I_nac *= coeff
-        if not inputs["above_yaw_I_user"].all == 0:
+        if not (inputs["above_yaw_I_user"] == 0).all():
             I_nac = inputs["above_yaw_I_user"]
         outputs["above_yaw_mass"] = copy.copy(m_nac)
         R = cm_nac.copy()
-        outputs["above_yaw_cm"] = inputs["above_yaw_cm_user"] if not inputs["above_yaw_cm_user"].all == 0 else R
-        outputs["above_yaw_I"] = inputs["above_yaw_I_user"] if not inputs["above_yaw_I_user"].all == 0 else I_nac.copy()
+        outputs["above_yaw_cm"] = inputs["above_yaw_cm_user"] if not (inputs["above_yaw_cm_user"] == 0).all() else R
+        outputs["above_yaw_I"] = inputs["above_yaw_I_user"] if not (inputs["above_yaw_I_user"] == 0).all() else I_nac.copy()
         parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["above_yaw_I_TT"] = util.unassembleI(util.assembleI(I_nac) + parallel_axis)
 
