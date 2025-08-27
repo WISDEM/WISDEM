@@ -326,6 +326,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 val=[],
                 desc="1D array of the names of the materials of each layer modeled in the tower structure.",
             )
+            ivc.add_output(
+                "lumped_mass",
+                val=np.zeros(n_height_tower),
+                units="kg",
+                desc="1D array of the lumped mass values defined along the tower axis.",
+            )
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
@@ -2112,7 +2118,7 @@ class Nacelle(om.Group):
             ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
             ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
             ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
-            ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
+            # ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
             ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
             ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
 
