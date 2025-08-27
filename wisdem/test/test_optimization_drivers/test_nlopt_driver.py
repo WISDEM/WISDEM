@@ -1381,180 +1381,180 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.16667, 0.05)
         assert_near_equal(prob["y"], -7.833334, 0.05)
 
-    # def test_simple_paraboloid_equality_failure_MMA(self):
-    #     prob = om.Problem(reports=False)
-    #     model = prob.model
+    def test_simple_paraboloid_equality_failure_MMA(self):
+        prob = om.Problem(reports=False)
+        model = prob.model
 
-    #     # Start very close to the correct answer with tight bounds to
-    #     # reduce test runtime
-    #     model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
-    #     model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
-    #     model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-    #     model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
+        # Start very close to the correct answer with tight bounds to
+        # reduce test runtime
+        model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
+        model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
+        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
+        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
 
-    #     prob.set_solver_print(level=0)
+        prob.set_solver_print(level=0)
 
-    #     prob.driver = NLoptDriver()
-    #     prob.driver.options["optimizer"] = "LD_MMA"
-    #     prob.driver.options["tol"] = 1e-6
+        prob.driver = NLoptDriver()
+        prob.driver.options["optimizer"] = "LD_MMA"
+        prob.driver.options["tol"] = 1e-6
 
-    #     prob.driver.options["maxiter"] = 5000
+        prob.driver.options["maxiter"] = 5000
 
-    #     model.add_design_var("x", lower=7.0, upper=7.5)
-    #     model.add_design_var("y", lower=-8.0, upper=-7.5)
-    #     model.add_objective("f_xy")
-    #     model.add_constraint("c", equals=-15.0)
+        model.add_design_var("x", lower=7.0, upper=7.5)
+        model.add_design_var("y", lower=-8.0, upper=-7.5)
+        model.add_objective("f_xy")
+        model.add_constraint("c", equals=-15.0)
 
-    #     prob.setup()
+        prob.setup()
 
-    #     with self.assertRaises(NotImplementedError) as raises_msg:
-    #         failed = prob.run_driver()
+        try:
+            prob.run_driver()
+        except Exception as e:
+            # NLopt raises a ValueError with message containing 'std::invalid_argument'
+            self.assertTrue(
+                "std::invalid_argument" in repr(e),
+                f"Expected 'std::invalid_argument' in exception, got: {repr(e)}"
+            )
 
-    #     exception = raises_msg.exception
+    def test_simple_paraboloid_equality_failure_LD_CCSAQ(self):
+        prob = om.Problem(reports=False)
+        model = prob.model
 
-    #     msg = "The selected optimizer, LD_MMA, does not support equality constraints."
-    #     print(exception.args[0])
-    #     self.assertIn(msg, exception.args[0])
+        # Start very close to the correct answer with tight bounds to
+        # reduce test runtime
+        model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
+        model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
+        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
+        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
 
-    # def test_simple_paraboloid_equality_failure_LD_CCSAQ(self):
-    #     prob = om.Problem(reports=False)
-    #     model = prob.model
+        prob.set_solver_print(level=0)
 
-    #     # Start very close to the correct answer with tight bounds to
-    #     # reduce test runtime
-    #     model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
-    #     model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
-    #     model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-    #     model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
+        prob.driver = NLoptDriver()
+        prob.driver.options["optimizer"] = "LD_CCSAQ"
+        prob.driver.options["tol"] = 1e-6
 
-    #     prob.set_solver_print(level=0)
+        prob.driver.options["maxiter"] = 5000
 
-    #     prob.driver = NLoptDriver()
-    #     prob.driver.options["optimizer"] = "LD_CCSAQ"
-    #     prob.driver.options["tol"] = 1e-6
+        model.add_design_var("x", lower=7.0, upper=7.5)
+        model.add_design_var("y", lower=-8.0, upper=-7.5)
+        model.add_objective("f_xy")
+        model.add_constraint("c", equals=-15.0)
 
-    #     prob.driver.options["maxiter"] = 5000
+        prob.setup()
 
-    #     model.add_design_var("x", lower=7.0, upper=7.5)
-    #     model.add_design_var("y", lower=-8.0, upper=-7.5)
-    #     model.add_objective("f_xy")
-    #     model.add_constraint("c", equals=-15.0)
+        try:
+            prob.run_driver()
+        except Exception as e:
+            # NLopt raises a ValueError with message containing 'std::invalid_argument'
+            self.assertTrue(
+                "std::invalid_argument" in repr(e),
+                f"Expected 'std::invalid_argument' in exception, got: {repr(e)}"
+            )
 
-    #     prob.setup()
+    def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT(self):
+        prob = om.Problem(reports=False)
+        model = prob.model
 
-    #     with self.assertRaises(NotImplementedError) as raises_msg:
-    #         failed = prob.run_driver()
+        # Start very close to the correct answer with tight bounds to
+        # reduce test runtime
+        model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
+        model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
+        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
+        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
 
-    #     exception = raises_msg.exception
+        prob.set_solver_print(level=0)
 
-    #     msg = "The selected optimizer, LD_CCSAQ, does not support equality constraints."
+        prob.driver = NLoptDriver()
+        prob.driver.options["optimizer"] = "GN_ORIG_DIRECT"
+        prob.driver.options["tol"] = 1e-6
 
-    #     self.assertIn(msg, exception.args[0])
+        prob.driver.options["maxiter"] = 5000
 
-    # def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT(self):
-    #     prob = om.Problem(reports=False)
-    #     model = prob.model
+        model.add_design_var("x", lower=7.0, upper=7.5)
+        model.add_design_var("y", lower=-8.0, upper=-7.5)
+        model.add_objective("f_xy")
+        model.add_constraint("c", equals=-15.0)
 
-    #     # Start very close to the correct answer with tight bounds to
-    #     # reduce test runtime
-    #     model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
-    #     model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
-    #     model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-    #     model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
+        prob.setup()
 
-    #     prob.set_solver_print(level=0)
+        try:
+            prob.run_driver()
+        except Exception as e:
+            # NLopt raises a ValueError with message containing 'std::invalid_argument'
+            self.assertTrue(
+                "std::invalid_argument" in repr(e),
+                f"Expected 'std::invalid_argument' in exception, got: {repr(e)}"
+            )
 
-    #     prob.driver = NLoptDriver()
-    #     prob.driver.options["optimizer"] = "GN_ORIG_DIRECT"
-    #     prob.driver.options["tol"] = 1e-6
+    def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT_L(self):
+        prob = om.Problem(reports=False)
+        model = prob.model
 
-    #     prob.driver.options["maxiter"] = 5000
+        # Start very close to the correct answer with tight bounds to
+        # reduce test runtime
+        model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
+        model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
+        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
+        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
 
-    #     model.add_design_var("x", lower=7.0, upper=7.5)
-    #     model.add_design_var("y", lower=-8.0, upper=-7.5)
-    #     model.add_objective("f_xy")
-    #     model.add_constraint("c", equals=-15.0)
+        prob.set_solver_print(level=0)
 
-    #     prob.setup()
+        prob.driver = NLoptDriver()
+        prob.driver.options["optimizer"] = "GN_ORIG_DIRECT_L"
+        prob.driver.options["tol"] = 1e-6
 
-    #     with self.assertRaises(NotImplementedError) as raises_msg:
-    #         failed = prob.run_driver()
+        prob.driver.options["maxiter"] = 5000
 
-    #     exception = raises_msg.exception
+        model.add_design_var("x", lower=7.0, upper=7.5)
+        model.add_design_var("y", lower=-8.0, upper=-7.5)
+        model.add_objective("f_xy")
+        model.add_constraint("c", equals=-15.0)
 
-    #     msg = "The selected optimizer, GN_ORIG_DIRECT, does not support equality constraints."
+        prob.setup()
 
-    #     self.assertIn(msg, exception.args[0])
+        try:
+            prob.run_driver()
+        except Exception as e:
+            # NLopt raises a ValueError with message containing 'std::invalid_argument'
+            self.assertTrue(
+                "std::invalid_argument" in repr(e),
+                f"Expected 'std::invalid_argument' in exception, got: {repr(e)}"
+            )
 
-    # def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT_L(self):
-    #     prob = om.Problem(reports=False)
-    #     model = prob.model
+    def test_simple_paraboloid_equality_failure_GN_AGS(self):
+        prob = om.Problem(reports=False)
+        model = prob.model
 
-    #     # Start very close to the correct answer with tight bounds to
-    #     # reduce test runtime
-    #     model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
-    #     model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
-    #     model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-    #     model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
+        # Start very close to the correct answer with tight bounds to
+        # reduce test runtime
+        model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
+        model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
+        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
+        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
 
-    #     prob.set_solver_print(level=0)
+        prob.set_solver_print(level=0)
 
-    #     prob.driver = NLoptDriver()
-    #     prob.driver.options["optimizer"] = "GN_ORIG_DIRECT_L"
-    #     prob.driver.options["tol"] = 1e-6
+        prob.driver = NLoptDriver()
+        prob.driver.options["optimizer"] = "GN_AGS"
+        prob.driver.options["tol"] = 1e-6
 
-    #     prob.driver.options["maxiter"] = 5000
+        prob.driver.options["maxiter"] = 5000
 
-    #     model.add_design_var("x", lower=7.0, upper=7.5)
-    #     model.add_design_var("y", lower=-8.0, upper=-7.5)
-    #     model.add_objective("f_xy")
-    #     model.add_constraint("c", equals=-15.0)
+        model.add_design_var("x", lower=7.0, upper=7.5)
+        model.add_design_var("y", lower=-8.0, upper=-7.5)
+        model.add_objective("f_xy")
+        model.add_constraint("c", equals=-15.0)
 
-    #     prob.setup()
+        prob.setup()
 
-    #     with self.assertRaises(NotImplementedError) as raises_msg:
-    #         failed = prob.run_driver()
-
-    #     exception = raises_msg.exception
-
-    #     msg = "The selected optimizer, GN_ORIG_DIRECT_L, does not support equality constraints."
-
-    #     self.assertIn(msg, exception.args[0])
-
-    # def test_simple_paraboloid_equality_failure_GN_AGS(self):
-    #     prob = om.Problem(reports=False)
-    #     model = prob.model
-
-    #     # Start very close to the correct answer with tight bounds to
-    #     # reduce test runtime
-    #     model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
-    #     model.add_subsystem("p2", om.IndepVarComp("y", -7.6), promotes=["*"])
-    #     model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-    #     model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
-
-    #     prob.set_solver_print(level=0)
-
-    #     prob.driver = NLoptDriver()
-    #     prob.driver.options["optimizer"] = "GN_AGS"
-    #     prob.driver.options["tol"] = 1e-6
-
-    #     prob.driver.options["maxiter"] = 5000
-
-    #     model.add_design_var("x", lower=7.0, upper=7.5)
-    #     model.add_design_var("y", lower=-8.0, upper=-7.5)
-    #     model.add_objective("f_xy")
-    #     model.add_constraint("c", equals=-15.0)
-
-    #     prob.setup()
-
-    #     with self.assertRaises(NotImplementedError) as raises_msg:
-    #         failed = prob.run_driver()
-
-    #     exception = raises_msg.exception
-
-    #     msg = "The selected optimizer, GN_AGS, does not support equality constraints."
-
-    #     self.assertIn(msg, exception.args[0])
+        try:
+            prob.run_driver()
+        except Exception as e:
+            # NLopt raises a ValueError with message containing 'std::invalid_argument'
+            self.assertTrue(
+                "std::invalid_argument" in repr(e),
+                f"Expected 'std::invalid_argument' in exception, got: {repr(e)}"
+            )
 
     def test_maxtime(self):
         prob = om.Problem(reports=False)
