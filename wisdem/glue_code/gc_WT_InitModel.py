@@ -1496,11 +1496,18 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
-    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
     wt_opt["control.fix_pitch_regI12"] = control["pitch"]["fix_pitch_regI12"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
+
+    if 'ROSCO' in modeling_options:  # Will only be there if called by WEIS
+        if modeling_options['ROSCO']['ps_percent'] != control["pitch"]["ps_percent"]:
+            logger.warning(
+                f"The ROSCO (modeling) ps_percent does not match the WindIO (geometry) ps_percent.  Using the ROSCO value of {modeling_options['ROSCO']['ps_percent']:.2f}."
+            )
+    else:
+        wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
 
     return wt_opt
 
