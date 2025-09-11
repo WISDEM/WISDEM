@@ -62,11 +62,11 @@ dependencies = [
   "python-benedict",
   "pyyaml",
   "ruamel.yaml",
-  "scipy<1.16",
+  "scipy",
   "simpy",
   "sortedcontainers",
   "statsmodels",
-  #"windIO",
+  "windIO",
 ]
 
 # List additional groups of dependencies here (e.g. development

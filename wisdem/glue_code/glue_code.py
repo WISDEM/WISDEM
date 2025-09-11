@@ -323,6 +323,8 @@ class WT_RNTA(om.Group):
             self.connect("drivetrain.drivetrain_damping_coefficient_user", "drivese.drivetrain_damping_coefficient_user")
             self.connect('drivetrain.yaw_mass_user', 'drivese.yaw_mass_user')
             self.connect('drivetrain.above_yaw_mass_user', 'drivese.above_yaw_mass_user')
+            self.connect('drivetrain.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
+            self.connect('drivetrain.above_yaw_I_user', 'drivese.above_yaw_I_user')
             # Not yet implemented
             #self.connect('drivetrain.above_yaw_cm_user', 'drivese.above_yaw_cm_user')
             #self.connect('drivetrain.above_yaw_I_TT_user', 'drivese.above_yaw_I_TT_user')
@@ -539,6 +541,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["costs"]:
                 self.connect("costs.labor_rate", "towerse.labor_cost_rate")
                 self.connect("costs.painting_rate", "towerse.painting_cost_rate")
+            self.connect("tower.lumped_mass", "towerse.lumped_mass_in")
 
         if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
             self.connect("materials.E", "fixedse.E_mat")

@@ -173,9 +173,9 @@ class Mooring(om.ExplicitComponent):
             ea_stiff = float(inputs["line_stiffness_coeff"][0]) * d**2
             cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
-            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
+            line_obj = props.getLineProps(1e3 * d/1.89, type="chain", stud="stud")  # MoorPy uses nominal diameter for getting chain props, windIO uses volume equivalent (https://www.orcina.com/webhelp/OrcaFlex/Content/html/Chain.htm)
         else:
-            line_obj = props.getLineProps(1e3 * d, type=line_mat)
+            line_obj = props.getLineProps(1e3 * d/1.8, type=line_mat)  # MoorPy uses nominal diameter for getting chain props, windIO uses volume equivalent (https://www.orcina.com/webhelp/OrcaFlex/Content/html/Chain.htm)
 
         if not line_obj is None:
             min_break_load = line_obj.MBL

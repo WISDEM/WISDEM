@@ -716,6 +716,16 @@ def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, flags, user_e
             wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass_user"]
         if "transformer_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass_user"]
+        
+        # if "yaw_mass_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.yaw_mass_user"] = drivetrain["other_components"]["yaw_mass_user"]
+        # if "above_yaw_mass_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_mass_user"] = drivetrain["other_components"]["above_yaw_mass_user"]
+        # if "above_yaw_I_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_I_user"] = drivetrain["other_components"]["above_yaw_I_user"]
+        # if "above_yaw_cm_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_cm_user"] = drivetrain["other_components"]["above_yaw_cm_user"]
+
         if "spring_constant_user" in drivetrain:
             wt_opt["drivetrain.drivetrain_spring_constant_user"]     = drivetrain["spring_constant_user"]
         if "damping_coefficient_user" in drivetrain:
@@ -952,6 +962,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.outfitting_factor"] = tower["structure"]["outfitting_factor"]
     if "tower_mass_user" in tower:
         wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    if "lumped_mass" in tower:
+        wt_opt["tower.lumped_mass"] = tower["lumped_mass"]["values"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []

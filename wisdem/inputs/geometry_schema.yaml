@@ -547,7 +547,6 @@ properties:
                                 minimum: 0.0
                                 maximum: 100.0
                                 description: Permanent magnet cost
-
             floating_platform:
                 type: object
                 properties:
@@ -597,6 +596,15 @@ definitions:
             items:
                 type: number
                 unit: kg/m
+                minItems: 2
+                uniqueItems: false
+        mass:
+            type: array
+            description: Concentrted mass along a beam, expressed in kilogram
+            default: [0.0, 0.0]
+            items:
+                type: number
+                unit: kg
                 minItems: 2
                 uniqueItems: false
         area:

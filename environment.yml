@@ -14,7 +14,7 @@ dependencies:
   - moorpy
   - netcdf4
   - ninja
-  - nlopt<=2.8
+  - nlopt
   - numpy
   - numpydoc
   - openmdao
@@ -28,11 +28,11 @@ dependencies:
   - python-benedict
   - pyyaml
   - ruamel.yaml
-  - scipy<1.16 #statsmodels needs update for 1.16+
+  - scipy
   - setuptools
   - simpy
   - sortedcontainers
-  - statsmodels
+  - statsmodels>=0.14.5
   - swig
   - xarray
   - pip:
