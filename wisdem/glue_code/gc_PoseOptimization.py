@@ -310,7 +310,8 @@ class PoseOptimization(object):
             self.opt['merit_figure'] = [self.opt['merit_figure']]
 
         for merit_figure in self.opt['merit_figure']:
-            wt_opt = self.set_merit_figure(wt_opt, merit_figure)
+            if merit_figure.lower() != 'none':
+                wt_opt = self.set_merit_figure(wt_opt, merit_figure)
 
         return wt_opt
 

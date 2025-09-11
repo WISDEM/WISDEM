@@ -29,8 +29,8 @@ design_variables:
           ref: [10.] # reference value to bring values close to 1, set as array to support design variables as arrays
           # indices: only used for design variables as arrays
 
-# This will be ignored if there is a merit_figure_user entry
-merit_figure: AEP
+# Multiple merit figures are allowed, so this should only be enabled with solvers that support multi-objective optimization
+# merit_figure: AEP
 
 # See the list of potential outputs.  Variable name is taken from the WISDEM namespace.
 merit_figure_user:
