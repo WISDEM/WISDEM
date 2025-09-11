@@ -2877,9 +2877,9 @@ class MooringProperties(om.ExplicitComponent):
                 outputs[var] = d2 * inputs[var + "_coeff"]
 
         elif line_mat[0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d[0], type="chain", stud="stud")
+            line_obj = mp.getLineProps(1e3 * d[0] / 1.89, type="chain", stud="stud")
         else:
-            line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
+            line_obj = mp.getLineProps(1e3 * d[0] / 1.8, type=line_mat[0])
 
         if not line_obj is None:
             outputs["line_mass_density"] = line_obj.m
