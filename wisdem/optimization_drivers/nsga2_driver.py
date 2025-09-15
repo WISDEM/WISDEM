@@ -6,7 +6,7 @@ from wisdem.inputs.validation import simple_types
 
 import numpy as np
 
-from wisdem.optimization_drivers.nsga2.algo.algo_nsga2 import NSGA2 as NSGA2_implementation
+from wisdem.optimization_drivers.nsga2.algo_nsga2 import NSGA2 as NSGA2_implementation
 
 try:
     from pyDOE3 import lhs

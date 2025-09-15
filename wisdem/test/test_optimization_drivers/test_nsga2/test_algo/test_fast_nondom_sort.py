@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import wisdem.optimization_drivers.nsga2.algo.fast_nondom_sort as fns
+import wisdem.optimization_drivers.nsga2.fast_nondom_sort as fns
 
 
 def test_fast_nondom_sort_unit_sphere():

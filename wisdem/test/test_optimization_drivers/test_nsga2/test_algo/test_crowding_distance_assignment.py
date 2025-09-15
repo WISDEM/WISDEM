@@ -2,7 +2,7 @@ from random import seed
 import numpy as np
 import matplotlib.pyplot as plt
 
-import wisdem.optimization_drivers.nsga2.algo.crowding_distance_assignment as cda
+import wisdem.optimization_drivers.nsga2.crowding_distance_assignment as cda
 
 
 def test_crowding_distance_assignment_line_1D_equidistant():

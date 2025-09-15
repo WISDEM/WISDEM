@@ -7,9 +7,9 @@ from numpy.typing import ArrayLike
 
 from mpi4py import MPI
 
-from wisdem.optimization_drivers.nsga2.algo.fast_nondom_sort import fast_nondom_sort
-from wisdem.optimization_drivers.nsga2.algo.crowding_distance_assignment import crowding_distance_assignment
-from wisdem.optimization_drivers.nsga2.algo.genetic_functions import (
+from wisdem.optimization_drivers.nsga2.fast_nondom_sort import fast_nondom_sort
+from wisdem.optimization_drivers.nsga2.crowding_distance_assignment import crowding_distance_assignment
+from wisdem.optimization_drivers.nsga2.genetic_functions import (
     binary_tournament_selection,
     polynomial_mutation,
     simulated_binary_crossover,
