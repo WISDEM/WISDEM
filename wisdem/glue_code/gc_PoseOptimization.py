@@ -541,7 +541,11 @@ class PoseOptimization(object):
                     )
                 s_opt_layer = np.linspace(0.0, 1.0, blade_opt["n_opt_struct"][k])
                 init_layer_opt = layer_interp(s_opt_layer)
-                indices_i = range(blade_opt["structure"][i]["index_start"], blade_opt["structure"][i]["index_end"])
+                # Only set an optimization variable if the layer has non zero initial thickness
+                indices_i = [
+                    idx for idx in range(blade_opt["structure"][i]["index_start"], blade_opt["structure"][i]["index_end"])
+                    if init_layer_opt[idx] >= 1.e-6
+                ]
                 wt_opt.model.add_design_var(
                     "blade.opt_var.layer_%d_opt"%k,
                     indices=indices_i,

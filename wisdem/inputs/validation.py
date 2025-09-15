@@ -51,9 +51,6 @@ def write_yaml(instance : dict, foutput : str) -> None:
     if rank == 0:
         with open(foutput, "w", encoding="utf-8") as f:
             yaml.dump(instance, f)
-    # Ensure all ranks wait for the file to be written before proceeding
-    if MPI:
-        MPI.COMM_WORLD.Barrier()
 
 
 # ---------------------

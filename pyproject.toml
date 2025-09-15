@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wisdem"
-version = "3.22.2"
+version = "3.22.4"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -61,10 +61,10 @@ dependencies = [
   "python-benedict",
   "pyyaml",
   "ruamel.yaml",
-  "scipy<1.16",
+  "scipy",
   "simpy",
   "sortedcontainers",
-  "statsmodels",
+  "statsmodels>=0.14.5",
 ]
 
 # List additional groups of dependencies here (e.g. development
