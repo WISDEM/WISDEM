@@ -327,6 +327,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 val=[],
                 desc="1D array of the names of the materials of each layer modeled in the tower structure.",
             )
+            ivc.add_output(
+                "lumped_mass",
+                val=np.zeros(n_height_tower),
+                units="kg",
+                desc="1D array of the lumped mass values defined along the tower axis.",
+            )
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
@@ -2113,7 +2119,7 @@ class Nacelle(om.Group):
             ivc.add_output("above_yaw_mass_user", 0.0, units="kg")
             ivc.add_output("above_yaw_cm_user", np.zeros(3), units="m")
             ivc.add_output("above_yaw_I_user", np.zeros(6), units="kg*m**2")
-            ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
+            # ivc.add_output("above_yaw_I_TT_user", np.zeros(6), units="kg*m**2")
             ivc.add_output('drivetrain_spring_constant_user',     val=0, units='N*m/rad')
             ivc.add_output('drivetrain_damping_coefficient_user',     val=0, units='N*m*s/rad')
 
@@ -2890,9 +2896,9 @@ class MooringProperties(om.ExplicitComponent):
                 outputs[var] = d2 * inputs[var + "_coeff"]
 
         elif line_mat[0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d[0], type="chain", stud="stud")
+            line_obj = mp.getLineProps(1e3 * d[0] / 1.89, type="chain", stud="stud")
         else:
-            line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
+            line_obj = mp.getLineProps(1e3 * d[0] / 1.8, type=line_mat[0])
 
         if not line_obj is None:
             outputs["line_mass_density"] = line_obj.m
