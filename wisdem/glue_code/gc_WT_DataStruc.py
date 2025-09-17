@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import moorpy as mp
+from moorpy.helpers import getLineProps
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -2896,12 +2896,9 @@ class MooringProperties(om.ExplicitComponent):
                     outputs[var][i_line] = d2 * inputs[var + "_coeff"]
 
             elif lm == "chain_stud":
-                ms = mp.System()
-                line_props = ms.setLineType(1e3 * d[i_line]/1.89, material='chain_studlink')
+                line_props = getLineProps(1e3 * d[i_line]/1.89, material='chain_studlink', source='default')
             else:
-                ms = mp.System()
-                line_props = ms.setLineType(1e3 * d[i_line]/1.8, material='chain')
-
+                line_props = getLineProps(1e3 * d[i_line]/1.8, material='chain', source='default')
             if line_props is not None:
                 outputs["line_mass_density"][i_line] = line_props['m']
                 outputs["line_stiffness"][i_line] = line_props['EA']

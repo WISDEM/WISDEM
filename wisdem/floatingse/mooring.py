@@ -3,6 +3,7 @@ import openmdao.api as om
 
 import moorpy as mp
 import moorpy.MoorProps as props
+from moorpy.helpers import getLineProps
 
 NLINES_MAX = 15
 NPTS_PLOT = 101
@@ -165,7 +166,7 @@ class Mooring(om.ExplicitComponent):
         n_anchors = self.options["options"]["n_anchors"]
         ratio = int(n_anchors / n_attach)
 
-        line_obj = None
+        line_props = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
             min_break_load = float(inputs["line_breaking_load_coeff"][0]) * d**2
@@ -173,11 +174,9 @@ class Mooring(om.ExplicitComponent):
             ea_stiff = float(inputs["line_stiffness_coeff"][0]) * d**2
             cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
-            ms = mp.System()
-            line_props = ms.setLineType(1e3 * d/1.89, material='chain_studlink')
+            line_props = getLineProps(1e3 * d/1.89, material='chain_studlink', source='default')
         else:
-            ms = mp.System()
-            line_props = ms.setLineType(1e3 * d/1.8, material='chain')
+            line_props = getLineProps(1e3 * d/1.8, material='chain', source='default')
 
         if not line_props is None:
             min_break_load = line_props['MBL']
@@ -338,15 +337,15 @@ class Mooring(om.ExplicitComponent):
             anchor_mass = 0.0  # TODO
         n_anchors = n_lines = self.options["options"]["n_anchors"]
 
-        ms = mp.System()
+        line_props = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
             mass_den = float(inputs["line_mass_density_coeff"][0]) * d**2
             cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
-            line_props = ms.setLineType(1e3 * d/1.89, material='chain_studlink')
+            line_props = getLineProps(1e3 * d/1.89, material='chain_studlink', source='default')
         else:
-            line_props = ms.setLineType(1e3 * d/1.8, material=line_mat)
+            line_props = getLineProps(1e3 * d/1.8, material=line_mat, source='default')
 
         if line_props is not None:
             mass_den = line_props['m']
