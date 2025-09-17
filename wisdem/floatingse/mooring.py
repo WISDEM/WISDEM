@@ -173,15 +173,17 @@ class Mooring(om.ExplicitComponent):
             ea_stiff = float(inputs["line_stiffness_coeff"][0]) * d**2
             cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
-            line_obj = props.getLineProps(1e3 * d/1.89, type="chain", stud="stud")  # MoorPy uses nominal diameter for getting chain props, windIO uses volume equivalent (https://www.orcina.com/webhelp/OrcaFlex/Content/html/Chain.htm)
+            ms = mp.System()
+            line_props = ms.setLineType(1e3 * d/1.89, material='chain_studlink')
         else:
-            line_obj = props.getLineProps(1e3 * d/1.8, type=line_mat)  # MoorPy uses nominal diameter for getting chain props, windIO uses volume equivalent (https://www.orcina.com/webhelp/OrcaFlex/Content/html/Chain.htm)
+            ms = mp.System()
+            line_props = ms.setLineType(1e3 * d/1.8, material='chain')
 
-        if not line_obj is None:
-            min_break_load = line_obj.MBL
-            mass_den = line_obj.m
-            ea_stiff = line_obj.EA
-            cost_rate = line_obj.cost
+        if not line_props is None:
+            min_break_load = line_props['MBL']
+            mass_den = line_props['m']
+            ea_stiff = line_props['EA']
+            cost_rate = line_props['cost']
 
         # Geometric constraints on line length
         if L_mooring > (water_depth - fairlead_depth):
@@ -336,19 +338,19 @@ class Mooring(om.ExplicitComponent):
             anchor_mass = 0.0  # TODO
         n_anchors = n_lines = self.options["options"]["n_anchors"]
 
-        line_obj = None
+        ms = mp.System()
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
             mass_den = float(inputs["line_mass_density_coeff"][0]) * d**2
             cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
-            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
+            line_props = ms.setLineType(1e3 * d/1.89, material='chain_studlink')
         else:
-            line_obj = props.getLineProps(1e3 * d, type=line_mat)
+            line_props = ms.setLineType(1e3 * d/1.8, material=line_mat)
 
-        if not line_obj is None:
-            mass_den = line_obj.m
-            cost_rate = line_obj.cost
+        if line_props is not None:
+            mass_den = line_props['m']
+            cost_rate = line_props['cost']
 
         # Cost of anchors
         anchor_total = anchor_rate * n_anchors

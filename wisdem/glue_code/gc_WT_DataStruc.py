@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import moorpy.MoorProps as mp
+import moorpy as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -2880,39 +2880,39 @@ class MooringProperties(om.ExplicitComponent):
         outputs["unstretched_length"] = inputs["unstretched_length_in"] * np.ones(n_lines)
         d2 = d * d
 
-        line_obj = None
-        if line_mat[0] == "custom":
-            varlist = [
-                "line_mass_density",
-                "line_stiffness",
-                "line_breaking_load",
-                "line_cost_rate",
-                "line_transverse_added_mass",
-                "line_tangential_added_mass",
-                "line_transverse_drag",
-                "line_tangential_drag",
-            ]
-            for var in varlist:
-                outputs[var] = d2 * inputs[var + "_coeff"]
+        for i_line, lm in enumerate(line_mat):
+            if lm == "custom":
+                varlist = [
+                    "line_mass_density",
+                    "line_stiffness",
+                    "line_breaking_load",
+                    "line_cost_rate",
+                    "line_transverse_added_mass",
+                    "line_tangential_added_mass",
+                    "line_transverse_drag",
+                    "line_tangential_drag",
+                ]
+                for var in varlist:
+                    outputs[var][i_line] = d2 * inputs[var + "_coeff"]
 
-        elif line_mat[0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d[0] / 1.89, type="chain", stud="stud")
-        else:
-            line_obj = mp.getLineProps(1e3 * d[0] / 1.8, type=line_mat[0])
+            elif lm == "chain_stud":
+                ms = mp.System()
+                line_props = ms.setLineType(1e3 * d[i_line]/1.89, material='chain_studlink')
+            else:
+                ms = mp.System()
+                line_props = ms.setLineType(1e3 * d[i_line]/1.8, material='chain')
 
-        if not line_obj is None:
-            outputs["line_mass_density"] = line_obj.m
-            outputs["line_stiffness"] = line_obj.EA
-            outputs["line_breaking_load"] = line_obj.MBL
-            outputs["line_cost_rate"] = line_obj.cost
-            varlist = [
-                "line_transverse_added_mass",
-                "line_tangential_added_mass",
-                "line_transverse_drag",
-                "line_tangential_drag",
-            ]
-            for var in varlist:
-                outputs[var] = d2 * inputs[var + "_coeff"]
+            if line_props is not None:
+                outputs["line_mass_density"][i_line] = line_props['m']
+                outputs["line_stiffness"][i_line] = line_props['EA']
+                outputs["line_breaking_load"][i_line] = line_props['MBL']
+                outputs["line_cost_rate"][i_line] = line_props['cost']
+
+                outputs["line_transverse_added_mass"][i_line] = line_props['Ca']
+                outputs["line_tangential_added_mass"][i_line] = line_props['CaAx']
+                outputs["line_transverse_drag"][i_line] = line_props['Cd']
+                outputs["line_tangential_drag"][i_line] = line_props['CdAx']
+
 
 
 class MooringJoints(om.ExplicitComponent):
