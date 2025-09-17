@@ -3,7 +3,7 @@ import os
 import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
-from wisdem.optimization_drivers.nsga2_driver import NSGA2Driver
+# from wisdem.optimization_drivers.nsga2_driver import NSGA2Driver
 
 class PoseOptimization(object):
     def __init__(self, wt_init, modeling_options, analysis_options):
@@ -178,6 +178,7 @@ class PoseOptimization(object):
                     wt_opt.driver.options["hotstart_file"] = opt_options["hotstart_file"] # File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
 
             elif opt_options["solver"] == "NSGA2":
+                raise Exception('NSGA2 is not yet supported')
                 wt_opt.driver = NSGA2Driver()
                 options_keys = [
                     "max_gen",
