@@ -4,7 +4,7 @@ from itertools import islice
 import numpy as np
 from numpy.typing import ArrayLike
 
-from mpi4py import MPI
+from openmdao.utils.mpi import MPI
 
 from wisdem.optimization_drivers.nsga2.fast_nondom_sort import fast_nondom_sort
 from wisdem.optimization_drivers.nsga2.crowding_distance_assignment import crowding_distance_assignment
@@ -42,7 +42,8 @@ class NSGA2:
 
     feasibility_dominates: bool = True  # use feasibility in the sorting process?
 
-    comm_mpi: MPI.Comm = None  # MPI communicator for parallel evaluation
+    if MPI:
+        comm_mpi: MPI.Comm = None  # MPI communicator for parallel evaluation
     model_mpi: tuple[int, int] = None  # parallelization model: size, color
     # follows the format used by openmdao/openmdao/utils/concurrent_utils.py
 
@@ -60,7 +61,7 @@ class NSGA2:
         design_vars_l: ArrayLike = None,  # the lower bound of the DVs
         design_vars_u: ArrayLike = None,  # the upper bound of the DVs
         params_override=(None, None, None, None),  # override params for NSGA-II
-        comm_mpi: MPI.Comm = None,  # communicator for parallel implementation
+        comm_mpi = None,  # communicator for parallel implementation, comm_mpi should be MPI.Comm
         model_mpi: tuple[int, int] = None,  # model for spreading work across processes
         verbose: bool = False,  # verbose outputs
         rng_seed: int = None,  # rng seed
