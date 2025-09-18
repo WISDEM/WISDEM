@@ -1,6 +1,5 @@
-from threading import local
 import time
-from itertools import chain, islice
+from itertools import islice
 
 import numpy as np
 from numpy.typing import ArrayLike
