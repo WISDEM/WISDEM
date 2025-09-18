@@ -1252,7 +1252,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             if isinstance(floating["members"][i][coeff], list):
                 coeff_length = len(floating["members"][i][coeff])
                 if usr_defined_flag[coeff]:
-                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+                    assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length ({grid_length}). Please correct."
             else:
             # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
                 floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
@@ -1497,11 +1497,18 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
-    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
     wt_opt["control.fix_pitch_regI12"] = control["pitch"]["fix_pitch_regI12"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
+
+    if 'ROSCO' in modeling_options:  # Will only be there if called by WEIS
+        if modeling_options['ROSCO']['ps_percent'] != control["pitch"]["ps_percent"]:
+            logger.warning(
+                f"The ROSCO (modeling) ps_percent does not match the WindIO (geometry) ps_percent.  Using the ROSCO value of {modeling_options['ROSCO']['ps_percent']:.2f}."
+            )
+    else:
+        wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
 
     return wt_opt
 

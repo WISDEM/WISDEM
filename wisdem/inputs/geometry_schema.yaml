@@ -1638,6 +1638,8 @@ properties:
                                 - reactions
                                 - transition
                                 - cylindrical
+                                - relative
+                                - axial_coeffs
                             properties:
                                 name:
                                     description: Unique name of the joint (node)
@@ -1658,6 +1660,37 @@ properties:
                                     description: Whether to use cylindrical coordinates (r,θ,z), with (r,θ) lying in the x/y-plane, instead of Cartesian coordinates.
                                     type: boolean
                                     default: False
+                                relative:
+                                    description: Make this joint relative to the stated joint, non-cylindrical only
+                                    default: origin
+                                    type: string
+                                relative_dims:
+                                    description: Three dimensional boolean array denoting which dimensions are relative
+                                    default: [True, True, True]
+                                    type: array
+                                    items:
+                                        type: boolean
+                                axial_coeffs:
+                                    description: Axial hydrodynamic coefficients used in OpenFAST, unused in WISDEM
+                                    type: object
+                                    default: {}
+                                    optional:
+                                        - Ca
+                                        - Cd
+                                        - Cp
+                                    properties:
+                                        Ca:
+                                            description: Coefficient of added mass
+                                            type: number
+                                            default: 0.0
+                                        Cd:
+                                            description: Coefficient of drag
+                                            type: number
+                                            default: 0.0
+                                        Cp:
+                                            description: Coefficient of dynamic pressure
+                                            type: number
+                                            default: 0.0
                                 reactions:
                                     # TODO: How to do carabiner type joints that only support tension and not compression?
                                     type: object
@@ -2007,6 +2040,10 @@ properties:
                                 Cdy:
                                     <<: *cd
                                     description: User-defined drag coefficient in y-direction
+                                no_intersect:
+                                    description: This member is parallel to another and intersecting "ghost nodes" should not be calculated.  An example is a heave plate.
+                                    type: boolean
+                                    default: False
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties

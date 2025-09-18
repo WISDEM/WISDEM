@@ -58,7 +58,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
     return p6, p6_0
 
 
-def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True, skip_duplicates=False):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
@@ -105,8 +105,11 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
             if expect_all and ix >= nfreq2:
                 continue
             imode = xroot1[m]
-            if imode != ix and ix<2:
-                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode numbder identified as {imode+1} going into slot {ix+1}")
+            if imode != ix and ix<2:   # Already detected the ith mode
+                logger.warning(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
+                if skip_duplicates:
+                    logger.warning("Skipping duplicate mode.")
+                    continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
@@ -114,8 +117,11 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
             if expect_all and iy >= nfreq2:
                 continue
             imode = yroot1[m]
-            if imode != iy and iy<2:
-                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode numbder identified as {imode+1} going into slot {iy+1}")
+            if imode != iy and iy<2: # Already detected the ith mode
+                logger.warning(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
+                if skip_duplicates:
+                    logger.warning("Skipping duplicate mode.")
+                    continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
@@ -125,7 +131,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
             # Torsional modes are not well captured by Frame3DD
             #imode = zroot1[m]
             #if imode != iz and iz<2:
-            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode numbder identified as {imode+1} going into slot {iz+1}")
+            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode number identified as {imode+1} going into slot {iz+1}")
             mshapes_z[iz, :] = zpolys[m, :]
             freq_z[iz] = freqs[m]
             iz += 1

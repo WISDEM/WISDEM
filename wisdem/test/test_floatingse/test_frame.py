@@ -24,6 +24,7 @@ class TestFrame(unittest.TestCase):
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        opt["floating"]["members"]["name"] = [chr(ord('a') + i) for i in range(n_member)]  # a though f
         opt["floating"]["rigid_bodies"] = {}
         opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
@@ -40,13 +41,14 @@ class TestFrame(unittest.TestCase):
         opt["mooring"]["n_attach"] = 3
 
         for k in range(n_member):
+            kname = opt["floating"]["members"]["name"][k]
             for var in ["Px", "Py", "Pz", "qdyn"]:
-                inputs[f"member{k}:{var}"] = NULL * np.ones((MEMMAX, 1))
+                inputs[f"member{k}_{kname}:{var}"] = NULL * np.ones((MEMMAX, 1))
 
-            inputs[f"member{k}:Px"][:2, :] = 1.0
-            inputs[f"member{k}:Py"][:2, :] = 2.0
-            inputs[f"member{k}:Pz"][:2, :] = 3.0
-            inputs[f"member{k}:qdyn"][:2, :] = 4.0
+            inputs[f"member{k}_{kname}:Px"][:2, :] = 1.0
+            inputs[f"member{k}_{kname}:Py"][:2, :] = 2.0
+            inputs[f"member{k}_{kname}:Pz"][:2, :] = 3.0
+            inputs[f"member{k}_{kname}:qdyn"][:2, :] = 4.0
 
         myobj = frame.PlatformLoads(options=opt)
         myobj.compute(inputs, outputs)
@@ -81,6 +83,7 @@ class TestFrame(unittest.TestCase):
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
+        opt["floating"]["members"]["name"] = [chr(ord('a') + i) for i in range(n_member)]  # a though f
         opt["floating"]["rigid_bodies"] = {}
         opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
@@ -99,8 +102,9 @@ class TestFrame(unittest.TestCase):
         inputs["tower_nodes"] = NULL * np.ones((MEMMAX, 3))
         inputs["tower_Rnode"] = NULL * np.ones(MEMMAX)
         for k in range(n_member):
-            inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
-            inputs[f"member{k}:nodes_r"] = NULL * np.ones(MEMMAX)
+            kname = opt["floating"]["members"]["name"][k]
+            inputs[f"member{k}_{kname}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
+            inputs[f"member{k}_{kname}:nodes_r"] = NULL * np.ones(MEMMAX)
 
         for var in [
             "D",
@@ -123,54 +127,56 @@ class TestFrame(unittest.TestCase):
         ]:
             inputs["tower_elem_" + var] = NULL * np.ones(MEMMAX)
             for k in range(n_member):
+                kname = opt["floating"]["members"]["name"][k]
                 if var in ["Px", "Py", "Pz", "qdyn"]:
-                    inputs[f"member{k}:{var}"] = NULL * np.ones((MEMMAX, 1))
+                    inputs[f"member{k}_{kname}:{var}"] = NULL * np.ones((MEMMAX, 1))
                 else:
-                    inputs[f"member{k}:section_{var}"] = NULL * np.ones(MEMMAX)
+                    inputs[f"member{k}_{kname}:section_{var}"] = NULL * np.ones(MEMMAX)
 
-        inputs["member0:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
-        inputs["member1:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
-        inputs["member2:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
-        inputs["member3:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
-        inputs["member4:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
-        inputs["member5:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
+        inputs["member0_a:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
+        inputs["member1_b:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
+        inputs["member2_c:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 0]])
+        inputs["member3_d:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [0, 0, 1]])
+        inputs["member4_e:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0, 0, 1]])
+        inputs["member5_f:nodes_xyz"][:2, :] = np.array([[0.5, 1, 0], [0, 0, 1]])
         for k in range(n_member):
-            L = np.sqrt(np.sum(np.diff(inputs[f"member{k}:nodes_xyz"][:2, :], axis=0) ** 2))
-            inputs[f"member{k}:nodes_r"][:2] = 0.1 * k * np.ones(2)
-            inputs[f"member{k}:section_D"][:1] = 2.0
-            inputs[f"member{k}:section_t"][:1] = 0.1
-            inputs[f"member{k}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_J0"][:1] = 2 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
-            inputs[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
-            inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
-            inputs[f"member{k}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
-            inputs[f"member{k}:buoyancy_force"] = np.array([ 1e2 ])
-            inputs[f"member{k}:displacement"] = np.array([ 1e1 ])
-            inputs[f"member{k}:center_of_buoyancy"] = inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            inputs[f"member{k}:center_of_mass"] = inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            inputs[f"member{k}:total_mass"] = np.array([ 1e3 ])
-            inputs[f"member{k}:total_cost"] = np.array([ 2e3 ])
-            inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
-            inputs[f"member{k}:Awater"] = np.array([ 5.0 ])
-            inputs[f"member{k}:Iwaterx"] = np.array([ 15.0 ])
-            inputs[f"member{k}:Iwatery"] = np.array([ 15.0 ])
-            inputs[f"member{k}:added_mass"] = np.arange(6)
-            inputs[f"member{k}:ballast_mass"] = np.array([ 1e2 ])
-            inputs[f"member{k}:variable_ballast_capacity"] = np.array([ 10 + k ])
-            inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
-            inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
-            inputs[f"member{k}:waterline_centroid"] = inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
-            inputs[f"member{k}:Px"][:2, :] = 1.0
-            inputs[f"member{k}:Py"][:2, :] = 2.0
-            inputs[f"member{k}:Pz"][:2, :] = 3.0
-            inputs[f"member{k}:qdyn"][:2, :] = 4.0
+            kname = opt["floating"]["members"]["name"][k]
+            L = np.sqrt(np.sum(np.diff(inputs[f"member{k}_{kname}:nodes_xyz"][:2, :], axis=0) ** 2))
+            inputs[f"member{k}_{kname}:nodes_r"][:2] = 0.1 * k * np.ones(2)
+            inputs[f"member{k}_{kname}:section_D"][:1] = 2.0
+            inputs[f"member{k}_{kname}:section_t"][:1] = 0.1
+            inputs[f"member{k}_{kname}:section_A"][:1] = 0.5 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_Ixx"][:1] = 2 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_Iyy"][:1] = 2 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_J0"][:1] = 2 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
+            inputs[f"member{k}_{kname}:section_E"][:1] = 3 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
+            inputs[f"member{k}_{kname}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
+            inputs[f"member{k}_{kname}:buoyancy_force"] = np.array([ 1e2 ])
+            inputs[f"member{k}_{kname}:displacement"] = np.array([ 1e1 ])
+            inputs[f"member{k}_{kname}:center_of_buoyancy"] = inputs[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            inputs[f"member{k}_{kname}:center_of_mass"] = inputs[f"member{k}_{kname}:nodes_xyz"][:2, :].mean(axis=0)
+            inputs[f"member{k}_{kname}:total_mass"] = np.array([ 1e3 ])
+            inputs[f"member{k}_{kname}:total_cost"] = np.array([ 2e3 ])
+            inputs[f"member{k}_{kname}:I_total"] = 1e2 + np.arange(6)
+            inputs[f"member{k}_{kname}:Awater"] = np.array([ 5.0 ])
+            inputs[f"member{k}_{kname}:Iwaterx"] = np.array([ 15.0 ])
+            inputs[f"member{k}_{kname}:Iwatery"] = np.array([ 15.0 ])
+            inputs[f"member{k}_{kname}:added_mass"] = np.arange(6)
+            inputs[f"member{k}_{kname}:ballast_mass"] = np.array([ 1e2 ])
+            inputs[f"member{k}_{kname}:variable_ballast_capacity"] = np.array([ 10 + k ])
+            inputs[f"member{k}_{kname}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
+            inputs[f"member{k}_{kname}:variable_ballast_Vpts"] = np.arange(10)
+            inputs[f"member{k}_{kname}:waterline_centroid"] = inputs[f"member{k}_{kname}:nodes_xyz"][:2, :2].mean(axis=0)
+            inputs[f"member{k}_{kname}:Px"][:2, :] = 1.0
+            inputs[f"member{k}_{kname}:Py"][:2, :] = 2.0
+            inputs[f"member{k}_{kname}:Pz"][:2, :] = 3.0
+            inputs[f"member{k}_{kname}:qdyn"][:2, :] = 4.0
 
         inputs["mooring_neutral_load"] = np.zeros((3, 3))
         inputs["mooring_neutral_load"][:, 0] = [200, -100.0, -100]
@@ -178,7 +184,7 @@ class TestFrame(unittest.TestCase):
         inputs["mooring_neutral_load"][:, 2] = -1e3
         inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         inputs["mooring_stiffness"] = 5 * np.eye(6)
-        inputs["transition_node"] = inputs["member0:nodes_xyz"][1, :]
+        inputs["transition_node"] = inputs["member0_a:nodes_xyz"][1, :]
         inputs["turbine_mass"] = np.array([ 1e4 ])
         inputs["turbine_cg"] = np.array([0, 0, 50])
         inputs["turbine_I"] = 1e6 * np.ones(6)
@@ -197,7 +203,7 @@ class TestFrame(unittest.TestCase):
             inputs[k] = outputs[k]
         for k in discrete_outputs:
             discrete_inputs[k] = discrete_outputs[k]
-        myobj = sys.PlatformTurbineSystem()
+        myobj = sys.PlatformTurbineSystem(options=opt)
         myobj.compute(inputs, outputs)
         for k in outputs:
             inputs[k] = outputs[k]

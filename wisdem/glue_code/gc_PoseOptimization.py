@@ -3,7 +3,7 @@ import os
 import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
-
+# from wisdem.optimization_drivers.nsga2_driver import NSGA2Driver
 
 class PoseOptimization(object):
     def __init__(self, wt_init, modeling_options, analysis_options):
@@ -34,12 +34,12 @@ class PoseOptimization(object):
         self.pyoptsparse_methods = [
             "SNOPT",
             "CONMIN",
-            "NSGA2",
+            # "NSGA2",
         ]
 
         self.floating_solve_component = 'floatingse'
         self.floating_period_solve_component = 'floatingse'
-        
+
     def _get_step_size(self):
         # If a step size for the driver-level finite differencing is provided, use that step size. Otherwise use a default value.
         return (
@@ -169,13 +169,31 @@ class PoseOptimization(object):
                         wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
                     else:
                         wt_opt.driver.opt_settings["Verify level"] = -1
-                        
+
                 # below are pyoptsparse options
                 wt_opt.driver.options["output_dir"] = folder_output # Directory location of pyopt_sparse output files.Default is {prob_name}_out/reports. OpenMDAO overwrties SNOPT output file locations.
                 if "hist_file_name" in opt_options:
                     wt_opt.driver.options["hist_file"] = os.path.join(folder_output, opt_options["hist_file_name"]) # File location for saving pyopt_sparse optimization history. Default is None for no output.
                 if "hotstart_file" in opt_options:
                     wt_opt.driver.options["hotstart_file"] = opt_options["hotstart_file"] # File location of a pyopt_sparse optimization history to use to hot start the optimization. Default is None.
+
+            elif opt_options["solver"] == "NSGA2":
+                raise Exception('NSGA2 is not yet supported')
+                wt_opt.driver = NSGA2Driver()
+                options_keys = [
+                    "max_gen",
+                    "pop_size",
+                    "run_parallel",
+                    "procs_per_model",
+                    "penalty_parameter",
+                    "penalty_exponent",
+                    "Pc",
+                    "eta_c",
+                    "Pm",
+                    "eta_m",
+                    "compute_pareto",
+                ]
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
 
             elif opt_options["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
@@ -279,92 +297,118 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_objective(self, wt_opt):
-        # Set merit figure. Each objective has its own scaling.  Check first for user override
-        if self.opt["merit_figure_user"]["name"] != "":
-            coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
-            wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
-                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
 
-        elif self.opt["merit_figure"].lower() == "aep":
+        if isinstance(self.opt['merit_figure_user'], dict):
+            self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]    
+
+        for merit_figure_user in self.opt['merit_figure_user']:
+            self.set_merit_figure_user(wt_opt, merit_figure_user)       
+
+
+        # make merit figure a list if it is not already
+        if isinstance(self.opt['merit_figure'], str):
+            self.opt['merit_figure'] = [self.opt['merit_figure']]
+
+        for merit_figure in self.opt['merit_figure']:
+            if merit_figure.lower() != 'none':
+                wt_opt = self.set_merit_figure(wt_opt, merit_figure)
+
+        return wt_opt
+
+    def set_merit_figure_user(self, wt_opt, merit_figure_user):
+        # Set merit figure. Each objective has its own scaling.  Check first for user override
+        if merit_figure_user["name"] != "":
+            coeff = -1.0 if merit_figure_user["max_flag"] else 1.0
+            wt_opt.model.add_objective(merit_figure_user["name"],
+                                       ref=coeff*np.abs(merit_figure_user["ref"]))    
+
+
+
+
+    def set_merit_figure(self, wt_opt, merit_figure):
+        # Set a single merit figure
+        # merit_figure is a single string
+
+        if merit_figure.lower() == "aep":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
-        elif self.opt["merit_figure"] == "blade_mass":
+        elif merit_figure == "blade_mass":
             wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e6)
 
-        elif self.opt["merit_figure"] == "blade_cost":
+        elif merit_figure == "blade_cost":
             wt_opt.model.add_objective("rotorse.total_bc.total_blade_cost", ref=1.0e6)
 
-        elif self.opt["merit_figure"].lower() == "lcoe":
+        elif merit_figure.lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
 
-        elif self.opt["merit_figure"] == "blade_tip_deflection":
+        elif merit_figure == "blade_tip_deflection":
             wt_opt.model.add_objective("tcons.tip_deflection_ratio")
 
-        elif self.opt["merit_figure"] == "tower_mass":
+        elif merit_figure == "tower_mass":
             wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "tower_cost":
+        elif merit_figure == "tower_cost":
             wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
-            
-        elif self.opt["merit_figure"] == "monopile_mass":
+
+        elif merit_figure == "monopile_mass":
             wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "monopile_cost":
+        elif merit_figure == "monopile_cost":
             wt_opt.model.add_objective("fixedse.monopile_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "jacket_mass":
+        elif merit_figure == "jacket_mass":
             wt_opt.model.add_objective("fixedse.jacket_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "structural_mass":
+        elif merit_figure == "structural_mass":
             if not self.modeling["flags"]["floating"]:
                 wt_opt.model.add_objective("fixedse.structural_mass", ref=1e6)
             else:
                 wt_opt.model.add_objective("floatingse.system_structural_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "hub_mass":
+        elif merit_figure == "hub_mass":
             wt_opt.model.add_objective("drivese.hub_system_mass", ref=1e5)
 
-        elif self.opt["merit_figure"] == "nacelle_mass":
+        elif merit_figure == "nacelle_mass":
             wt_opt.model.add_objective("drivese.nacelle_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "nacelle_cost":
+        elif merit_figure == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_hull_mass":
+        elif merit_figure == "platform_hull_mass":
             wt_opt.model.add_objective("floatingse.platform_hull_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_mass":
+        elif merit_figure == "platform_mass":
             wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_cost":
+        elif merit_figure == "platform_cost":
             wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "mooring_mass":
+        elif merit_figure == "mooring_mass":
             wt_opt.model.add_objective("floatingse.mooring_mass", ref=1e4)
 
-        elif self.opt["merit_figure"] == "mooring_cost":
+        elif merit_figure == "mooring_cost":
             wt_opt.model.add_objective("floatingse.mooring_cost", ref=1e4)
 
-        elif self.opt["merit_figure"] == "Cp":
+        elif merit_figure == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
 
-        elif self.opt["merit_figure"] in ["turbine_cost", "turbine_capex"]:
+        elif merit_figure in ["turbine_cost", "turbine_capex"]:
             wt_opt.model.add_objective("tcc.turbine_cost_kW", ref=1e3)
 
-        elif self.opt["merit_figure"] in ["bos", "bos_cost", "bos_capex"]:
+        elif merit_figure in ["bos", "bos_cost", "bos_capex"]:
             if self.modeling["flags"]["offshore"]:
                 wt_opt.model.add_objective("orbit.total_capex_kW", ref=1e3)
             else:
                 wt_opt.model.add_objective("landbosse.total_capex_kW", ref=1e3)
 
-        elif self.opt["merit_figure"] == "inverse_design":
+        elif merit_figure == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
 
         else:
-            raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
+            raise ValueError("The merit figure " + merit_figure + " is unknown or not supported.")
 
         return wt_opt
 
@@ -1045,7 +1089,7 @@ class PoseOptimization(object):
             upper_value = target + error
             lower_value = target - error
             wt_opt.model.add_constraint("rotorse.rp.powercurve.rated_V", upper = upper_value, lower = lower_value, ref = 10.0)
-            
+
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
                 "rotorse.ccblade.CM",
@@ -1161,7 +1205,7 @@ class PoseOptimization(object):
             upper_value = target + error
             lower_value = target - error
             wt_opt.model.add_constraint("towerse.tower_mass", upper = upper_value, lower = lower_value, ref = 1.e+6)
-            
+
         if monopile_constr["stress"]["flag"] and tower_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_stress", upper=1.0)
         elif monopile_constr["stress"]["flag"]:
@@ -1206,7 +1250,7 @@ class PoseOptimization(object):
 
         if monopile_constr["tower_diameter_coupling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
-            
+
         if monopile_constr["mass"]["flag"]:
             target = monopile_constr["mass"]["target"]
             error = monopile_constr["mass"]["acceptable_error"]
@@ -1345,7 +1389,7 @@ class PoseOptimization(object):
                 idx_k = user_constr[k]["indices"]
             else:
                 idx_k = None
-            
+
             if "ref" in user_constr[k]:
                 ref_k = user_constr[k]["ref"]
             else:
@@ -1428,7 +1472,7 @@ class PoseOptimization(object):
                 )
                 init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
-            
+
             if not self.modeling["user_elastic"]["blade"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
                 layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
