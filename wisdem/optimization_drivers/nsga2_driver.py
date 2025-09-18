@@ -1,7 +1,7 @@
 import os
 import copy
 from pprint import pprint
-from wisdem.inputs import write_yaml
+from wisdem.inputs.validation import write_yaml
 from wisdem.inputs.validation import simple_types
 
 import numpy as np

@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import moorpy.MoorProps as mp
+from moorpy.helpers import getLineProps
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -201,7 +201,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
-            ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
+            if 'ROSCO' not in modeling_options: # If using WEIS, ps_percent will be set there
+                ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
             ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
@@ -2537,15 +2538,15 @@ class Floating(om.Group):
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
-            self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect(f"memgrp{idx}.grid_axial_joints", f"member{i}_{name_member}:grid_axial_joints")
             if floating_init_options["members"]["outer_shape"][i] == "circular":
-                self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+                self.connect(f"memgrid{idx}.outer_diameter", f"member{i}_{name_member}:outer_diameter")
             elif floating_init_options["members"]["outer_shape"][i] == "rectangular":
                 # TODO: AggregatedJoints hasn't included rectangular yet, so no connection now
                 print("WARNING: AggregatedJoints hasn't included rectangular yet")
-                # self.connect(f"memgrid{idx}.side_length_a", "member_" + name_member + ":side_length_a")
-                # self.connect(f"memgrid{idx}.side_length_b", "member_" + name_member + ":side_length_b")
-            self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
+                # self.connect(f"memgrid{idx}.side_length_a", f"member{i}_{name_member}:side_length_a")
+                # self.connect(f"memgrid{idx}.side_length_b", f"member{i}_{name_member}:side_length_b")
+            self.connect(f"memgrp{idx}.s", f"member{i}_{name_member}:s")
 
 
 # Component that links certain nodes together in a specific dimension for optimization
@@ -2667,15 +2668,15 @@ class AggregateJoints(om.ExplicitComponent):
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             i_grid = len(floating_init_options["members"]["grid_member_" + iname])
 
-            self.add_input("member_" + iname + ":s", val=np.zeros(i_grid))
-            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid), units="m")
-            self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
+            self.add_input(f"member{i}_{iname}:s", val=np.zeros(i_grid))
+            self.add_input(f"member{i}_{iname}:outer_diameter", val=np.zeros(i_grid), units="m")
+            self.add_input(f"member{i}_{iname}:grid_axial_joints", val=np.zeros(i_axial_joints))
 
-            self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
-            self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
-            self.add_output("member_" + iname + ":height", val=0.0, units="m")
-            self.add_output("member_" + iname + ":s_ghost1", val=0.0)
-            self.add_output("member_" + iname + ":s_ghost2", val=1.0)
+            self.add_output(f"member{i}_{iname}:joint1", val=np.zeros(3), units="m")
+            self.add_output(f"member{i}_{iname}:joint2", val=np.zeros(3), units="m")
+            self.add_output(f"member{i}_{iname}:height", val=0.0, units="m")
+            self.add_output(f"member{i}_{iname}:s_ghost1", val=0.0)
+            self.add_output(f"member{i}_{iname}:s_ghost2", val=1.0)
 
         self.add_output("joints_xyz", val=np.zeros((n_joints_tot, 3)), units="m")
 
@@ -2698,6 +2699,20 @@ class AggregateJoints(om.ExplicitComponent):
         locations_xyz = locations.copy()
         locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(locations[icyl, 1])
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
+
+        # Handle relative joints
+        joint_names = floating_init_options['joints']['name']
+        for i_joint in range(floating_init_options['joints']['n_joints']):
+            rel_joint = floating_init_options['joints']['relative'][i_joint]     # name of joint relative to this joint
+            if rel_joint != 'origin':  # is a relative joint
+                if rel_joint not in joint_names:
+                    raise Exception(f'The relative joint {joint_names[i_joint]} is not relative to an existing joint.  Relative joint provided: {rel_joint}')
+                
+                rel_joint_location = locations_xyz[name2idx[rel_joint]]
+                relative_dimensions = np.array(floating_init_options['joints']['relative_dims'][i_joint])  # These joints are relative
+                locations_xyz[i_joint][relative_dimensions] += rel_joint_location[relative_dimensions]
+
+
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node
@@ -2727,12 +2742,12 @@ class AggregateJoints(om.ExplicitComponent):
                     continue
 
                 iname = memopt["name"][k]
-                s = 0.5 * inputs["member_" + iname + ":s"]
-                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                s = 0.5 * inputs[f"member{k}_{iname}:s"]
+                Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
                 dxyz = joint2xyz - joint1xyz
 
                 for a in range(i_axial_joints):
-                    s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
+                    s_axial = inputs[f"member{k}_{iname}:grid_axial_joints"][a]
                     joints_xyz[count, :] = joint1xyz + s_axial * dxyz
 
                     Ra = PchipInterpolator(s, Rk)(s_axial)
@@ -2750,32 +2765,36 @@ class AggregateJoints(om.ExplicitComponent):
             joint1xyz = joints_xyz[joint1id, :]
             joint2xyz = joints_xyz[joint2id, :]
             hk = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
-            outputs["member_" + iname + ":joint1"] = joint1xyz
-            outputs["member_" + iname + ":joint2"] = joint2xyz
-            outputs["member_" + iname + ":height"] = hk
+            outputs[f"member{k}_{iname}:joint1"] = joint1xyz
+            outputs[f"member{k}_{iname}:joint2"] = joint2xyz
+            outputs[f"member{k}_{iname}:height"] = hk
 
-            # Largest radius at connection points for this member
-            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
-            node_r[joint1id] = max(node_r[joint1id], Rk[0])
-            node_r[joint2id] = max(node_r[joint2id], Rk[-1])
-            intersects[joint1id] += 1
-            intersects[joint2id] += 1
+            # Largest radius at connection points for this member,
+            # Don't check radius and add an intersection if the member is parallel to the one it's connecting to
+            # The ghost node calculations pre-suppose that joints join orthogonal members, but if the member is parallel to another, the
+            # no_intersect flag should be used.  no_intersect should be used for modeling heave plates 
+            if not floating_init_options['members']['no_intersect'][k]:
+                Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
+                node_r[joint1id] = max(node_r[joint1id], Rk[0])
+                node_r[joint2id] = max(node_r[joint2id], Rk[-1])
+                intersects[joint1id] += 1
+                intersects[joint2id] += 1
 
         # Store the ghost node non-dimensional locations
         for k in range(n_members):
             iname = memopt["name"][k]
             joint1id = name2idx[memopt["joint1"][k]]
             joint2id = name2idx[memopt["joint2"][k]]
-            hk = outputs["member_" + iname + ":height"]
-            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            hk = outputs[f"member{k}_{iname}:height"]
+            Rk = 0.5 * inputs[f"member{k}_{iname}:outer_diameter"]
             s_ghost1 = 0.0
             s_ghost2 = 1.0
             if intersects[joint1id] > 1 and node_r[joint1id] > Rk[0]:
                 s_ghost1 = node_r[joint1id] / hk
             if intersects[joint2id] > 1 and node_r[joint2id] > Rk[-1]:
                 s_ghost2 = 1.0 - node_r[joint2id] / hk
-            outputs["member_" + iname + ":s_ghost1"] = s_ghost1
-            outputs["member_" + iname + ":s_ghost2"] = s_ghost2
+            outputs[f"member{k}_{iname}:s_ghost1"] = s_ghost1
+            outputs[f"member{k}_{iname}:s_ghost2"] = s_ghost2
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
@@ -2861,39 +2880,36 @@ class MooringProperties(om.ExplicitComponent):
         outputs["unstretched_length"] = inputs["unstretched_length_in"] * np.ones(n_lines)
         d2 = d * d
 
-        line_obj = None
-        if line_mat[0] == "custom":
-            varlist = [
-                "line_mass_density",
-                "line_stiffness",
-                "line_breaking_load",
-                "line_cost_rate",
-                "line_transverse_added_mass",
-                "line_tangential_added_mass",
-                "line_transverse_drag",
-                "line_tangential_drag",
-            ]
-            for var in varlist:
-                outputs[var] = d2 * inputs[var + "_coeff"]
+        for i_line, lm in enumerate(line_mat):
+            if lm == "custom":
+                varlist = [
+                    "line_mass_density",
+                    "line_stiffness",
+                    "line_breaking_load",
+                    "line_cost_rate",
+                    "line_transverse_added_mass",
+                    "line_tangential_added_mass",
+                    "line_transverse_drag",
+                    "line_tangential_drag",
+                ]
+                for var in varlist:
+                    outputs[var][i_line] = d2 * inputs[var + "_coeff"]
 
-        elif line_mat[0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d[0] / 1.89, type="chain", stud="stud")
-        else:
-            line_obj = mp.getLineProps(1e3 * d[0] / 1.8, type=line_mat[0])
+            elif lm == "chain_stud":
+                line_props = getLineProps(1e3 * d[i_line]/1.89, material='chain_studlink', source='default')
+            else:
+                line_props = getLineProps(1e3 * d[i_line]/1.8, material='chain', source='default')
+            if line_props is not None:
+                outputs["line_mass_density"][i_line] = line_props['m']
+                outputs["line_stiffness"][i_line] = line_props['EA']
+                outputs["line_breaking_load"][i_line] = line_props['MBL']
+                outputs["line_cost_rate"][i_line] = line_props['cost']
 
-        if not line_obj is None:
-            outputs["line_mass_density"] = line_obj.m
-            outputs["line_stiffness"] = line_obj.EA
-            outputs["line_breaking_load"] = line_obj.MBL
-            outputs["line_cost_rate"] = line_obj.cost
-            varlist = [
-                "line_transverse_added_mass",
-                "line_tangential_added_mass",
-                "line_transverse_drag",
-                "line_tangential_drag",
-            ]
-            for var in varlist:
-                outputs[var] = d2 * inputs[var + "_coeff"]
+                outputs["line_transverse_added_mass"][i_line] = line_props['Ca']
+                outputs["line_tangential_added_mass"][i_line] = line_props['CaAx']
+                outputs["line_transverse_drag"][i_line] = line_props['Cd']
+                outputs["line_tangential_drag"][i_line] = line_props['CdAx']
+
 
 
 class MooringJoints(om.ExplicitComponent):
@@ -2926,6 +2942,9 @@ class MooringJoints(om.ExplicitComponent):
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
         idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
+        
+        # Find mooring nodes
+        # Use mooring node name that correpsonds to floating joint location
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue
@@ -2933,25 +2952,28 @@ class MooringJoints(om.ExplicitComponent):
             node_loc[k, :] = joints_loc[idx, :]
         outputs["mooring_nodes"] = node_loc
 
-        node_loc = np.unique(node_loc, axis=0)
-        tol = 0.5
-        z_fair = node_loc[:, 2].max()
-        z_anch = node_loc[:, 2].min()
-        ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
-        ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
+        # node_loc = np.unique(node_loc, axis=0)      # this step re-orders!  I'm not sure how there would be duplicates, unless there were duplicate mooring nodes
+        depth = np.abs(node_loc[:, 2].min())
+        
+        ifair = np.where(np.array(mooring_init_options['node_type']) == 'vessel')[0]
+        ianch = np.where(np.array(mooring_init_options['node_type']) == 'fixed')[0]
+        
+        z_fair = node_loc[ifair, 2].mean()
+        z_anch = node_loc[ianch, 2].mean()
 
         node_fair = node_loc[ifair, :]
         node_anch = node_loc[ianch, :]
         ang_fair = np.arctan2(node_fair[:, 1], node_fair[:, 0])
         ang_anch = np.arctan2(node_anch[:, 1], node_anch[:, 0])
-        node_fair = node_fair[np.argsort(ang_fair), :]
-        node_anch = node_anch[np.argsort(ang_anch), :]
+        node_fair = np.unique(node_fair[np.argsort(ang_fair), :], axis=0)
+        node_anch = np.unique(node_anch[np.argsort(ang_anch), :], axis=0)
 
         outputs["fairlead_nodes"] = node_fair
         outputs["anchor_nodes"] = node_anch
         outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
-        outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
-        outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
+        outputs["fairlead_radius"] = np.sqrt(np.sum(node_fair[:,:2] ** 2, axis=1))
+        outputs["anchor_radius"] = np.sqrt(np.sum(node_anch[:,:2] ** 2, axis=1))
+
 
 
 class ComputeMaterialsProperties(om.ExplicitComponent):
