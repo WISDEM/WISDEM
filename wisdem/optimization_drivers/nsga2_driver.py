@@ -407,7 +407,7 @@ class NSGA2Driver(Driver):
             "constrs_fronts": rv[3],
         }
         # create a yaml file at the path
-        write_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+        write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
 
         # iterate over the specified generations
         for generation in range(max_gen + 1):
@@ -426,7 +426,7 @@ class NSGA2Driver(Driver):
                 "constrs_fronts": rv[3],
             }
             # create a yaml file at the path
-            write_yaml(nsga2_output_dir, "nsga2_debug.yaml", simple_types(nsga2_debug_collection))
+            write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
 
         print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
 
