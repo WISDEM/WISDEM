@@ -24,6 +24,7 @@ opt["floating"]["members"]["n_layers"] = [1, 1, 1, 1]
 opt["floating"]["members"]["n_ballasts"] = [2, 0, 0, 0]
 opt["floating"]["members"]["n_axial_joints"] = [0, 0, 0, 0]
 opt["floating"]["members"]["outer_shape"] = 4 * ["circular"]
+opt["floating"]["members"]["name"] = ['spar', 'leg1', 'leg2', 'leg3']
 opt["floating"]["rigid_bodies"] = {}
 opt["floating"]["rigid_bodies"]["n_bodies"] = 0
 opt["WISDEM"] = {}
@@ -73,46 +74,47 @@ prob["painting_cost_rate"] = 14.4  # Cost factor for column surface finishing [$
 
 # Main geometry
 h = np.array([10.0, 20.0, 10.0, 8.0])
-prob["member0.outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
-prob["member0.grid_axial_joints"] = []
-prob["member0.ballast_grid"] = np.array([[0, 0.25], [0, 0.5]])
-prob["member0.ballast_volume"] = [np.pi * 7**2 * 5, 0.0]
-prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
-prob["member0.outer_diameter_in"] = 14 * np.ones(npts)
-prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
-prob["member0.layer_materials"] = ["steel"]
-prob["member0.ballast_materials"] = ["slurry", "seawater"]
-prob["member0:joint1"] = np.array([0.0, 0.0, 8.0 - h.sum()])
-prob["member0:joint2"] = np.array([0.0, 0.0, 8.0])  # Freeboard=10
-prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
-prob["member0.bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
-prob["member0.ring_stiffener_web_height"] = 0.10
-prob["member0.ring_stiffener_web_thickness"] = 0.04
-prob["member0.ring_stiffener_flange_width"] = 0.10
-prob["member0.ring_stiffener_flange_thickness"] = 0.02
-prob["member0.ring_stiffener_spacing"] = 0.044791667  # non-dimensional ring stiffener spacing
+prob["member0_spar.outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
+prob["member0_spar.grid_axial_joints"] = []
+prob["member0_spar.ballast_grid"] = np.array([[0, 0.25], [0, 0.5]])
+prob["member0_spar.ballast_volume"] = [np.pi * 7**2 * 5, 0.0]
+prob["member0_spar.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
+prob["member0_spar.outer_diameter_in"] = 14 * np.ones(npts)
+prob["member0_spar.layer_thickness"] = 0.05 * np.ones((1, npts))
+prob["member0_spar.layer_materials"] = ["steel"]
+prob["member0_spar.ballast_materials"] = ["slurry", "seawater"]
+prob["member0_spar:joint1"] = np.array([0.0, 0.0, 8.0 - h.sum()])
+prob["member0_spar:joint2"] = np.array([0.0, 0.0, 8.0])  # Freeboard=10
+prob["member0_spar.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
+prob["member0_spar.bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
+prob["member0_spar.ring_stiffener_web_height"] = 0.10
+prob["member0_spar.ring_stiffener_web_thickness"] = 0.04
+prob["member0_spar.ring_stiffener_flange_width"] = 0.10
+prob["member0_spar.ring_stiffener_flange_thickness"] = 0.02
+prob["member0_spar.ring_stiffener_spacing"] = 0.044791667  # non-dimensional ring stiffener spacing
 
 # Now do the legs
 angs = np.linspace(0, 2 * np.pi, 1 + opt["mooring"]["n_attach"])
 for k in range(1, 4):
-    prob["member" + str(k) + ".outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
-    prob["member" + str(k) + ".grid_axial_joints"] = []
-    prob["member" + str(k) + ".s_in"] = np.array([0.0, 0.5, 1.0])
-    prob["member" + str(k) + ".outer_diameter_in"] = 5 * np.ones(3)
-    prob["member" + str(k) + ".ca_usr_grid"] = 2.0*np.ones(3)  # Added mass coefficient
-    prob["member" + str(k) + ".cd_usr_grid"] = -1.0*np.ones(3)  # drag coefficient
-    prob["member" + str(k) + ".layer_thickness"] = 0.05 * np.ones((1, 3))
-    prob["member" + str(k) + ".layer_materials"] = ["steel"]
-    prob["member" + str(k) + ".ballast_materials"] = []
-    prob["member" + str(k) + ":joint1"] = np.array([30.0 * np.cos(angs[k - 1]), 30.0 * np.sin(angs[k - 1]), -40.0])
-    prob["member" + str(k) + ":joint2"] = np.array([0.0, 0.0, -40.0])  # Freeboard=10
-    prob["member" + str(k) + ".bulkhead_thickness"] = 0.05 * np.ones(2)  # Locations of internal bulkheads
-    prob["member" + str(k) + ".bulkhead_grid"] = np.array([0.0, 1.0])
-    prob["member" + str(k) + ".ring_stiffener_web_height"] = 0.10
-    prob["member" + str(k) + ".ring_stiffener_web_thickness"] = 0.04
-    prob["member" + str(k) + ".ring_stiffener_flange_width"] = 0.10
-    prob["member" + str(k) + ".ring_stiffener_flange_thickness"] = 0.02
-    prob["member" + str(k) + ".ring_stiffener_spacing"] = 0.06666667  # non-dimensional ring stiffener spacing
+    kname = opt["floating"]["members"]["name"][k]
+    prob["member" + str(k) + f"_{kname}" + ".outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
+    prob["member" + str(k) + f"_{kname}" + ".grid_axial_joints"] = []
+    prob["member" + str(k) + f"_{kname}" + ".s_in"] = np.array([0.0, 0.5, 1.0])
+    prob["member" + str(k) + f"_{kname}" + ".outer_diameter_in"] = 5 * np.ones(3)
+    prob["member" + str(k) + f"_{kname}" + ".ca_usr_grid"] = 2.0*np.ones(3)  # Added mass coefficient
+    prob["member" + str(k) + f"_{kname}" + ".cd_usr_grid"] = -1.0*np.ones(3)  # drag coefficient
+    prob["member" + str(k) + f"_{kname}" + ".layer_thickness"] = 0.05 * np.ones((1, 3))
+    prob["member" + str(k) + f"_{kname}" + ".layer_materials"] = ["steel"]
+    prob["member" + str(k) + f"_{kname}" + ".ballast_materials"] = []
+    prob["member" + str(k) + f"_{kname}" + ":joint1"] = np.array([30.0 * np.cos(angs[k - 1]), 30.0 * np.sin(angs[k - 1]), -40.0])
+    prob["member" + str(k) + f"_{kname}" + ":joint2"] = np.array([0.0, 0.0, -40.0])  # Freeboard=10
+    prob["member" + str(k) + f"_{kname}" + ".bulkhead_thickness"] = 0.05 * np.ones(2)  # Locations of internal bulkheads
+    prob["member" + str(k) + f"_{kname}" + ".bulkhead_grid"] = np.array([0.0, 1.0])
+    prob["member" + str(k) + f"_{kname}" + ".ring_stiffener_web_height"] = 0.10
+    prob["member" + str(k) + f"_{kname}" + ".ring_stiffener_web_thickness"] = 0.04
+    prob["member" + str(k) + f"_{kname}" + ".ring_stiffener_flange_width"] = 0.10
+    prob["member" + str(k) + f"_{kname}" + ".ring_stiffener_flange_thickness"] = 0.02
+    prob["member" + str(k) + f"_{kname}" + ".ring_stiffener_spacing"] = 0.06666667  # non-dimensional ring stiffener spacing
 
 # Mooring parameters: Nylon
 prob["line_diameter"] = 0.5  # Diameter of mooring line/chain [m]
@@ -145,7 +147,7 @@ prob["beta_wind"] = prob["beta_wave"] = 0.0
 prob["env.Uref"] = 11.0
 prob["wind_reference_height"] = 119.0
 
-prob["transition_node"] = prob["member0:joint2"]
+prob["transition_node"] = prob["member0_spar:joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["turbine_mass"] = 350e3

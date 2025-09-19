@@ -30,8 +30,9 @@ class FloatingSEProp(om.Group):
             "labor_cost_rate",
         ]
         for k in range(n_member):
+            kname = opt["floating"]["members"]["name"][k]
             self.add_subsystem(
-                f"member{k}",
+                f"member{k}_{kname}",
                 MemberDetailed(
                     column_options=opt["floating"]["members"],
                     idx=k,
@@ -40,9 +41,9 @@ class FloatingSEProp(om.Group):
                     n_refine=2,
                     member_shape=opt["floating"]["members"]["outer_shape"][k],
                 ),
-                promotes=mem_prom + [("joint1", f"member{k}:joint1"),
-                                     ("joint2", f"member{k}:joint2"),
-                                     ("total_mass_user", f"member{k}:mass_user")],
+                promotes=mem_prom + [("joint1", f"member{k}_{kname}:joint1"),
+                                     ("joint2", f"member{k}_{kname}:joint2"),
+                                     ("total_mass_user", f"member{k}_{kname}:mass_user")],
             )
 
         self.add_subsystem(
@@ -117,30 +118,31 @@ class FloatingSE(om.Group):
         n_member = opt["floating"]["members"]["n_members"]
         for k in range(n_member):
             member_shape = opt["floating"]["members"]["outer_shape"][k]
+            kname = opt["floating"]["members"]["name"][k]
 
             for var in mem_vars:
-                self.connect(f"member{k}.{var}", f"member{k}:{var}")
+                self.connect(f"member{k}_{kname}.{var}", f"member{k}_{kname}:{var}")
 
-            self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
-            self.connect(f"member{k}.constr_ballast_capacity", f"member{k}:constr_ballast_capacity")
+            self.connect(f"member{k}_{kname}.nodes_xyz_all", f"member{k}_{kname}:nodes_xyz")
+            self.connect(f"member{k}_{kname}.constr_ballast_capacity", f"member{k}_{kname}:constr_ballast_capacity")
 
             if member_shape == "circular":
-                self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
-                self.connect(f"member{k}.section_D", f"member{k}:section_D")
-                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
-                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
-                self.connect(f"member{k}.outer_diameter_full", f"memload{k}.outer_diameter_full")
+                self.connect(f"member{k}_{kname}.nodes_r_all", f"member{k}_{kname}:nodes_r")
+                self.connect(f"member{k}_{kname}.section_D", f"member{k}_{kname}:section_D")
+                self.connect(f"member{k}_{kname}.ca_usr_grid_full", f"memload{k}.ca_usr")
+                self.connect(f"member{k}_{kname}.cd_usr_grid_full", f"memload{k}.cd_usr")
+                self.connect(f"member{k}_{kname}.outer_diameter_full", f"memload{k}.outer_diameter_full")
             elif member_shape == "rectangular":
-                # self.connect(f"member{k}.nodes_a_all", f"member{k}:nodes_a")
-                # self.connect(f"member{k}.nodes_b_all", f"member{k}:nodes_b")
-                self.connect(f"member{k}.section_a", f"member{k}:section_a") 
-                self.connect(f"member{k}.section_b", f"member{k}:section_b")
-                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
-                self.connect(f"member{k}.cay_usr_grid_full", f"memload{k}.cay_usr")
-                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
-                self.connect(f"member{k}.cdy_usr_grid_full", f"memload{k}.cdy_usr")
-                self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
-                self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
+                # self.connect(f"member{k}_{kname}.nodes_a_all", f"member{k}_{kname}:nodes_a")
+                # self.connect(f"member{k}_{kname}.nodes_b_all", f"member{k}_{kname}:nodes_b")
+                self.connect(f"member{k}_{kname}.section_a", f"member{k}_{kname}:section_a") 
+                self.connect(f"member{k}_{kname}.section_b", f"member{k}_{kname}:section_b")
+                self.connect(f"member{k}_{kname}.ca_usr_grid_full", f"memload{k}.ca_usr")
+                self.connect(f"member{k}_{kname}.cay_usr_grid_full", f"memload{k}.cay_usr")
+                self.connect(f"member{k}_{kname}.cd_usr_grid_full", f"memload{k}.cd_usr")
+                self.connect(f"member{k}_{kname}.cdy_usr_grid_full", f"memload{k}.cdy_usr")
+                self.connect(f"member{k}_{kname}.side_length_a_full", f"memload{k}.side_length_a_full")
+                self.connect(f"member{k}_{kname}.side_length_b_full", f"memload{k}.side_length_b_full")
 
             for var in ["z_global", "s_full", "s_all"]:
-                self.connect(f"member{k}.{var}", f"memload{k}.{var}")
+                self.connect(f"member{k}_{kname}.{var}", f"memload{k}.{var}")

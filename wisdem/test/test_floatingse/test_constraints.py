@@ -20,16 +20,18 @@ class TestConstraints(unittest.TestCase):
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["n_ballasts"] = [2] * 6
+        opt["floating"]["members"]["name"] = [chr(ord('a') + i) for i in range(n_member)]  # a though f
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
 
         for k in range(n_member):
-            inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
-            inputs[f"member{k}:constr_ballast_capacity"] = np.array([0.6])
+            kname = opt["floating"]["members"]["name"][k]
+            inputs[f"member{k}_{kname}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
+            inputs[f"member{k}_{kname}:constr_ballast_capacity"] = np.array([0.6])
             # semi-like members with 2m spacing
             x = 2 * np.cos(k*(2*np.pi)/n_member)
             y = 2 * np.sin(k*(2*np.pi)/n_member)
-            inputs[f"member{k}:nodes_xyz"][:2, :] = np.array([[x, y, -1], [x, y, 1]])
+            inputs[f"member{k}_{kname}:nodes_xyz"][:2, :] = np.array([[x, y, -1], [x, y, 1]])
 
         inputs["Hsig_wave"] = np.array([ 10.0 ])
         inputs["variable_ballast_mass"] = np.array([ 3.0 ])

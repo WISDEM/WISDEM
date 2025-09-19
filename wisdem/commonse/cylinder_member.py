@@ -2288,6 +2288,9 @@ class MemberHydro(om.ExplicitComponent):
         dxyz = xyz1 - xyz0
         xyz = inputs["nodes_xyz"]
 
+        if dxyz[2] < 0:
+            raise Exception(f'FloatingSE assumes members go from bottom to top, but joint1 (z = {xyz0[2]}) is above joint2 (z = {xyz1[2]}).')
+
         # Dimensions away from vertical
         tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
         outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
@@ -2296,6 +2299,7 @@ class MemberHydro(om.ExplicitComponent):
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
         if xyz[:, 2].min() < 0.0 and xyz[:, 2].max() > 0.0:
+            # np.interp assumes that xyz[:, 2] is increasing, hence the exception above
             s_waterline = np.interp(0.0, xyz[:, 2], s_full)
             ind = np.where(xyz[:, 2] < 0.0)[0]
             s_under = np.r_[s_full[ind], s_waterline]

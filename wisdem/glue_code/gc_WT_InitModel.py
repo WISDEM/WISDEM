@@ -117,7 +117,7 @@ def MoI_setter(wt_opt, varstr, listin):
 
 def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic):
     # Function to assign values to the openmdao group Blade
-    
+
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
     wt_opt["blade.ref_axis"][:, 0] = PchipInterpolator(
     blade["reference_axis"]["x"]["grid"], blade["reference_axis"]["x"]["values"]
@@ -129,7 +129,7 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic)
         blade["reference_axis"]["z"]["grid"], blade["reference_axis"]["z"]["values"]
     )(nd_span)
 
-    
+
     blade_DV_aero = blade_DV["aero_shape"]
     wt_opt = assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape"])
     if not user_elastic:
@@ -191,7 +191,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
 
     for i in range(n_webs):
         web_i = structure["webs"][i]
-        
+
         offset_grid = np.zeros(len(nd_span))
         offset_values = np.zeros(len(nd_span))
         web_start_nd_grid = np.zeros(len(nd_span))
@@ -199,7 +199,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
         web_end_nd_grid = np.zeros(len(nd_span))
         web_end_nd_values = np.zeros(len(nd_span))
         build_web = False
-        
+
         # web_start_nd
         # if anchor is defined, use that. if not, look for hard-coded start and end nd grid
         if "anchor" in web_i["start_nd_arc"]:
@@ -211,11 +211,11 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         if "plane_type1" in anchors[j]["plane_intersection"]:
                             if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
                                 web_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
-                            else: 
+                            else:
                                 raise Exception("in WISDEM plane_type1 requires a rotation to build web %s" % web_i["name"])
                         else:
                             raise Exception("in WISDEM plane_intersection requires plane_type1, which is missing in layer %s" % web_i["name"])
-                        
+
                         if "offset" in anchors[j]["plane_intersection"]:
                             offset_grid = anchors[j]["plane_intersection"]["offset"]["grid"]
                             offset_values = anchors[j]["plane_intersection"]["offset"]["values"]
@@ -224,7 +224,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                             raise Exception(
                                 "Blade structure anchor %s plane_intersection must be defined both start and end" % anchor_name
                             )
-                    if anchor_handle in anchors[j]:    
+                    if anchor_handle in anchors[j]:
                         web_start_nd_grid = anchors[j][anchor_handle]["grid"]
                         web_start_nd_values = anchors[j][anchor_handle]["values"]
                     break
@@ -235,8 +235,8 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
             raise Exception(
                 "Blade structure web start_nd_arc must be defined by either grid/values or anchor"
             )
-        
-        
+
+
         web_start_nd = np.nan_to_num(
                     PchipInterpolator(
                         web_start_nd_grid,
@@ -244,7 +244,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        
+
         web_offset = np.nan_to_num(
                     PchipInterpolator(
                         offset_grid,
@@ -252,7 +252,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
                         extrapolate=False,
                     )(nd_span)
                 )
-        
+
         wt_opt["blade.structure.web_start_nd_yaml"][i, :] = web_start_nd
         wt_opt["blade.structure.web_offset"][i, :] = web_offset
         wt_opt["blade.structure.web_rotation"][i] = web_rotation
@@ -274,7 +274,7 @@ def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
             raise Exception(
                 "Blade structure web end_nd_arc must be defined by either grid/values or anchor"
             )
-    
+
         web_end_nd = np.nan_to_num(
                     PchipInterpolator(
                         web_end_nd_grid,
@@ -307,7 +307,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         layer_end_nd_grid = np.zeros(len(nd_span))
         layer_end_nd_values = np.zeros(len(nd_span))
         build_layer = -100
-        
+
         # layer_start_nd
         # if anchor is defined, use that. if not, look for hard-coded start and end nd grid
         if "anchor" in layer_i["start_nd_arc"]:
@@ -321,7 +321,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         if "plane_type1" in anchors[j]["plane_intersection"]:
                             if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
                                 layer_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
-                            else: 
+                            else:
                                 raise Exception("in WISDEM plane_type1 requires a rotation to build layer %s" % layer_i["name"])
                             if anchors[j]["plane_intersection"]["side"] == "suction":
                                 build_layer = 1
@@ -333,7 +333,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                                 )
                         else:
                             raise Exception("in WISDEM plane_intersection requires plane_type1, which is missing in layer %s" % layer_i["name"])
-                        
+
                         if "offset" in anchors[j]["plane_intersection"]:
                             offset_grid = anchors[j]["plane_intersection"]["offset"]["grid"]
                             offset_values = anchors[j]["plane_intersection"]["offset"]["values"]
@@ -354,7 +354,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         width_values = anchors[j]["width"]["values"]
                         if anchors[j]["midpoint_nd_arc"]["anchor"]["name"] != "LE":
                             raise Exception("WISDEM currently only supports LE midpoint_nd_arc anchor. Please contact the NREL developers.")
-                    
+
                     elif "width" in anchors[j]:
                         width_grid = anchors[j]["width"]["grid"]
                         width_values = anchors[j]["width"]["values"]
@@ -377,8 +377,8 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                             raise Exception(
                                 f"Blade structure anchor {anchor_name} does not have a start_nd_arc or end_nd_arc defined"
                             )
-                    
-                    elif anchor_handle in anchors[j]:    
+
+                    elif anchor_handle in anchors[j]:
                         build_layer = 0
                         layer_start_nd_grid = anchors[j][anchor_handle]["grid"]
                         layer_start_nd_values = anchors[j][anchor_handle]["values"]
@@ -388,7 +388,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                             f"Blade structure anchor {anchor_name} does not have a plane_intersection, width, or start_nd_arc defined"
                         )
                     break
-            
+
             if not anchor_start_found:
                 for j in range(n_webs):
                     if len(webs[j]["anchors"]) > 1:
@@ -404,7 +404,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         break
 
             if not anchor_start_found:
-                
+
                 layer_name = layer_i["name"]
                 raise Exception(
                     f"Blade structure layer {layer_name} start_nd_arc anchor {anchor_name} not found in anchors list"
@@ -416,8 +416,8 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
             raise Exception(
                 "Blade structure layer start_nd_arc must be defined by either grid/values or anchor"
             )
-        
-        
+
+
         if build_layer == 0:
             layer_start_nd = np.nan_to_num(
                         PchipInterpolator(
@@ -427,7 +427,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         )(nd_span)
                 )
             wt_opt["blade.structure.layer_start_nd_yaml"][i, :] = layer_start_nd
-        
+
         if build_layer == 1 or build_layer == 2:
             layer_offset = np.nan_to_num(
                         PchipInterpolator(
@@ -442,7 +442,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         if build_layer == 6:
             wt_opt["blade.structure.index_layer_start"][i] = index_layer_start
 
-        
+
         # layer_end_nd
         if "anchor" in layer_i["end_nd_arc"]:
             anchor_name = layer_i["end_nd_arc"]["anchor"]["name"]
@@ -464,17 +464,17 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                         if "start_nd_arc" in anchors[j]:
                             if "anchor" in anchors[j]["start_nd_arc"]:
                                 if anchors[j]["start_nd_arc"]["anchor"]["name"] == "TE" and layer_i["start_nd_arc"]["anchor"]["name"] == "TE":
-                                    build_layer = 4                    
-                    
-                    elif anchor_handle in anchors[j]:    
+                                    build_layer = 4
+
+                    elif anchor_handle in anchors[j]:
                         layer_end_nd_grid = anchors[j][anchor_handle]["grid"]
                         layer_end_nd_values = anchors[j][anchor_handle]["values"]
-                    
+
                     elif build_layer != 1 and build_layer != 2 and "plane_intersection" in anchors[j]:
                         raise Exception("WISDEM does not yet support an end anchor with plane_intersection or width defined where the start anchor is not defined this way. Please contact the NREL developers.")
-                    
+
                     break
-            
+
             if not anchor_end_found:
                 for j in range(n_webs):
                     if len(webs[j]["anchors"]) > 1:
@@ -503,7 +503,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
             raise Exception(
                 "Blade structure layer end_nd_arc must be defined by either grid/values or anchor"
             )
-        
+
         if build_layer == 0:
             layer_end_nd = np.nan_to_num(
                         PchipInterpolator(
@@ -512,12 +512,12 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                             extrapolate=False,
                         )(nd_span)
                     )
-            
+
             wt_opt["blade.structure.layer_end_nd_yaml"][i, :] = layer_end_nd
-        
+
         if build_layer == 6:
             wt_opt["blade.structure.index_layer_end"][i] = index_layer_end
-        
+
         if build_layer > 0:
             layer_width = np.nan_to_num(
                         PchipInterpolator(
@@ -532,7 +532,7 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
         if "thickness" in layer_i:
             layer_thickness_grid = layer_i["thickness"]["grid"]
             layer_thickness_values = layer_i["thickness"]["values"]
-    
+
         layer_thickness = np.nan_to_num(
                     PchipInterpolator(
                         layer_thickness_grid,
@@ -541,12 +541,12 @@ def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
                     )(nd_span)
                 )
         wt_opt["blade.structure.layer_thickness"][i, :] = layer_thickness
-        
+
         # fiber_orientation
         if "fiber_orientation" in layer_i:
             layer_fiber_orientation_grid = layer_i["fiber_orientation"]["grid"]
             layer_fiber_orientation_values = layer_i["fiber_orientation"]["values"]
-    
+
         layer_fiber_orientation = np.nan_to_num(
                     PchipInterpolator(
                         layer_fiber_orientation_grid,
@@ -716,7 +716,7 @@ def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, flags, user_e
             wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass_user"]
         if "transformer_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass_user"]
-        
+
         # if "yaw_mass_user" in drivetrain["other_components"]:
         #     wt_opt["drivetrain.yaw_mass_user"] = drivetrain["other_components"]["yaw_mass_user"]
         # if "above_yaw_mass_user" in drivetrain["other_components"]:
@@ -1130,7 +1130,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             if isinstance(floating["members"][i][coeff], list):
                 coeff_length = len(floating["members"][i][coeff])
                 if usr_defined_flag[coeff]:
-                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+                    assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length ({grid_length}). Please correct."
             else:
             # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
                 floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
@@ -1374,6 +1374,14 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
 
+    if 'ROSCO' in modeling_options:  # Will only be there if called by WEIS
+        if modeling_options['ROSCO']['ps_percent'] != control["pitch"]["ps_percent"]:
+            logger.warning(
+                f"The ROSCO (modeling) ps_percent does not match the WindIO (geometry) ps_percent.  Using the ROSCO value of {modeling_options['ROSCO']['ps_percent']:.2f}."
+            )
+    else:
+        wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
+
     return wt_opt
 
 
@@ -1500,7 +1508,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
     # airfoils_master are the airfoils used along blade span
     # airfoils are the airfoils in the full database
 
-    
+
     n_af_database = modeling_options["WISDEM"]["RotorSE"]["n_af_database"]
     n_af_master = modeling_options["WISDEM"]["RotorSE"]["n_af_master"]
     af_master = modeling_options["WISDEM"]["RotorSE"]["af_master"]
@@ -1517,8 +1525,8 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
     cl_master = np.zeros((n_af_master, n_aoa, n_Re))
     cd_master = np.zeros((n_af_master, n_aoa, n_Re))
     cm_master = np.zeros((n_af_master, n_aoa, n_Re))
-    
-    
+
+
     for i in range(n_af_master):
         airfoil_exists = False
         for j in range(n_af_database):
@@ -1547,7 +1555,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
 
                 if coordinates_only:
                     break
-                
+
                 # now move on to the polars, first combining polars across configurations
                 n_configs = len(airfoils_master[i]["configuration"])
                 configuration = [''] * n_configs
@@ -1568,7 +1576,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                                 cl_config[:, re_i, k] = PchipInterpolator(
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["values"]
                                 )(aoa)
-                            
+
                                 cd_config[:, re_i, k] = PchipInterpolator(
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["values"]
                                 )(aoa)
@@ -1612,14 +1620,14 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                         cm_master[i, j, :] = PchipInterpolator(
                                             re_config, cm_master_i[j, :]
                                         )(Re)
-                            
+
                 break
 
         if not airfoil_exists:
             raise ValueError(
                 f"Airfoil {af_master[i]} not found in airfoil database. Please check the airfoil names."
             )
-    
+
     # Assign to openmdao structure
     wt_opt["airfoils.coord_xy"] = coord_xy_master
     wt_opt["airfoils.rthick_master"] = rthick_master

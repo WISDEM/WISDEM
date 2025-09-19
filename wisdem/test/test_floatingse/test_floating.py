@@ -28,6 +28,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
         opt["floating"]["members"]["outer_shape"] = ["circular"]
+        opt["floating"]["members"]["name"] = ['spar'] 
         opt["floating"]["rigid_bodies"] = {}
         opt["floating"]["rigid_bodies"]["n_bodies"] = 0
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
@@ -68,32 +69,32 @@ class TestOC3Mass(unittest.TestCase):
         # Mass and cost scaling factors
         prob["labor_cost_rate"] = 1.0  # Cost factor for labor time [$/min]
         prob["painting_cost_rate"] = 14.4  # Cost factor for column surface finishing [$/m^2]
-        prob["member0.outfitting_factor_in"] = 1.0  # Fraction of additional outfitting mass for each column
+        prob["member0_spar.outfitting_factor_in"] = 1.0  # Fraction of additional outfitting mass for each column
 
         # Column geometry
         h = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-        prob["member0.grid_axial_joints"] = [0.384615]  # Fairlead at 70m
-        # prob["member0.ballast_grid"] = np.empy((0,2))
-        # prob["member0.ballast_volume"] = np.empty(0)
-        prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
-        prob["member0.outer_diameter_in"] = np.array([9.4, 9.4, 9.4, 6.5, 6.5])
-        prob["member0.ca_usr_grid"] = 2.0*np.ones(5)  # Added mass coefficient
-        prob["member0.cd_usr_grid"] = -1.0*np.ones(5)  # Drag coefficient
-        prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
-        prob["member0.layer_materials"] = ["steel"]
-        prob["member0.ballast_materials"] = ["slurry", "seawater"]
-        prob["member0:joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
-        prob["member0:joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
-        prob["member0.s_ghost1"] = 0.0
-        prob["member0.s_ghost2"] = 1.0
-        prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
-        prob["member0.bulkhead_grid"] = np.array([0.0, 0.37692308, 0.89230769, 1.0])  # Thickness of internal bulkheads
-        prob["member0.ring_stiffener_web_height"] = 0.10
-        prob["member0.ring_stiffener_web_thickness"] = 0.04
-        prob["member0.ring_stiffener_flange_width"] = 0.10
-        prob["member0.ring_stiffener_flange_thickness"] = 0.02
-        prob["member0.ring_stiffener_spacing"] = 0.016538462  # non-dimensional ring stiffener spacing
-        prob["transition_node"] = prob["member0:joint2"]
+        prob["member0_spar.grid_axial_joints"] = [0.384615]  # Fairlead at 70m
+        # prob["member0_spar.ballast_grid"] = np.empy((0,2))
+        # prob["member0_spar.ballast_volume"] = np.empty(0)
+        prob["member0_spar.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
+        prob["member0_spar.outer_diameter_in"] = np.array([9.4, 9.4, 9.4, 6.5, 6.5])
+        prob["member0_spar.ca_usr_grid"] = 2.0*np.ones(5)  # Added mass coefficient
+        prob["member0_spar.cd_usr_grid"] = -1.0*np.ones(5)  # Drag coefficient
+        prob["member0_spar.layer_thickness"] = 0.05 * np.ones((1, npts))
+        prob["member0_spar.layer_materials"] = ["steel"]
+        prob["member0_spar.ballast_materials"] = ["slurry", "seawater"]
+        prob["member0_spar:joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
+        prob["member0_spar:joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
+        prob["member0_spar.s_ghost1"] = 0.0
+        prob["member0_spar.s_ghost2"] = 1.0
+        prob["member0_spar.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
+        prob["member0_spar.bulkhead_grid"] = np.array([0.0, 0.37692308, 0.89230769, 1.0])  # Thickness of internal bulkheads
+        prob["member0_spar.ring_stiffener_web_height"] = 0.10
+        prob["member0_spar.ring_stiffener_web_thickness"] = 0.04
+        prob["member0_spar.ring_stiffener_flange_width"] = 0.10
+        prob["member0_spar.ring_stiffener_flange_thickness"] = 0.02
+        prob["member0_spar.ring_stiffener_spacing"] = 0.016538462  # non-dimensional ring stiffener spacing
+        prob["transition_node"] = prob["member0_spar:joint2"]
         prob["transition_piece_mass"] = 0.0
         prob["transition_piece_cost"] = 0.0
 
@@ -150,13 +151,13 @@ class TestOC3Mass(unittest.TestCase):
         ansys_I = np.array([ansys_Ixx, ansys_Iyy, ansys_Izz, 0.0, 0.0, 0.0])
 
         npt.assert_allclose(
-            ansys_m_bulk, prob["member0.bulkhead_mass"].sum(), rtol=0.03
+            ansys_m_bulk, prob["member0_spar.bulkhead_mass"].sum(), rtol=0.03
         )  # ANSYS uses R_od, we use R_id, top cover seems unaccounted for
-        npt.assert_allclose(ansys_m_shell, prob["member0.shell_mass"].sum(), rtol=0.01)
-        npt.assert_allclose(ansys_m_stiff, prob["member0.stiffener_mass"].sum(), rtol=0.01)
-        npt.assert_allclose(ansys_m_spar, prob["member0.total_mass"].sum(), rtol=0.01)
-        npt.assert_allclose(ansys_cg, prob["member0.center_of_mass"], rtol=0.02)
-        npt.assert_allclose(ansys_I, prob["member0.I_total"], rtol=0.02)
+        npt.assert_allclose(ansys_m_shell, prob["member0_spar.shell_mass"].sum(), rtol=0.01)
+        npt.assert_allclose(ansys_m_stiff, prob["member0_spar.stiffener_mass"].sum(), rtol=0.01)
+        npt.assert_allclose(ansys_m_spar, prob["member0_spar.total_mass"].sum(), rtol=0.01)
+        npt.assert_allclose(ansys_cg, prob["member0_spar.center_of_mass"], rtol=0.02)
+        npt.assert_allclose(ansys_I, prob["member0_spar.I_total"], rtol=0.02)
 
 
 if __name__ == "__main__":

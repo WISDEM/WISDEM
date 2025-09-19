@@ -504,6 +504,10 @@ properties:
                                 maximum: 1e-1
                                 default: 1e-8
                                 description: Convergence tolerance for modal eigenvalue solution
+                            skip_duplicate_modes:
+                                type: boolean
+                                default: True   # up for debate
+                                description: If true, skip duplicate modes during identification
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
                     gamma_n: *gamma_n
