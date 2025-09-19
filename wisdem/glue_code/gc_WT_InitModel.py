@@ -1275,8 +1275,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
                             "outer_diameter"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Cd"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Ca"]))
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(np.array(floating["members"][i]["Cd"])>0.0) else np.ones(len(floating["members"][i]["Cd"]))
                     diameter_assigned = True
                 if "side_length_a" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_a"]["constant"]:
@@ -1289,8 +1289,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.side_length_a_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_a"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Ca"]))
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Cd"]))
                 if "side_length_b" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_b"]["constant"]:
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"] = floating["members"][i]["outer_shape"][
@@ -1302,8 +1302,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_b"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"] if np.all(floating["members"][i]["Cay"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"] if np.all(floating["members"][i]["Cdy"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"] if np.all(np.array(floating["members"][i]["Cay"])>0.0) else np.ones(len(floating["members"][i]["Cay"]))
+                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"] if np.all(np.array(floating["members"][i]["Cdy"])>0.0) else np.ones(len(floating["members"][i]["Cdy"]))
                     diameter_assigned = True
 
         if not diameter_assigned:
