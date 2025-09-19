@@ -1478,7 +1478,7 @@ properties:
 
     merit_figure_user:
         type: [array, object]
-        default: {}
+        default: []
         description: Provides mechanism for a user-specific objective function.  Overrides any entries in merit_figure.
         properties: &merit_user
             name:

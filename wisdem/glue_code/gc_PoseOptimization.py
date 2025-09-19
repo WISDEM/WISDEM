@@ -302,7 +302,7 @@ class PoseOptimization(object):
             self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]
 
         for merit_figure_user in self.opt['merit_figure_user']:
-            self.set_merit_figure_user(wt_opt, merit_figure_user)
+            wt_opt = self.set_merit_figure_user(wt_opt, merit_figure_user)
 
 
         # make merit figure a list if it is not already
@@ -322,7 +322,7 @@ class PoseOptimization(object):
             wt_opt.model.add_objective(merit_figure_user["name"],
                                        ref=coeff*np.abs(merit_figure_user["ref"]))
 
-
+        return wt_opt
 
 
     def set_merit_figure(self, wt_opt, merit_figure):

@@ -561,6 +561,10 @@ properties:
                                     units: kg
                                     description: Override bottom-up calculation of total member mass with this value
                                     minimum: 0.0
+                                no_intersect:
+                                    description: This member is parallel to another and intersecting "ghost nodes" should not be calculated.  An example is a heave plate.
+                                    type: boolean
+                                    default: False
             jacket:
                 type: object
                 properties:

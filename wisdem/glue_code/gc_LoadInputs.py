@@ -280,7 +280,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_axial_joints"] = np.zeros(n_members, dtype=int)
-            self.modeling_options["floating"]["members"]["no_intersect"] = np.full(n_members, fill_value=False)
+            self.modeling_options["floating"]["members"]["no_intersect"] = [False] * n_members
             ballast_types = []
             for i in range(n_members):
                 self.modeling_options["floating"]["members"]["name"][i] = self.wt_init["components"][
