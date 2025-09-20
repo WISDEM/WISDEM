@@ -556,11 +556,18 @@ properties:
                             type: object
                             optional:
                                 - relative
+                                - relative_dims
                             properties:
                                 relative:
                                     description: Make this joint relative to the stated joint, non-cylindrical only
                                     default: origin
                                     type: string
+                                relative_dims:
+                                    description: Three dimensional boolean array denoting which dimensions are relative
+                                    default: [True, True, True]
+                                    type: array
+                                    items:
+                                        type: boolean
                     members:
                         type: array
                         items:
