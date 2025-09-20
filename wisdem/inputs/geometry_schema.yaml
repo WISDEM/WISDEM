@@ -550,6 +550,17 @@ properties:
             floating_platform:
                 type: object
                 properties:
+                    joints:
+                        type: array
+                        items:
+                            type: object
+                            optional:
+                                - relative
+                            properties:
+                                relative:
+                                    description: Make this joint relative to the stated joint, non-cylindrical only
+                                    default: origin
+                                    type: string
                     members:
                         type: array
                         items:
