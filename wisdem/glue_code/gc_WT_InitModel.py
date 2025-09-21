@@ -1369,7 +1369,6 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
-    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]

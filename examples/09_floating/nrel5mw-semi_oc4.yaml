@@ -962,6 +962,7 @@ components:
             mb2Type: SRB
             uptower: true
         generator:
+            rated_rpm: 1200.0
             rho_Fe: 7700.0
             rho_Fes: 7850.0
             rho_Copper: 8900.0
