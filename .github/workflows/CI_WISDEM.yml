@@ -137,7 +137,8 @@ jobs:
         env:
             MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy windIO
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy #windIO
+          '${{ steps.cp.outputs.python-path }}' -m pip install git+https://github.com/IEAWindSystems/windIO.git@floating_fixes
           '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       - name: Limited test
