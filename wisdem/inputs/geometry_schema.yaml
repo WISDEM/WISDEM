@@ -550,46 +550,6 @@ properties:
             floating_platform:
                 type: object
                 properties:
-                    joints:
-                        type: array
-                        items:
-                            type: object
-                            optional:
-                                - relative
-                                - relative_dims
-                                - axial_coeffs
-                            properties:
-                                relative:
-                                    description: Make this joint relative to the stated joint, non-cylindrical only
-                                    default: origin
-                                    type: string
-                                relative_dims:
-                                    description: Three dimensional boolean array denoting which dimensions are relative
-                                    default: [True, True, True]
-                                    type: array
-                                    items:
-                                        type: boolean
-                                axial_coeffs:
-                                    description: Axial hydrodynamic coefficients used in OpenFAST, unused in WISDEM
-                                    type: object
-                                    default: {}
-                                    optional:
-                                        - Ca
-                                        - Cd
-                                        - Cp
-                                    properties:
-                                        Ca:
-                                            description: Coefficient of added mass
-                                            type: number
-                                            default: 0.0
-                                        Cd:
-                                            description: Coefficient of drag
-                                            type: number
-                                            default: 0.0
-                                        Cp:
-                                            description: Coefficient of dynamic pressure
-                                            type: number
-                                            default: 0.0
                     members:
                         type: array
                         items:
