@@ -740,7 +740,7 @@ class WindTurbineOntologyPython(object):
                     name2grp[kname] = k
             self.modeling_options["floating"]["members"]["name2idx"] = name2grp
 
-    def write_ontology(self, wt_opt, fname_output):
+    def update_ontology(self, wt_opt):
         # Update blade
         if self.modeling_options["flags"]["blade"] or self.modeling_options["user_elastic"]["blade"]:
             # Update blade outer shape
@@ -1323,9 +1323,10 @@ class WindTurbineOntologyPython(object):
                     (wt_opt["tcc.tower_cost"] / wt_opt["tcc.tower_mass"])[0]
                 )
 
+                
+    def write_outputs(self, fname_output):
         # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
 
-    def write_options(self, fname_output):
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)
