@@ -496,7 +496,7 @@ properties:
                                 description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
                             shift:
                                 type: number
-                                default: 10.0
+                                default: 100.0
                                 description: Numerical matrix diagonal adder for eigenvalue solve of unrestrained structure
                             tol:
                                 type: number
