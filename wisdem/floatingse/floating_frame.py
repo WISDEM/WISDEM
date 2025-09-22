@@ -501,14 +501,9 @@ class TowerModal(om.ExplicitComponent):
                 NFREQ2 = int(NFREQ / 2)
                 myzmpf = 1e-7*modal.zmpf # zmpf is buggy here, so suppressing it
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-                    xyz[:, 2],
-                    modal.freq,
-                    modal.xdsp,
-                    modal.ydsp,
-                    modal.zdsp,
-                    modal.xmpf,
-                    modal.ympf,
-                    myzmpf, #modal.zmpf,
+                    xyz[:, 2], modal.freq,
+                    modal.xdsp, modal.ydsp, modal.zdsp,
+                    modal.xmpf, modal.ympf, myzmpf, #modal.zmpf,
                     base_slope0=False,
                     skip_duplicates=frame3dd_opt["skip_duplicate_modes"]
                 )
