@@ -299,10 +299,10 @@ class PoseOptimization(object):
     def set_objective(self, wt_opt):
 
         if isinstance(self.opt['merit_figure_user'], dict):
-            self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]    
+            self.opt['merit_figure_user'] = [self.opt['merit_figure_user']]
 
         for merit_figure_user in self.opt['merit_figure_user']:
-            self.set_merit_figure_user(wt_opt, merit_figure_user)       
+            wt_opt = self.set_merit_figure_user(wt_opt, merit_figure_user)
 
 
         # make merit figure a list if it is not already
@@ -320,9 +320,9 @@ class PoseOptimization(object):
         if merit_figure_user["name"] != "":
             coeff = -1.0 if merit_figure_user["max_flag"] else 1.0
             wt_opt.model.add_objective(merit_figure_user["name"],
-                                       ref=coeff*np.abs(merit_figure_user["ref"]))    
+                                       ref=coeff*np.abs(merit_figure_user["ref"]))
 
-
+        return wt_opt
 
 
     def set_merit_figure(self, wt_opt, merit_figure):
@@ -442,8 +442,8 @@ class PoseOptimization(object):
             indices_twist = range(twist_options["index_start"], twist_options["index_end"])
             s_opt_twist = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
             twist_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["values"],
             )
             init_twist_opt = twist_interpolator(s_opt_twist)
             wt_opt.model.add_design_var(
@@ -464,8 +464,8 @@ class PoseOptimization(object):
             indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             s_opt_chord = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
             chord_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["values"],
             )
             init_chord_opt = chord_interpolator(s_opt_chord)
             wt_opt.model.add_design_var(
@@ -476,12 +476,12 @@ class PoseOptimization(object):
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
-            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
-            af_pos_init = wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"]
+            n_af_master = self.modeling["WISDEM"]["RotorSE"]["n_af_master"]
+            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af_master - 1)
+            af_pos_init = wt_init["components"]["blade"]["outer_shape"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
-            lb_af = np.zeros(n_af)
-            ub_af = np.zeros(n_af)
+            lb_af = np.zeros(n_af_master)
+            ub_af = np.zeros(n_af_master)
             for i in range(1, indices_af[0]):
                 lb_af[i] = ub_af[i] = af_pos_init[i]
             for i in indices_af:
@@ -492,90 +492,10 @@ class PoseOptimization(object):
                 "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
-        L_D_options = blade_opt["aero_shape"]["L/D"]
-        if L_D_options["flag"]:
-            n_opt = L_D_options["n_opt"]
-            indices = range(L_D_options["index_start"], L_D_options["index_end"])
-            s_opt_L_D = np.linspace(0.0, 1.0, n_opt)
-            L_D_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
-            )
-            init_L_D_opt = L_D_interpolator(s_opt_L_D)
-
-            wt_opt.model.add_design_var(
-                "inn_af.L_D_opt",
-                indices=indices,
-                lower=init_L_D_opt[indices] - L_D_options["max_decrease"],
-                upper=init_L_D_opt[indices] + L_D_options["max_increase"],
-            )
-
-        c_d_options = blade_opt["aero_shape"]["c_d"]
-        if c_d_options["flag"]:
-            n_opt = c_d_options["n_opt"]
-            indices = range(c_d_options["index_start"], c_d_options["index_end"])
-            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
-            c_d_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
-            )
-            init_c_d_opt = c_d_interpolator(s_opt_c_d)
-
-            wt_opt.model.add_design_var(
-                "inn_af.c_d_opt",
-                indices=indices,
-                lower=init_c_d_opt[indices] - c_d_options["max_decrease"],
-                upper=init_c_d_opt[indices] + c_d_options["max_increase"],
-            )
-
-        stall_options = blade_opt["aero_shape"]["stall_margin"]
-        if stall_options["flag"]:
-            n_opt = stall_options["n_opt"]
-            indices = range(stall_options["index_start"], stall_options["index_end"])
-            s_opt_stall = np.linspace(0.0, 1.0, n_opt)
-            stall_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-            )
-            init_stall_opt = stall_interpolator(s_opt_stall)
-
-            wt_opt.model.add_design_var(
-                "inn_af.stall_margin_opt",
-                indices=indices,
-                lower=init_stall_opt[indices] - stall_options["max_decrease"],
-                upper=init_stall_opt[indices] + stall_options["max_increase"],
-            )
-
-        t_c_options = blade_opt["aero_shape"]["rthick"]
-        if t_c_options["flag"]:
-            n_opt = t_c_options["n_opt"]
-            indices = range(t_c_options["index_start"], t_c_options["index_end"])
-            s_opt_t_c = np.linspace(0.0, 1.0, n_opt)
-            t_c_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
-            )
-            init_t_c_opt = t_c_interpolator(s_opt_t_c)
-
-            wt_opt.model.add_design_var(
-                "inn_af.r_thick_opt",
-                indices=indices,
-                lower=init_t_c_opt[indices] - t_c_options["max_decrease"],
-                upper=init_t_c_opt[indices] + t_c_options["max_increase"],
-            )
-
-        z_options = blade_opt["aero_shape"]["z"]
-        if z_options["flag"]:
-            wt_opt.model.add_design_var(
-                "inn_af.z",
-                lower=z_options["lower_bound"],
-                upper=z_options["upper_bound"],
-            )
-
         if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             if self.modeling["user_elastic"]["blade"]:
                 raise Exception("Blade structural design variables not available for user-defined blade elastic model. Please modify the modeling or optimization options.")
-            layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+            layers = wt_init["components"]["blade"]["structure"]["layers"]
             for i in range(len(blade_opt["structure"])):
                 k = blade_opt["layer_index_opt"][i]
                 layer_interp = PchipInterpolator(
@@ -735,7 +655,7 @@ class PoseOptimization(object):
             )
         if drive_opt["uptilt"]["flag"]:
             wt_opt.model.add_design_var(
-                "nacelle.uptilt",
+                "drivetrain.uptilt",
                 lower=drive_opt["uptilt"]["lower_bound"],
                 upper=drive_opt["uptilt"]["upper_bound"],
                 ref=1e-2,
@@ -743,7 +663,7 @@ class PoseOptimization(object):
 
         if drive_opt["generator_length"]["flag"]:
             wt_opt.model.add_design_var(
-                "nacelle.L_generator",
+                "drivetrain.L_generator",
                 lower=drive_opt["generator_length"]["lower_bound"],
                 upper=drive_opt["generator_length"]["upper_bound"],
             )
@@ -761,7 +681,7 @@ class PoseOptimization(object):
         ]:
             if drive_opt[k]["flag"]:
                 wt_opt.model.add_design_var(
-                    "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"]
+                    "drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"]
                 )
 
         for k in [
@@ -773,38 +693,28 @@ class PoseOptimization(object):
             "nose_wall_thickness",
         ]:
             if drive_opt[k]["flag"]:
-                wt_opt.model.add_design_var(
-                    "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
-                )
+                wt_opt.model.add_design_var("drivetrain." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2)
 
         # -- Floating --
-        if float_opt["joints"]["flag"]:
-            jointz = float_opt["joints"]["z_coordinate"]
-            jointr = float_opt["joints"]["r_coordinate"]
-
-            count = 0
-            for k in range(len(jointz)):
-                wt_opt.model.add_design_var(
-                    f"floating.jointdv_{count}",
-                    lower=jointz[k]["lower_bound"],
-                    upper=jointz[k]["upper_bound"],
-                )
+        count = 0
+        jointz = float_opt["joints"]["z_coordinate"]
+        jointr = float_opt["joints"]["r_coordinate"]
+        for k in range(len(jointz)):
+            if jointz[k]["flag"]:
+                wt_opt.model.add_design_var(f"floating.jointdv_{count}", lower=jointz[k]["lower_bound"], upper=jointz[k]["upper_bound"])
                 count += 1
 
-            for k in range(len(jointr)):
-                wt_opt.model.add_design_var(
-                    f"floating.jointdv_{count}",
-                    lower=jointr[k]["lower_bound"],
-                    upper=jointr[k]["upper_bound"],
-                )
+        for k in range(len(jointr)):
+            if jointr[k]["flag"]:
+                wt_opt.model.add_design_var(f"floating.jointdv_{count}", lower=jointr[k]["lower_bound"], upper=jointr[k]["upper_bound"])
                 count += 1
 
-        if float_opt["members"]["flag"]:
-            for kgrp in float_opt["members"]["groups"]:
+        for kgrp in float_opt["members"]["groups"]:
+            if kgrp["flag"]:
                 memname = kgrp["names"][0]
                 idx = self.modeling["floating"]["members"]["name2idx"][memname]
                 imem = self.modeling["floating"]["members"]["name"].index(memname)
-                istruct = wt_init["components"]["floating_platform"]["members"][imem]["internal_structure"]
+                istruct = wt_init["components"]["floating_platform"]["members"][imem]["structure"]
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
@@ -829,11 +739,11 @@ class PoseOptimization(object):
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
-                if "ballast" in kgrp and len(istruct["ballasts"]) > 0:
-                    V_ballast = np.zeros(len(istruct["ballasts"]))
+                if "ballast" in kgrp and len(istruct["ballast"]) > 0:
+                    V_ballast = np.zeros(len(istruct["ballast"]))
                     for j in range(V_ballast.size):
-                        if "volume" in istruct["ballasts"][j]:
-                            V_ballast[j] = istruct["ballasts"][j]["volume"]
+                        if "volume" in istruct["ballast"][j]:
+                            V_ballast[j] = istruct["ballast"][j]["volume"]
                     iball = np.where(V_ballast > 0.0)[0]
                     if iball.size > 0:
                         wt_opt.model.add_design_var(
@@ -918,6 +828,8 @@ class PoseOptimization(object):
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
+
+        # -- User DVs --
         if "user" in self.opt["design_variables"]:
             user_defined = self.opt["design_variables"]["user"]
             for i in range(len(user_defined)):
@@ -999,10 +911,6 @@ class PoseOptimization(object):
                 )
         if blade_constr["tip_deflection"]["flag"]:
             wt_opt.model.add_constraint("tcons.tip_deflection_ratio", upper=1.0)
-        if blade_constr["t_sc_joint"]["flag"] and self.modeling["WISDEM"]["RotorSE"]["bjs"]:
-            wt_opt.model.add_constraint(
-                "rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0
-            )
         if blade_constr["chord"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"]:
                 wt_opt.model.add_constraint("blade.pa.max_chord_constr", upper=1.0)
@@ -1428,54 +1336,22 @@ class PoseOptimization(object):
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
             twist_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["twist"]["values"],
             )
             init_twist_opt = twist_interpolator(wt_opt["blade.opt_var.s_opt_twist"])
             wt_opt["blade.opt_var.twist_opt"] = init_twist_opt
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
             chord_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape"]["chord"]["values"],
             )
             init_chord_opt = chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
-            if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
-                wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rthick"]["n_opt"])
-                r_thick_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
-                )
-                init_r_thick_opt = r_thick_interpolator(wt_opt["inn_af.s_opt_r_thick"])
-                wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
-                wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
-                L_D_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
-                )
-                init_L_D_opt = L_D_interpolator(wt_opt["inn_af.s_opt_L_D"])
-                wt_opt["inn_af.L_D_opt"] = init_L_D_opt
-                wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
-                c_d_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
-                )
-                init_c_d_opt = c_d_interpolator(wt_opt["inn_af.s_opt_c_d"])
-                wt_opt["inn_af.c_d_opt"] = init_c_d_opt
-
-                wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
-                    0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
-                )
-                stall_margin_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-                )
-                init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
-                wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
             if not self.modeling["user_elastic"]["blade"]:
                 # YL: no internal structure optimization when using user-defined blade elastic properties
-                layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+                layers = wt_init["components"]["blade"]["structure"]["layers"]
                 for i in range(self.modeling["WISDEM"]["RotorSE"]["n_layers"]):
                     wt_opt["blade.opt_var.s_opt_layer_%d"%i] = np.linspace(
                         0.0, 1.0, blade_opt["n_opt_struct"][i]
@@ -1502,7 +1378,7 @@ class PoseOptimization(object):
                     if self.modeling["flags"]["tower"]:
                         wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
-        if self.modeling["flags"]["nacelle"]:
+        if self.modeling["flags"]["drivetrain"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
 
             wt_opt["drivese.shaft_deflection_allowable"] = drive_constr["shaft_deflection"]["upper_bound"]
@@ -1517,8 +1393,8 @@ class PoseOptimization(object):
         if self.modeling["flags"]["floating"]:
             float_constr = self.opt["constraints"]["floating"]
             wt_opt["floatingse.max_surge_fraction"] = float_constr["max_surge"]["upper_bound"]
-            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="rad")
-            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="rad")
+            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="deg")
+            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="deg")
 
         return wt_opt
 

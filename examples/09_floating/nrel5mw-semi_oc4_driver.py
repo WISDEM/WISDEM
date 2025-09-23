@@ -8,7 +8,7 @@ from wisdem.glue_code.runWISDEM import run_wisdem
 ## File management
 run_dir = os.path.dirname(os.path.realpath(__file__))
 fname_wt_input_oc4 = run_dir + os.sep + "nrel5mw-semi_oc4.yaml"
-fname_modeling_options = run_dir + os.sep + "modeling_options.yaml"
+fname_modeling_options = run_dir + os.sep + "modeling_options_semi.yaml"
 fname_analysis_options = run_dir + os.sep + "analysis_options.yaml"
 
 

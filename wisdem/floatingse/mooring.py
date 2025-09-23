@@ -333,7 +333,7 @@ class Mooring(om.ExplicitComponent):
             # Do empirical sizing with MoorPy
             fx = (inputs["anchor_max_lateral_load"] - outputs["constr_anchor_lateral"].min()) / gamma
             fz = (inputs["anchor_max_vertical_load"] - outputs["constr_anchor_vertical"].min()) / gamma
-            anchor_rate, _, _ = props.getAnchorProps(fx, fz, type=anchor_type.replace("_", "-"))
+            anchor_rate, _, _, _ = props.getAnchorCost(fx, fz, type=anchor_type.replace("_", "-"))
             anchor_mass = 0.0  # TODO
         n_anchors = n_lines = self.options["options"]["n_anchors"]
 

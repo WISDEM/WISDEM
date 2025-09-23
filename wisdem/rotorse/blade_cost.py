@@ -799,11 +799,7 @@ class material_cutting_process(object):
         self.materials["n_rolls"] = np.zeros(len(mat_names))
 
         for i_mat in range(len(mat_names)):
-            if (
-                self.materials["orth"][i_mat] == 1
-                and self.materials["component_id"][i_mat] > 1
-                and self.materials["component_id"][i_mat] < 4
-            ):
+            if self.materials["orth"][i_mat] == 1 and self.materials["roll_mass"][i_mat] > 0:
                 # Number of rolls
                 self.materials["n_rolls"][i_mat] = (
                     self.materials["total_mass_w_waste"][i_mat] / self.materials["roll_mass"][i_mat]
@@ -3042,16 +3038,6 @@ class BladeCost(om.ExplicitComponent):
             desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
         self.add_input(
-            "layer_web",
-            val=np.zeros(n_layers),
-            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
-        )
-        self.add_discrete_input(
-            "definition_layer",
-            val=np.zeros(n_layers),
-            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
-        )
-        self.add_input(
             "layer_thickness",
             val=np.zeros((n_layers, n_span)),
             units="m",
@@ -3067,6 +3053,11 @@ class BladeCost(om.ExplicitComponent):
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
+        self.add_discrete_input(
+            "build_layer",
+            val=-np.ones(n_layers),
+            desc="1D array of boolean values indicating how to build a layer.",
+        )
 
         # Inputs - Materials
         self.add_discrete_input("mat_name", val=n_mat * [""], desc="1D array of names of materials.")
@@ -3074,11 +3065,6 @@ class BladeCost(om.ExplicitComponent):
             "orth",
             val=np.zeros(n_mat),
             desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
-        )
-        self.add_discrete_input(
-            "component_id",
-            val=np.zeros(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
         )
         self.add_input(
             "rho",
@@ -3338,10 +3324,9 @@ class BladeCost(om.ExplicitComponent):
         web_end_nd = inputs["web_end_nd"]
         layer_thickness = inputs["layer_thickness"]
         orth = discrete_inputs["orth"]
-        component_id = discrete_inputs["component_id"]
         rho_mat = inputs["rho"]
         waste = inputs["waste"]
-        layer_web = np.array(inputs["layer_web"], dtype=int)
+        build_layer = discrete_inputs["build_layer"]
         ply_t = inputs["ply_t"]
         # When ply thickness is not defined or set to 0, set to high number to avoid inf laminate thickness later on
         ply_t[ply_t == 0] = 1.0e6
@@ -3458,7 +3443,7 @@ class BladeCost(om.ExplicitComponent):
 
                 width_ss = np.zeros(self.n_span)
                 width_ps = np.zeros(self.n_span)
-                if layer_web[i_lay] == 0:
+                if build_layer[i_lay] >= 0:
                     # Determine on which of the two molds the layer should go
                     if (
                         layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
@@ -3503,21 +3488,26 @@ class BladeCost(om.ExplicitComponent):
                     layer_volume_span_ss[i_lay, :] = layer_thickness[i_lay, :] * width_ss
                     layer_volume_span_ps[i_lay, :] = layer_thickness[i_lay, :] * width_ps
                 else:
+                    web_id = int(- build_layer[i_lay] - 1)
                     SS = False
                     PS = False
                     # Compute the volume per unit meter for each layer
                     layer_volume_span_webs[i_lay, :] = (
-                        layer_thickness[i_lay, :] * web_height[int(layer_web[i_lay]) - 1, :]
+                        layer_thickness[i_lay, :] * web_height[web_id, :]
                     )
                     # Compute length of shear webs
-                    if web_length[int(layer_web[i_lay]) - 1] == 0:
-                        web_length[int(layer_web[i_lay]) - 1] = (s[imax] - s[imin]) * blade_length
-                        web_indices[int(layer_web[i_lay]) - 1, :] = [imin, imax]
+                    if web_length[web_id] == 0:
+                        web_length[web_id] = (s[imax] - s[imin]) * blade_length
+                        web_indices[web_id, :] = [imin, imax]
                 # Compute volume of layer
                 layer_volume_span = (
                     layer_volume_span_ss[i_lay, :] + layer_volume_span_ps[i_lay, :] + layer_volume_span_webs[i_lay, :]
                 )
-                layer_volume[i_lay] = np.trapz(layer_volume_span, s * blade_length)
+                try:
+                    # Numpy v1/2 clash
+                    layer_volume[i_lay] = np.trapezoid(layer_volume_span, s * blade_length)
+                except AttributeError:
+                    layer_volume[i_lay] = np.trapz(layer_volume_span, s * blade_length)
 
                 # Assign volume to corresponding material
                 mat_name = self.layer_mat[i_lay]
@@ -3535,34 +3525,48 @@ class BladeCost(om.ExplicitComponent):
                 if orth[i_mat]:
                     layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
                     layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
-                    add_volume_ss = np.trapz(
-                        np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
-                        np.r_[0, blade_length * root_preform_length],
-                    )
-                    add_volume_ps = np.trapz(
-                        np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
-                        np.r_[0, blade_length * root_preform_length],
-                    )
+                    try:
+                        add_volume_ss = np.trapezoid(
+                            np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                        add_volume_ps = np.trapezoid(
+                            np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                    except AttributeError:
+                        add_volume_ss = np.trapz(
+                            np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                        add_volume_ps = np.trapz(
+                            np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
                     volume_root_preform_ss += add_volume_ss
                     volume_root_preform_ps += add_volume_ps
                     mass_root_preform_ss += add_volume_ss * rho_mat[i_mat]
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
                     width_ss_interp = np.interp(root_preform_length, s, width_ss)
                     width_ps_interp = np.interp(root_preform_length, s, width_ps)
-                    area_root_ss = np.trapz(
-                        np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length]
-                    )
-                    area_root_ps = np.trapz(
-                        np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length]
-                    )
+                    try:
+                        area_root_ss = np.trapezoid(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                        area_root_ps = np.trapezoid(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
+                    except AttributeError:
+                        area_root_ss = np.trapz(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                        area_root_ps = np.trapz(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
 
                 # Fabric shear webs
-                if layer_web[i_lay] != 0:
-                    add_volume = np.trapz(layer_volume_span_webs[i_lay, :], s * blade_length)
-                    mass_webs[layer_web[i_lay] - 1] += add_volume * rho_mat[i_mat]
+                if build_layer[i_lay] < 0:
+                    web_id = int(- build_layer[i_lay] - 1)
+                    try:
+                        add_volume = np.trapezoid(layer_volume_span_webs[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        add_volume = np.trapz(layer_volume_span_webs[i_lay, :], s * blade_length)
+                    mass_webs[web_id] += add_volume * rho_mat[i_mat]
                     if orth[i_mat]:
-                        volumeskin2lay_webs[layer_web[i_lay] - 1] += add_volume
-                        fabric2lay_webs[layer_web[i_lay] - 1] += add_volume / ply_t[i_mat]
+                        volumeskin2lay_webs[web_id] += add_volume
+                        fabric2lay_webs[web_id] += add_volume / ply_t[i_mat]
 
                 # Spar caps
                 elif self.layer_name[i_lay].lower() == self.spar_cap_ss:
@@ -3570,8 +3574,12 @@ class BladeCost(om.ExplicitComponent):
                     spar_cap_length_ss = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ss = width[imin]
                     width_sc_end_ss = width[imax]
-                    area_sc_ss = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    try:
+                        area_sc_ss = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        area_sc_ss = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                     fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
                     mass_sc_ss = volume2lay_sc_ss * rho_mat[i_mat]
                     max_n_plies_sc_ss = max(layer_thickness[i_lay, :]) / ply_t[i_mat]
@@ -3587,39 +3595,54 @@ class BladeCost(om.ExplicitComponent):
                     spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ps = width[imin]
                     width_sc_end_ps = width[imax]
-                    area_sc_ps = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    try:
+                        area_sc_ps = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ps = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        area_sc_ps = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                     fabric2lay_sc_ps = volume2lay_sc_ps / ply_t[i_mat]
                     mass_sc_ps = volume2lay_sc_ps * rho_mat[i_mat]
                     max_n_plies_sc_ps = max(layer_thickness[i_lay, :]) / ply_t[i_mat]
 
                 # Shell skins
-                elif component_id[i_mat] == 2:
-                    volume2lay_shell_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
-                    volume2lay_shell_ps = np.trapz(layer_volume_span_ps[i_lay, :], s * blade_length)
+                elif orth[i_mat] == 1 and ply_t[i_mat] < 1.e-2 and layer_start_nd[i_lay, imin] < 0.1 and layer_end_nd[i_lay, imin] > 0.9:
+                    try:
+                        volume2lay_shell_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                        volume2lay_shell_ps = np.trapezoid(layer_volume_span_ps[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        volume2lay_shell_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
+                        volume2lay_shell_ps = np.trapz(layer_volume_span_ps[i_lay, :], s * blade_length)
                     fabric2lay_shell_ss += volume2lay_shell_ss / ply_t[i_mat]
                     fabric2lay_shell_ps += volume2lay_shell_ps / ply_t[i_mat]
                     mass_shell_ss += volume2lay_shell_ss * rho_mat[i_mat]
                     mass_shell_ps += volume2lay_shell_ps * rho_mat[i_mat]
 
                 # Shell core
-                elif component_id[i_mat] == 1:
-                    areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax] * blade_length)
-                    areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_coreshell_ss = np.trapz(
-                        layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length
-                    )
-                    volume2lay_coreshell_ps = np.trapz(
-                        layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length
-                    )
+                elif orth[i_mat] == 0 and layer_start_nd[i_lay, imin] > 0.01 and layer_end_nd[i_lay, imin] < 0.99:
+                    try:
+                        areacore2lay_shell_ss += np.trapezoid(width_ss[imin:imax], s[imin:imax] * blade_length)
+                        areacore2lay_shell_ps += np.trapezoid(width_ps[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    except AttributeError:
+                        areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax] * blade_length)
+                        areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
                     mass_shell_ss += volume2lay_coreshell_ss * rho_mat[i_mat]
                     mass_shell_ps += volume2lay_coreshell_ps * rho_mat[i_mat]
 
                 # TE/LE reinforcement
-                elif component_id[i_mat] > 0:
-                    length2lay_reinf = np.trapz(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                elif orth[i_mat] == 1:
+                    try:
+                        length2lay_reinf = np.trapezoid(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    except AttributeError:
+                        length2lay_reinf = np.trapz(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
                     if np.mean(layer_start_nd[i_lay, :]) > 0.0 and np.mean(layer_end_nd[i_lay, :]) > 0.0:
                         LE = True
                         TE = False
@@ -3694,25 +3717,41 @@ class BladeCost(om.ExplicitComponent):
         bom = blade_bom()
         web_area = np.zeros(self.n_webs)
         for i_web in range(self.n_webs):
-            web_area[i_web] = np.trapz(
-                web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
-                blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
-            )
+            try:
+                web_area[i_web] = np.trapezoid(
+                    web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
+                    blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
+                )
+            except AttributeError:
+                web_area[i_web] = np.trapz(
+                    web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
+                    blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
+                )
         web_area_w_flanges = web_area + 2.0 * web_length * flange_width
-        ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
-        ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
+        try:
+            ss_area = np.trapezoid(sect_perimeter_ss, blade_length * s)
+            ps_area = np.trapezoid(sect_perimeter_ps, blade_length * s)
+        except AttributeError:
+            ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
+            ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
         ss_area_w_flanges = ss_area + 2.0 * flange_width * blade_length
         ps_area_w_flanges = ps_area + 2.0 * flange_width * blade_length
-        spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
-        spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
+        try:
+            spar_cap_ss_area = np.trapezoid(spar_cap_width_ss, blade_length * s)
+            spar_cap_ps_area = np.trapezoid(spar_cap_width_ps, blade_length * s)
+        except AttributeError:
+            spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
+            spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
         sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
-        ss_area_root = np.trapz(
-            np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length]
-        )
+        try:
+            ss_area_root = np.trapezoid(np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length])
+        except AttributeError:
+            ss_area_root = np.trapz(np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length])
         sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
-        ps_area_root = np.trapz(
-            np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length]
-        )
+        try:
+            ps_area_root = np.trapezoid(np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length])
+        except AttributeError:
+            ps_area_root = np.trapz(np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length])
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
         bom.blade_specs["area_lpskin_wo_flanges"] = ss_area
@@ -3747,7 +3786,6 @@ class BladeCost(om.ExplicitComponent):
         mat_dictionary = {}
         mat_dictionary["mat_name"] = discrete_inputs["mat_name"]
         mat_dictionary["orth"] = orth
-        mat_dictionary["component_id"] = component_id
         mat_dictionary["roll_mass"] = roll_mass
         mat_dictionary["total_mass_w_waste"] = mat_mass_scrap
         mat_dictionary["total_ply_area_w_waste"] = mat_area
@@ -3903,14 +3941,16 @@ class StandaloneBladeCost(om.Group):
         # Airfoil dictionary inputs
         airfoils = om.IndepVarComp()
         rotorse_options = modeling_options["WISDEM"]["RotorSE"]
-        n_af = rotorse_options["n_af"]  # Number of airfoils
+        n_af_master = rotorse_options["n_af_master"]  # Number of airfoils
         n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-        airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
-        airfoils.add_output("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        airfoils.add_discrete_output("name", val=n_af_master * [""], desc="1D array of names of airfoils.")
+        airfoils.add_output(
+            "rthick_master", val=np.zeros(n_af_master), desc="1D array of the relative thicknesses of each airfoil used along span."
+        )
         # Airfoil coordinates
         airfoils.add_output(
             "coord_xy",
-            val=np.zeros((n_af, n_xy, 2)),
+            val=np.zeros((n_af_master, n_xy, 2)),
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
         )
         self.add_subsystem("airfoils", airfoils)
@@ -3923,17 +3963,16 @@ class StandaloneBladeCost(om.Group):
                 user_elastic=modeling_options["user_elastic"]["blade"],
             ),
         )
-        self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
+        self.connect("airfoils.rthick_master", "blade.interp_airfoils.rthick_master")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
             "high_level_blade_props",
             ComputeHighLevelBladeProperties(rotorse_options=modeling_options["WISDEM"]["RotorSE"]),
         )
-        self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("blade.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] > 0:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
             n_span_out = (
@@ -3950,21 +3989,20 @@ class StandaloneBladeCost(om.Group):
 
             # Inputs to be split between inner and outer blade portions
             self.connect("high_level_blade_props.blade_length", "split.blade_length")
-            self.connect("blade.outer_shape_bem.s", "split.s")
+            self.connect("blade.outer_shape.s", "split.s")
             self.connect("blade.pa.chord_param", "split.chord")
             self.connect("blade.interp_airfoils.coord_xy_interp", "split.coord_xy_interp")
-            self.connect("blade.internal_structure_2d_fem.layer_thickness", "split.layer_thickness")
-            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "split.layer_start_nd")
-            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "split.layer_end_nd")
-            self.connect("blade.internal_structure_2d_fem.web_start_nd", "split.web_start_nd")
-            self.connect("blade.internal_structure_2d_fem.web_end_nd", "split.web_end_nd")
-            self.connect("blade.internal_structure_2d_fem.joint_position", "split.joint_position")
+            self.connect("blade.structure.layer_thickness", "split.layer_thickness")
+            self.connect("blade.structure.layer_start_nd", "split.layer_start_nd")
+            self.connect("blade.structure.layer_end_nd", "split.layer_end_nd")
+            self.connect("blade.structure.web_start_nd", "split.web_start_nd")
+            self.connect("blade.structure.web_end_nd", "split.web_end_nd")
+            self.connect("blade.structure.joint_position", "split.joint_position")
 
             # Common inputs to blade cost model
             self.connect("materials.name", ["rc_in.mat_name", "rc_out.mat_name"])
             self.connect("materials.orth", ["rc_in.orth", "rc_out.orth"])
             self.connect("materials.rho", ["rc_in.rho", "rc_out.rho"])
-            self.connect("materials.component_id", ["rc_in.component_id", "rc_out.component_id"])
             self.connect("materials.unit_cost", ["rc_in.unit_cost", "rc_out.unit_cost"])
             self.connect("materials.waste", ["rc_in.waste", "rc_out.waste"])
             self.connect("materials.rho_fiber", ["rc_in.rho_fiber", "rc_out.rho_fiber"])
@@ -3972,10 +4010,9 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.fwf", ["rc_in.fwf", "rc_out.fwf"])
             self.connect("materials.roll_mass", ["rc_in.roll_mass", "rc_out.roll_mass"])
             self.connect(
-                "blade.internal_structure_2d_fem.definition_layer",
-                ["rc_in.definition_layer", "rc_out.definition_layer"],
+                "blade.structure.build_layer",
+                ["rc_in.build_layer", "rc_out.build_layer"],
             )
-            self.connect("blade.internal_structure_2d_fem.layer_web", ["rc_in.layer_web", "rc_out.layer_web"])
 
             # Inner blade portion inputs
             self.connect("split.blade_length_inner", "rc_in.blade_length")
@@ -4004,20 +4041,18 @@ class StandaloneBladeCost(om.Group):
             )
 
             self.connect("high_level_blade_props.blade_length", "rc.blade_length")
-            self.connect("blade.outer_shape_bem.s", "rc.s")
+            self.connect("blade.outer_shape.s", "rc.s")
             self.connect("blade.pa.chord_param", "rc.chord")
             self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
-            self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
-            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
-            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
-            self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
-            self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
-            self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
-            self.connect("blade.internal_structure_2d_fem.web_end_nd", "rc.web_end_nd")
+            self.connect("blade.structure.layer_thickness", "rc.layer_thickness")
+            self.connect("blade.structure.layer_start_nd", "rc.layer_start_nd")
+            self.connect("blade.structure.layer_end_nd", "rc.layer_end_nd")
+            self.connect("blade.structure.build_layer", "rc.build_layer")
+            self.connect("blade.structure.web_start_nd", "rc.web_start_nd")
+            self.connect("blade.structure.web_end_nd", "rc.web_end_nd")
             self.connect("materials.name", "rc.mat_name")
             self.connect("materials.orth", "rc.orth")
             self.connect("materials.rho", "rc.rho")
-            self.connect("materials.component_id", "rc.component_id")
             self.connect("materials.unit_cost", "rc.unit_cost")
             self.connect("materials.waste", "rc.waste")
             self.connect("materials.rho_fiber", "rc.rho_fiber")
@@ -4026,10 +4061,10 @@ class StandaloneBladeCost(om.Group):
             self.connect("materials.roll_mass", "rc.roll_mass")
 
         self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
-        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] > 0:
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
-            self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "total_bc.joint_cost")
+            self.connect("blade.structure.joint_cost", "total_bc.joint_cost")
         else:
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
@@ -4043,7 +4078,8 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
     wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade, modeling_options["user_elastic"]["blade"])
 
     airfoils = wt_init["airfoils"]
-    wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
+    airfoils_master = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
+    wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, coordinates_only=True)
 
     return wt_opt
 

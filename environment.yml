@@ -3,13 +3,16 @@ channels:
   - defaults
 
 dependencies:
+  - cftime
   - coveralls
   - cython
+  - jsonmerge
   - jsonschema
   - make
   - matplotlib
   - meson
   - moorpy
+  - netcdf4
   - ninja
   - nlopt
   - numpy
@@ -31,9 +34,12 @@ dependencies:
   - sortedcontainers
   - statsmodels>=0.14.5
   - swig
+  - xarray
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
+    #- windIO>=2.0.0
+    - git+https://github.com/IEAWindSystems/windIO.git@floating_fixes
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

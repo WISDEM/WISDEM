@@ -5,22 +5,24 @@ design_variables:
 
     floating:
         joints:
-            flag: True
             z_coordinate:
                 - names: [col1_keel, col2_keel, col3_keel]
                   lower_bound: -40.0
                   upper_bound: -15.0
+                  flag: True
                 - names: [main_keel]
                   lower_bound: -40.0
                   upper_bound: -15.0
+                  flag: True
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
                   lower_bound: 25.0
                   upper_bound: 50.0
+                  flag: True
         members:
-            flag: True
             groups:
                 - names: [column1, column2, column3]
+                  flag: True
                   diameter:
                       lower_bound: 1.0
                       upper_bound: 20.0
@@ -33,6 +35,7 @@ design_variables:
                         upper_bound: 1.0
 
                 - names: [delta_pontoon_lower12, delta_pontoon_lower23, delta_pontoon_lower31]
+                  flag: True
                   diameter:
                       lower_bound: 2.0
                       upper_bound: 5.0
@@ -41,6 +44,7 @@ design_variables:
                       upper_bound: 1.0
 
                 - names: [delta_pontoon_upper12, delta_pontoon_upper23, delta_pontoon_upper31]
+                  flag: True
                   diameter:
                       lower_bound: 2.0
                       upper_bound: 5.0
@@ -49,6 +53,7 @@ design_variables:
                       upper_bound: 1.0
 
                 - names: [main_column]
+                  flag: True
                   diameter:
                       lower_bound: 1.0
                       upper_bound: 20.0
@@ -65,35 +70,14 @@ design_variables:
                                 upper_bound: 1.0
 
     mooring:
-            anchor_radius:
-                # This adjusts the radius of all anchor nodes from (0,0)
-                flag: False
-                lower_bound: 10.0
-                upper_bound: 1000.0
-            line_length:
-                # Adjust the unstretched line length of the mooring segments
-                linked_lines:
-                    # This will set the same line length for all segments listed in the same names entry
-                    - names: [line1, line2, line3]
-                      flag: False
-                      lower_bound: 100.0
-                      upper_bound: 2000.0
-                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                      flag: False
-                      lower_bound: 100.0
-                      upper_bound: 2000.0
-            line_diameter:
-                # Adjust the diameter of the mooring segments
-                linked_lines:
-                    # This will set the same diameter for all segments listed in the same names entry
-                    - names: [line1, line2, line3]
-                      flag: False
-                      lower_bound: 0.1
-                      upper_bound: 2.0
-                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
-                      flag: False
-                      lower_bound: 0.1
-                      upper_bound: 2.0
+        line_length:
+            flag: False
+            lower_bound: 100.0
+            upper_bound: 2000.0
+        line_diameter:
+            flag: False
+            lower_bound: 0.1
+            upper_bound: 2.0
 
 merit_figure: LCOE
 

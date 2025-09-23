@@ -3,34 +3,29 @@ import unittest
 
 import wisdem.glue_code.gc_LoadInputs as gcl
 
-test_dir = (
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    + os.sep
-    + "examples"
-    + os.sep
-    + "02_reference_turbines"
-    + os.sep
+test_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
+    "examples",
+    "02_reference_turbines",
 )
 
 
 class TestLoadInputs(unittest.TestCase):
     def setUp(self):
-        fname_wt_input = test_dir + "nrel5mw.yaml"
-        fname_modeling_options = test_dir + "modeling_options.yaml"
-        fname_analysis_options = test_dir + "analysis_options.yaml"
+        fname_wt_input = os.path.join(test_dir, "nrel5mw.yaml")
+        fname_modeling_options = os.path.join(test_dir, "modeling_options_nrel5.yaml")
+        fname_analysis_options = os.path.join(test_dir, "analysis_options.yaml")
 
         self.myobj = gcl.WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
     def testRunFlags(self):
         self.myobj.wt_init["airfoils"] = {}
         self.myobj.wt_init["components"]["blade"] = {}
-        self.myobj.wt_init.pop("bos")
         self.myobj.wt_init["components"].pop("tower")
         self.myobj.set_run_flags()
 
         self.assertTrue(self.myobj.modeling_options["flags"]["airfoils"])
         self.assertTrue(self.myobj.modeling_options["flags"]["blade"])
-        self.assertFalse(self.myobj.modeling_options["flags"]["bos"])
         self.assertFalse(self.myobj.modeling_options["flags"]["tower"])
 
     def testOptFlags(self):

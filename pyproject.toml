@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wisdem"
-version = "3.22.4"
+version = "4.0.0"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -38,6 +38,7 @@ classifiers = [  # Optional
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: C",
   "Programming Language :: Fortran",
@@ -50,6 +51,7 @@ classifiers = [  # Optional
 
 dependencies = [
   "dearpygui",
+  "jsonmerge",
   "jsonschema",
   "moorpy",
   "numpy",
@@ -64,7 +66,8 @@ dependencies = [
   "scipy",
   "simpy",
   "sortedcontainers",
-  "statsmodels>=0.14.5",
+  "statsmodels",
+  "windIO",
 ]
 
 # List additional groups of dependencies here (e.g. development

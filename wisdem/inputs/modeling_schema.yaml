@@ -1,4 +1,4 @@
-# Author: Pietro Bortolotti
+# Author: Pietro Bortolotti and Garrett Barter
 # Organization: National Renewable Energy Laboratory, Golden, CO
 # Date: 2020-04-28
 
@@ -10,6 +10,9 @@ title: WISDEM wind turbine modeling options schema
 description: Schema that describes the modeling options for WISDEM
 type: object
 properties:
+    fname_input_modeling:
+        type: string
+        description: Used to store file name of modeling options file
     General:
         type: object
         default: {}
@@ -92,6 +95,10 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -154,22 +161,6 @@ properties:
                         type: boolean
                         default: True
                         description: Flag switching on and off the 3d DU-Selig airfoil correction implemented in Polar.py
-                    inn_af:
-                        type: boolean
-                        default: False
-                        description: Flag switching on and off the inverted neural network for airfoil design
-                    inn_af_max_rthick:
-                        type: number
-                        default: 0.4
-                        minimum: 0.
-                        maximum: 1.
-                        description: Maximum airfoil thickness supported by the INN for airfoil design
-                    inn_af_min_rthick:
-                        type: number
-                        default: 0.15
-                        minimum: 0.
-                        maximum: 1.
-                        description: Minimum airfoil thickness supported by the INN for airfoil design
             DriveSE:
                 type: object
                 default: {}
@@ -196,10 +187,11 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
-                    use_gb_torque_density:
-                        type: boolean
-                        default: True
-                        description: Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg
+                    gearbox_torque_density:
+                        type: number
+                        default: 200.
+                        units: Nm/kg
+                        description: Value of desired torque density of the gearbox. If zero, DrivetrainSE sizes the gearbox.
                     hub:
                         type: object
                         default: {}
@@ -295,6 +287,10 @@ properties:
                         type: integer
                         default: 3
                         description: Number of Frame3DD element refinements for every specified section along tower/member
+                    rank_and_file: &rank_and_file
+                        type: boolean
+                        default: False
+                        description: Nikhar's method for modal identification
             FixedBottomSE:
                 type: object
                 default: {}
@@ -339,11 +335,138 @@ properties:
                         type: boolean
                         default: False
                         description: If true, save .pngs of the jacket truss during analysis or optimization. Jacket only.
+                    rank_and_file: *rank_and_file
             BOS:
                 type: object
                 default: {}
                 properties:
                     flag: *flag
+                    plant_turbine_spacing:
+                        type: number
+                        description: Distance between turbines in the primary grid streamwise direction in rotor diameters
+                        units: dimensionless
+                        minimum: 1
+                        maximum: 100
+                        default: 7
+                    plant_row_spacing:
+                        type: number
+                        description: Distance between turbine rows in the cross-wind direction in rotor diameters
+                        units: dimensionless
+                        minimum: 1
+                        maximum: 100
+                        default: 7
+                    distance_to_substation:
+                        type: number
+                        description: Distance from centroid of plant to substation in km
+                        units: km
+                        minimum: 0
+                        maximum: 1000
+                        default: 2
+                    distance_to_interconnection:
+                        type: number
+                        description: Distance from substation to grid connection in km
+                        units: km
+                        minimum: 0
+                        maximum: 1000
+                        default: 50
+                    distance_to_landfall:
+                        type: number
+                        description: Distance from plant centroid to export cable landfall for offshore plants
+                        units: km
+                        minimum: 0
+                        maximum: 1000
+                        default: 100
+                    distance_to_site:
+                        type: number
+                        description: Distance from port to plant centroid for offshore plants
+                        units: km
+                        minimum: 0
+                        maximum: 1000
+                        default: 100
+                    interconnect_voltage:
+                        type: number
+                        description: Voltage of cabling to grid interconnection
+                        units: kV
+                        minimum: 0
+                        maximum: 1000
+                        default: 130
+                    contingency:
+                        type: number
+                        description: Additional contingency cost during project construction
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1.e4
+                        default: 316.0
+                    construction_insurance:
+                        type: number
+                        description: Additional insurance cost during project construction
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1.e4
+                        default: 44.0
+                    construction_financing:
+                        type: number
+                        description: Additional financing cost during project construction
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1.e4
+                        default: 183.0
+                    commissioning_cost_kW:
+                        type: number
+                        description: Additional BOS cost to commission the turbines and wind farm
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1.e4
+                        default: 44.0
+                    decommissioning_cost_kW:
+                        type: number
+                        description: Additional BOS cost to decommission the turbines and wind farm
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1.e4
+                        default: 58.0
+                    port_cost_per_month:
+                        type: number
+                        description: Monthly port rental fees
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 2.e+6
+                    site_auction_price:
+                        type: number
+                        description: Cost to secure site lease
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 100e6
+                    site_assessment_cost:
+                        type: number
+                        description: Cost to do engineering site assessment
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 50e6
+                    review_cost:
+                        type: number
+                        description: Cost for additional review by permitting agencies, such as the U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 0.0
+                    construction_plan_cost:
+                        type: number
+                        description: Cost to do construction planning
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 1e6
+                    installation_plan_cost:
+                        type: number
+                        description: Cost to do installation planning
+                        units: USD
+                        minimum: 0
+                        maximum: 1.e+9
+                        default: 2.5e5
             FloatingSE:
                 type: object
                 default: {}
@@ -373,7 +496,7 @@ properties:
                                 description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
                             shift:
                                 type: number
-                                default: 10.0
+                                default: 100.0
                                 description: Numerical matrix diagonal adder for eigenvalue solve of unrestrained structure
                             tol:
                                 type: number
@@ -383,7 +506,7 @@ properties:
                                 description: Convergence tolerance for modal eigenvalue solution
                             skip_duplicate_modes:
                                 type: boolean
-                                default: True   # up for debate
+                                default: False   # up for debate
                                 description: If true, skip duplicate modes during identification
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
@@ -391,11 +514,240 @@ properties:
                     gamma_b: *gamma_b
                     gamma_freq: *gamma_freq
                     gamma_fatigue: *gamma_fatigue
+                    rank_and_file: *rank_and_file
                     symmetric_moorings:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
-
+            LCOE:
+                type: object
+                description: Data for a levelized cost of energy analysis.
+                default: {}
+                properties:
+                    flag: *flag
+                    wake_loss_factor:
+                        type: number
+                        description: Factor to model losses in annual energy production in a wind farm compared to the annual energy production at the turbine level (wakes mostly).
+                        units: dimensionless
+                        minimum: 0
+                        maximum: 1
+                        default: 0.15
+                    fixed_charge_rate:
+                        type: number
+                        description: Fixed charge rate to compute the levelized cost of energy. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf
+                        units: dimensionless
+                        minimum: 0
+                        maximum: 1
+                        default: 0.075
+                    bos_per_kW:
+                        type: number
+                        description: Balance of stations costs expressed in USD per kW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 10000
+                        default: 0.0
+                    opex_per_kW:
+                        type: number
+                        description: Operational expenditures expressed in USD per kW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf
+                        units: USD/kW
+                        minimum: 0
+                        maximum: 1000
+                        default: 0.0
+                    turbine_number:
+                        type: integer
+                        description: Number of turbines in the park, used to compute levelized cost of energy. Often wind parks are assumed of 600 MW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf
+                        units: dimensionless
+                        minimum: 0
+                        maximum: 10000
+                        default: 50
+                    labor_rate:
+                        type: number
+                        description: Hourly loaded wage per worker including all benefits and overhead.  This is currently only applied to steel, column structures.
+                        units: USD/h
+                        minimum: 0.0
+                        maximum: 1000.0
+                        default: 58.8
+                    painting_rate:
+                        type: number
+                        description: Cost per unit area for finishing and surface treatments.  This is currently only applied to steel, column structures.
+                        units: USD/m^2
+                        minimum: 0.0
+                        maximum: 1000.0
+                        default: 30.0
+                    blade_mass_cost_coeff:
+                        type: number
+                        description: Regression-based blade cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 14.6
+                    hub_mass_cost_coeff:
+                        type: number
+                        description: Regression-based hub cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 3.9
+                    pitch_system_mass_cost_coeff:
+                        type: number
+                        description: Regression-based pitch system cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 22.1
+                    spinner_mass_cost_coeff:
+                        type: number
+                        description: Regression-based spinner cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 11.1
+                    lss_mass_cost_coeff:
+                        type: number
+                        description: Regression-based low speed shaft cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 11.9
+                    bearing_mass_cost_coeff:
+                        type: number
+                        description: Regression-based bearing cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 4.5
+                    gearbox_mass_cost_coeff:
+                        type: number
+                        description: Regression-based gearbox cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 12.9
+                    gearbox_torque_cost:
+                        type: number
+                        description: Regression-based cost of gearboxes based on torque, tuned in 2024
+                        units: USD/kNm
+                        minimum: 0.0
+                        maximum: 1.e+3
+                        default: 50.
+                    hss_mass_cost_coeff:
+                        type: number
+                        description: Regression-based high speed side cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 6.8
+                    generator_mass_cost_coeff:
+                        type: number
+                        description: Regression-based generator cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 12.4
+                    bedplate_mass_cost_coeff:
+                        type: number
+                        description: Regression-based bedplate cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 2.9
+                    yaw_mass_cost_coeff:
+                        type: number
+                        description: Regression-based yaw system cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 8.3
+                    converter_mass_cost_coeff:
+                        type: number
+                        description: Regression-based converter cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 18.8
+                    transformer_mass_cost_coeff:
+                        type: number
+                        description: Regression-based transformer cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 18.8
+                    hvac_mass_cost_coeff:
+                        type: number
+                        description: Regression-based HVAC system cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 124.0
+                    cover_mass_cost_coeff:
+                        type: number
+                        description: Regression-based nacelle cover cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 5.7
+                    elec_connec_machine_rating_cost_coeff:
+                        type: number
+                        description: Regression-based electrical plant connection cost/rating ratio
+                        units: USD/kW
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 41.85
+                    platforms_mass_cost_coeff:
+                        type: number
+                        description: Regression-based nacelle platform cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 17.1
+                    tower_mass_cost_coeff:
+                        type: number
+                        description: Regression-based tower cost/mass ratio
+                        units: USD/kg
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 2.9
+                    controls_machine_rating_cost_coeff:
+                        type: number
+                        description: Regression-based controller and sensor system cost/rating ratio
+                        units: USD/kW
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 21.15
+                    crane_cost:
+                        type: number
+                        description: crane cost if present
+                        units: USD
+                        minimum: 0.0
+                        maximum: 1.e+6
+                        default: 12.e+3
+                    electricity_price:
+                        type: number
+                        description: Electricity price used to compute value in beyond lcoe metrics
+                        units: USD/kW/h
+                        minimum: 0.
+                        maximum: 1.
+                        default: 0.04
+                    reserve_margin_price:
+                        type: number
+                        description: Reserve margin price used to compute value in beyond lcoe metrics
+                        units: USD/kW/yr
+                        minimum: 0.
+                        maximum: 1.e+4
+                        default: 120.
+                    capacity_credit:
+                        type: number
+                        description: Capacity credit used to compute value in beyond lcoe metrics
+                        minimum: 0.
+                        maximum: 1.
+                        default: 0.
+                    benchmark_price:
+                        type: number
+                        description: Benchmark price used to nondimensionalize value in beyond lcoe metrics
+                        units: USD/kW/h
+                        minimum: 0.
+                        maximum: 1.
+                        default: 0.071
             Loading:
                 type: object
                 # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
@@ -458,3 +810,134 @@ properties:
                                     description: Applied wind reference velocity, if necessary
                                     default: 0.0
                                     unit: meter
+    Environment:
+        type: object
+        default: {}
+        description: The field :code:`environment` includes the data characterizing air and water where the wind turbine operates.
+        optional:
+            - air_density
+            - air_dyn_viscosity
+            - air_speed_sound
+            - shear_exp
+            - gravity
+            - weib_shape_parameter
+            - water_density
+            - water_dyn_viscosity
+            - water_depth
+            - soil_shear_modulus
+            - soil_poisson
+            - air_pressure
+            - air_vapor_pressure
+            - significant_wave_height
+            - significant_wave_period
+        properties:
+            gravity:
+                type: number
+                description: Gravitational acceleration
+                units: m/s^2
+                minimum: 0
+                maximum: 100.0
+                default: 9.80665
+            air_density:
+                type: number
+                description: Density of air.
+                units: kg/m^3
+                minimum: 0
+                maximum: 1.5
+                default: 1.225
+            air_dyn_viscosity:
+                type: number
+                description: Dynamic viscosity of air.
+                units: kg/(m*s)
+                minimum: 0
+                maximum: 2.e-5
+                default: 1.81e-5
+            air_pressure:
+                type: number
+                description: Atmospheric pressure of air
+                units: kg/(m*s^2)
+                minimum: 0
+                maximum: 1.e+6
+                default: 1.035e+5
+            air_vapor_pressure:
+                type: number
+                description: Vapor pressure of fluid
+                units: kg/(m*s^2)
+                minimum: 0
+                maximum: 1.e+6
+                default: 1.7e+3
+            weib_shape_parameter:
+                type: number
+                description: Shape factor of the Weibull wind distribution.
+                units: dimensionless
+                minimum: 1
+                maximum: 3
+                default: 2.
+            air_speed_sound:
+                type: number
+                description: Speed of sound in air.
+                units: m/s
+                minimum: 330.
+                maximum: 350.
+                default: 340.
+            shear_exp:
+                type: number
+                description: Shear exponent of the atmospheric boundary layer.
+                units: dimensionless
+                minimum: 0
+                maximum: 1
+                default: 0.2
+            water_density:
+                type: number
+                description: Density of water.
+                units: kg/m^3
+                minimum: 950
+                maximum: 1100
+                default: 1025.0
+            water_dyn_viscosity:
+                type: number
+                description: Dynamic viscosity of water.
+                units: kg/(m*s)
+                minimum: 1.e-3
+                maximum: 2.e-3
+                default: 1.3351e-3
+            water_depth:
+                type: number
+                description: Water depth for offshore environment.
+                units: m
+                minimum: 0.0
+                maximum: 1.e+4
+                default: 0.0
+            soil_shear_modulus:
+                type: number
+                description: Shear modulus of the soil.
+                units: Pa
+                minimum: 10.e+6
+                maximum: 500.e+6
+                default: 140.e+6
+            soil_poisson:
+                type: number
+                description: Poisson ratio of the soil.
+                units: dimensionless
+                minimum: 0
+                maximum: 0.6
+                default: 0.4
+            V_mean:
+                type: number
+                units: m/s
+                default: 0.
+                minimum: 0.
+                maximum: 2.e+1
+                description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
+            significant_wave_height:
+                type: number
+                default: 4.52
+                minimum: 0.01
+                maximum: 200
+                description: Average height of the highest one-third of waves in a wave record or time series (meters)
+            significant_wave_period:
+                type: number
+                default: 9.45
+                minimum: 0.05
+                maximum: 1000.0
+                description: Average period of the highest one-third of waves in a wave record or time series (seconds)

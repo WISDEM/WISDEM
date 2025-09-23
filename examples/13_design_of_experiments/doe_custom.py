@@ -16,7 +16,7 @@ def driver():
     # File management
     mydir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # get path to examples dir
     fname_wt_input = os.path.join(mydir, "02_reference_turbines", "IEA-15-240-RWT.yaml")
-    fname_modeling_options = os.path.join(mydir, "02_reference_turbines", "modeling_options.yaml")
+    fname_modeling_options = os.path.join(mydir, "02_reference_turbines", "modeling_options_iea15.yaml")
     fname_analysis_options = os.path.join(mydir, "02_reference_turbines", "analysis_options.yaml")
 
     # Initial run
@@ -37,7 +37,7 @@ def driver():
     aep_output = np.zeros( npts ) # Initialize output container
     myargs = [] # Container for parallel run arguments
     for k in range(npts):
-        overrides = {'hub.cone':Blades[k], 'nacelle.uptilt': Shafts[k]}
+        overrides = {'hub.cone':Blades[k], 'drivetrain.uptilt': Shafts[k]}
         myargs.append([k, fname_wt_input, fname_modeling_options, fname_analysis_options, overrides])
 
         # Run cases in serial this way

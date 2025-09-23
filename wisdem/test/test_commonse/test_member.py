@@ -558,7 +558,6 @@ class TestMemberComponent(unittest.TestCase):
         stiffs = np.array([[0.095, 0.105], [0.295, 0.305], [0.495, 0.505], [0.695, 0.705], [0.895, 0.905]])
         expect = np.unique(np.r_[s_full, stiffs.flatten()])
         npt.assert_almost_equal(key, expect)
-        print("HERE")
         for k in key:
             instiff = np.any(np.logical_and(k >= stiffs[:, 0], k < stiffs[:, 1]))
             if instiff:

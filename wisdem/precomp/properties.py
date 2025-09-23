@@ -36,7 +36,8 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
     mat_lamW = np.array(mat_lamW, dtype=np.int_)
 
     max_sectors = np.int_(np.max([n_laminaU.size, n_laminaL.size, n_laminaW.size]))
-    max_laminates = np.int_(np.max([n_laminaU.max(), n_laminaL.max(), n_laminaW.max()]))
+    max_laminatesUL = np.int_(np.max([n_laminaU.max(), n_laminaL.max()]))
+    max_laminatesW = np.int_(np.max(n_laminaW.max()))
 
     n_materials = len(e1)
     n_af_nodes = len(xnode)
@@ -122,12 +123,12 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
     n_laminas[0,:n_laminaU.size] = n_laminaU
     n_laminas[1,:n_laminaL.size] = n_laminaL
     
-    tht_lam = np.zeros((2, max_sectors, max_laminates))
-    tlam = np.zeros((2, max_sectors, max_laminates))
-    mat_id = np.zeros((2, max_sectors, max_laminates), dtype=np.int_)
-    wmat_id = np.zeros((nweb, 6), dtype=np.int_)
-    tht_wlam = np.zeros((nweb, 6))
-    twlam = np.zeros((nweb, 6))
+    tht_lam = np.zeros((2, max_sectors, max_laminatesUL))
+    tlam = np.zeros((2, max_sectors, max_laminatesUL))
+    mat_id = np.zeros((2, max_sectors, max_laminatesUL), dtype=np.int_)
+    wmat_id = np.zeros((nweb, max_laminatesW), dtype=np.int_)
+    tht_wlam = np.zeros((nweb, max_laminatesW))
+    twlam = np.zeros((nweb, max_laminatesW))
 
     k = 0
     for i in range(n_sctU):

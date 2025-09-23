@@ -115,7 +115,7 @@ class Gearbox(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("direct_drive", default=True)
-        self.options.declare("use_gb_torque_density", default=True)
+        self.options.declare("gearbox_torque_density", default=0.0)
 
     def setup(self):
         self.add_discrete_input("gear_configuration", val="eep")
@@ -126,13 +126,13 @@ class Gearbox(om.ExplicitComponent):
         self.add_input("rated_torque", val=0.0, units="N*m")
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("gearbox_mass_user", val=0.0, units="kg")
-        self.add_input("gearbox_torque_density", val=0.0, units="N*m/kg")
         self.add_input("gearbox_radius_user", val=0.0, units="m")
         self.add_input("gearbox_length_user", val=0.0, units="m")
 
         self.add_output("stage_ratios", val=np.zeros(3))
         self.add_output("gearbox_mass", 0.0, units="kg")
         self.add_output("gearbox_I", np.zeros(3), units="kg*m**2")
+        self.add_output("gearbox_torque_density", val=0.0, units="N*m/kg")
         self.add_output("L_gearbox", 0.0, units="m")
         self.add_output("D_gearbox", 0.0, units="m")
         self.add_output("carrier_mass", 0.0, units="kg")
@@ -183,9 +183,9 @@ class Gearbox(om.ExplicitComponent):
         # Now determine gearbox mass
         m_gearbox = float(inputs["gearbox_mass_user"][0])
         
-        if m_gearbox == 0.0 and self.options["use_gb_torque_density"]:
+        if m_gearbox == 0.0 and self.options["gearbox_torque_density"] > 0.:
             # NOTE THIS IS DEFAULT BECAUSE WE TRUST IT MORE AND IT IS MUCH QUICKER
-            m_gearbox = torque / float(inputs["gearbox_torque_density"][0])
+            m_gearbox = torque / self.options["gearbox_torque_density"]
 
         if m_gearbox == 0.0:
 
@@ -288,3 +288,4 @@ class Gearbox(om.ExplicitComponent):
         # Store outputs
         outputs["gearbox_mass"] = m_gearbox
         outputs["gearbox_I"] = I * m_gearbox
+        outputs["gearbox_torque_density"] = torque / m_gearbox

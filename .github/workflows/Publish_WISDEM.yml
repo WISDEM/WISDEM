@@ -43,18 +43,18 @@ jobs:
             mingw-w64-x86_64-gcc-fortran
             
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build wheels linux
         if: contains( matrix.os, 'ubuntu')
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.1.4
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
 
       - name: Build wheels mac-13
         if: contains( matrix.os, 'macos-13')
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.1.4
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -62,7 +62,7 @@ jobs:
 
       - name: Build wheels mac-14
         if: contains( matrix.os, 'macos-14')
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.1.4
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Build wheels mac-15
         if: contains( matrix.os, 'macos-15')
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.1.4
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.23.3
+        uses: pypa/cibuildwheel@v3.1.4
           
       - uses: actions/upload-artifact@v4
         with:
