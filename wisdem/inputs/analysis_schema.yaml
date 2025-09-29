@@ -1468,6 +1468,9 @@ properties:
                             description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
                             items:
                                 type: integer
+                        ref:
+                            type: number
+                            description: Value to scale constraint close to 1.0 in the driver
 
     merit_figure:
         type: [string, array]
