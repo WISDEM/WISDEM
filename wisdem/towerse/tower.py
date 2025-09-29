@@ -626,7 +626,6 @@ class DistributeLumpedMass(om.ExplicitComponent):
             total_mass_den[-1] += lumped_mass_input[-1] / inputs["section_height"][-1]
 
         outputs["total_mass_den"] = total_mass_den
-        print("integrate total mass density: ", np.sum(total_mass_den * inputs["section_height"]))
 
 class TowerSEPerf(om.Group):
     """

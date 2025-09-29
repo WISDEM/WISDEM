@@ -127,7 +127,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
                 continue
             imode = xroot1[m]
             if imode != ix and ix<2:   # Already detected the ith mode
-                logger.warning(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
+                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
                 if skip_duplicates:
                     logger.warning("Skipping duplicate mode.")
                     continue
@@ -139,7 +139,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
                 continue
             imode = yroot1[m]
             if imode != iy and iy<2: # Already detected the ith mode
-                logger.warning(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
+                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
                 if skip_duplicates:
                     logger.warning("Skipping duplicate mode.")
                     continue
