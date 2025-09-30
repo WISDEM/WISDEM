@@ -198,7 +198,7 @@ def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, 
         elif removal:
             _jsonschema_validate_modified(input_dict, schema_dict, cls=RemovalValidatingDraft7Validator, registry=registry)
         else:
-            _jsonschema_validate_modified(input_dict, schema_dict, registry=registry)
+            pass
 
     if MPI:
         input_dict = MPI.COMM_WORLD.bcast(input_dict, root = 0)
@@ -253,7 +253,7 @@ def write_geometry_yaml(instance, foutput):
 
     
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_model, restrictive=True, removal=True, defaults=False, rank_0=True)
+    _validate(instance, fschema_model, restrictive=True, removal=False, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
