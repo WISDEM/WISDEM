@@ -188,20 +188,11 @@ def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, 
         input_dict = MPI_load_yaml(finput) if (MPI and rank_0 == False) else load_yaml(finput)
 
     # WindIO way
-    if MPI:
-        rank = MPI.COMM_WORLD.Get_rank()
-    else:
-        rank = 0
-    if rank == 0:
-        if defaults:
-            _jsonschema_validate_modified(input_dict, schema_dict, cls=DefaultValidatingDraft7Validator, registry=registry)
-        elif removal:
-            _jsonschema_validate_modified(input_dict, schema_dict, cls=RemovalValidatingDraft7Validator, registry=registry)
-        else:
-            pass
-
-    if MPI:
-        input_dict = MPI.COMM_WORLD.bcast(input_dict, root = 0)
+    validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
+    if MPI and rank_0 == 0:
+        validator(schema_dict).validate(input_dict)
+    elif not MPI:
+        validator(schema_dict).validate(input_dict)
 
     # Old way
     #validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator

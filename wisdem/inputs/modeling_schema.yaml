@@ -9,6 +9,7 @@ $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
 description: Schema that describes the modeling options for WISDEM
 type: object
+additionalProperties: True
 properties:
     fname_input_modeling:
         type: string
@@ -28,6 +29,7 @@ properties:
     WISDEM:
         type: object
         default: {}
+        additionalProperties: True
         properties:
             n_dlc:
                 type: integer
@@ -37,6 +39,7 @@ properties:
             RotorSE:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: &flag
                         type: [boolean, string]
@@ -164,6 +167,7 @@ properties:
             DriveSE:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: *flag
                     gamma_f: &gamma_f
@@ -222,6 +226,7 @@ properties:
             TowerSE:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: *flag
                     wind: &wind
@@ -294,6 +299,7 @@ properties:
             FixedBottomSE:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     type:
                         type: string
@@ -339,6 +345,7 @@ properties:
             BOS:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: *flag
                     plant_turbine_spacing:
@@ -470,6 +477,7 @@ properties:
             FloatingSE:
                 type: object
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: *flag
                     n_refine:
@@ -523,6 +531,7 @@ properties:
                 type: object
                 description: Data for a levelized cost of energy analysis.
                 default: {}
+                additionalProperties: True
                 properties:
                     flag: *flag
                     wake_loss_factor:
@@ -752,6 +761,7 @@ properties:
                 type: object
                 # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
                 description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only analysis
+                additionalProperties: True
                 properties:
                     mass:
                         type: number

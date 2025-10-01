@@ -155,6 +155,14 @@ properties:
                                 max_increase: *max_increase
                                 index_start: *index_start
                                 index_end: *index_end
+                    n_opt_struct: 
+                        type: array
+                        items:
+                            type: integer
+                    layer_index_opt:
+                        type: array
+                        items:
+                            type: integer
             control:
                 type: object
                 default: {}
@@ -1729,3 +1737,5 @@ properties:
                 type: array
                 description: List of variables to include in recorder
                 default: []
+
+    opt_flag: *flag
