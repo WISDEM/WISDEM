@@ -508,6 +508,7 @@ class TowerModal(om.ExplicitComponent):
                     modal.ympf,
                     myzmpf, #modal.zmpf,
                     base_slope0=False,
+                    skip_duplicates=frame3dd_opt["skip_duplicate_modes"]
                 )
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
