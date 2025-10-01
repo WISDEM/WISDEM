@@ -188,16 +188,17 @@ def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, 
         input_dict = MPI_load_yaml(finput) if (MPI and rank_0 == False) else load_yaml(finput)
 
     # WindIO way
-    validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
-    if MPI and rank_0 == 0:
-        validator(schema_dict).validate(input_dict)
-    elif not MPI:
-        validator(schema_dict).validate(input_dict)
+    if defaults:
+        _jsonschema_validate_modified(input_dict, schema_dict, cls=DefaultValidatingDraft7Validator, registry=registry)
+    elif removal:
+        _jsonschema_validate_modified(input_dict, schema_dict, cls=RemovalValidatingDraft7Validator, registry=registry)
+    else:
+        _jsonschema_validate_modified(input_dict, schema_dict, registry=registry)
 
     # Old way
     #validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
     #validator(schema_dict).validate(unique_input_dict)
-    
+
     # Deep copy to ensure no shared references from yaml pointers and anchors
     unique_input_dict = deep_copy_without_shared_refs(input_dict)
 
@@ -244,7 +245,7 @@ def write_geometry_yaml(instance, foutput):
 
     
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_model, restrictive=True, removal=False, defaults=False, rank_0=True)
+    _validate(instance, fschema_model, restrictive=True, removal=True, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):

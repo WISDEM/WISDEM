@@ -155,14 +155,6 @@ properties:
                                 max_increase: *max_increase
                                 index_start: *index_start
                                 index_end: *index_end
-                    n_opt_struct: 
-                        type: array
-                        items:
-                            type: integer
-                    layer_index_opt:
-                        type: array
-                        items:
-                            type: integer
             control:
                 type: object
                 default: {}
@@ -1476,9 +1468,6 @@ properties:
                             description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
                             items:
                                 type: integer
-                        ref:
-                            type: number
-                            description: Value to scale constraint close to 1.0 in the driver
 
     merit_figure:
         type: [string, array]
@@ -1737,5 +1726,3 @@ properties:
                 type: array
                 description: List of variables to include in recorder
                 default: []
-
-    opt_flag: *flag
