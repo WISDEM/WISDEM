@@ -117,7 +117,10 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
             idir_mpf = idir[m]
             # Verification: If MPF and displacement directions disagree, use displacement and warn
             if idir_disp != idir_mpf:
-                logger.warning(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
+                if m<3:
+                    logger.warning(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
+                else:
+                    logger.debug(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
                 idir_use = idir_disp
             else:
                 idir_use = idir_mpf
@@ -127,9 +130,15 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
                 continue
             imode = xroot1[m]
             if imode != ix and ix<2:   # Already detected the ith mode
-                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
+                if m<3:
+                    logger.warning(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
+                else:
+                    logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
                 if skip_duplicates:
-                    logger.debug("Skipping duplicate mode.")
+                    if m<3:
+                        logger.warning("Skipping duplicate mode.")
+                    else:
+                        logger.debug("Skipping duplicate mode.")
                     continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
@@ -139,9 +148,15 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
                 continue
             imode = yroot1[m]
             if imode != iy and iy<2: # Already detected the ith mode
-                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
+                if m<3:
+                    logger.warning(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
+                else:
+                    logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
                 if skip_duplicates:
-                    logger.debug("Skipping duplicate mode.")
+                    if m<3:
+                        logger.warning("Skipping duplicate mode.")
+                    else:
+                        logger.debug("Skipping duplicate mode.")
                     continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
