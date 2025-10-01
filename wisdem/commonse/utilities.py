@@ -110,14 +110,14 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
 
         displacements_threshold = 1e-7
         if max(max_disp) < displacements_threshold:
-            logger.warning(f"Mode {m}: All displacements negligible ({max(max_disp):.2e}), using MPF direction.")
+            logger.debug(f"Mode {m}: All displacements negligible ({max(max_disp):.2e}), using MPF direction.")
             idir_use = idir[m]
         else:
             idir_disp = np.argmax(max_disp)
             idir_mpf = idir[m]
             # Verification: If MPF and displacement directions disagree, use displacement and warn
             if idir_disp != idir_mpf:
-                logger.debug(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
+                logger.warning(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
                 idir_use = idir_disp
             else:
                 idir_use = idir_mpf
