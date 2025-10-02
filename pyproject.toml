@@ -51,7 +51,7 @@ classifiers = [  # Optional
 dependencies = [
   "dearpygui",
   "jsonschema",
-  "moorpy",
+  "moorpy<1.2",
   "numpy",
   "openmdao",
   "openpyxl",

@@ -58,7 +58,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
     return p6, p6_0
 
 
-def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True, skip_duplicates=False):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
@@ -101,31 +101,58 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
         if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
             continue
         
-        if idir[m] == 0:
+        # Handle cases where mpf's dont agree with the raw mode shape (x,y,zdsp)
+        max_disp = [
+        np.max(np.abs(xdsp[m, :])),
+        np.max(np.abs(ydsp[m, :])),
+        np.max(np.abs(zdsp[m, :]) * 1e-7 ) # supressing Z
+        ]
+
+        displacements_threshold = 1e-7
+        if max(max_disp) < displacements_threshold:
+            logger.debug(f"Mode {m}: All displacements negligible ({max(max_disp):.2e}), using MPF direction.")
+            idir_use = idir[m]
+        else:
+            idir_disp = np.argmax(max_disp)
+            idir_mpf = idir[m]
+            # Verification: If MPF and displacement directions disagree, use displacement and warn
+            if idir_disp != idir_mpf:
+                logger.warning(f"Mode {m} (freq={freqs[m]:.3f}): MPF direction ({idir_mpf}) disagrees with max displacement direction ({idir_disp}). Using displacement direction.")
+                idir_use = idir_disp
+            else:
+                idir_use = idir_mpf
+
+        if idir_use == 0: # idir[m] == 0:
             if expect_all and ix >= nfreq2:
                 continue
             imode = xroot1[m]
-            if imode != ix and ix<2:
-                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode numbder identified as {imode+1} going into slot {ix+1}")
+            if imode != ix and ix<2:   # Already detected the ith mode
+                logger.warning(f"WARNING: Freq no. {m}, x-dir: Mode number identified as {imode+1} going into slot {ix+1}.")
+                if skip_duplicates:
+                    logger.warning("Skipping duplicate mode.")
+                    continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
-        elif idir[m] == 1:
+        elif idir_use == 1: # idir[m] == 1:
             if expect_all and iy >= nfreq2:
                 continue
             imode = yroot1[m]
-            if imode != iy and iy<2:
-                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode numbder identified as {imode+1} going into slot {iy+1}")
+            if imode != iy and iy<2: # Already detected the ith mode
+                logger.warning(f"WARNING: Freq no. {m}, y-dir: Mode number identified as {imode+1} going into slot {iy+1}")
+                if skip_duplicates:
+                    logger.warning("Skipping duplicate mode.")
+                    continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
-        elif idir[m] == 2:
+        elif idir_use == 2: # idir[m] == 2:
             if expect_all and iz >= nfreq2:
                 continue
             # Torsional modes are not well captured by Frame3DD
             #imode = zroot1[m]
             #if imode != iz and iz<2:
-            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode numbder identified as {imode+1} going into slot {iz+1}")
+            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode number identified as {imode+1} going into slot {iz+1}")
             mshapes_z[iz, :] = zpolys[m, :]
             freq_z[iz] = freqs[m]
             iz += 1

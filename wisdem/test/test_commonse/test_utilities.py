@@ -177,7 +177,28 @@ class TestAny(unittest.TestCase):
         r = np.linspace(0, 1, 20)
         n = 10
         n2 = int(n / 2)
-        dx = dy = dz = np.tile(np.r_[r**2 + 10.0], (n, 1))
+        dx = np.zeros((n, len(r)))
+        dy = np.zeros((n, len(r)))
+        dz = np.zeros((n, len(r)))
+        # Mode shapes from IEA-15 fixed bottom (https://github.com/IEAWindSystems/IEA-15-240-RWT/blob/7d15a9e6243c299e1d1842a40e4ce4184485fab9/OpenFAST/IEA-15-240-RWT-Monopile/IEA-15-240-RWT-Monopile_ElastoDyn_tower.dat#L40)
+        # Reverse order of openfast and OpenFAST starts at x^2
+        first_mode = [-0.18, 0.61, -0.61, 0.14, 1.03, 0, 0]
+        second_mode = [-0.53, 1.86, -3.55, -0.63, 3.66, 0, 0]  # reversed order
+
+        # Indices where modes are located
+        x_modes = [3,6]
+        y_modes = [1,4]
+        z_modes = [2,5]
+
+        # Apply displacements to mode shapes
+        dx[x_modes[0]] = np.polyval(first_mode, r)
+        dy[y_modes[0]] = np.polyval(first_mode, r)
+        dz[z_modes[0]] = np.polyval(first_mode, r)
+
+        dx[x_modes[1]] = np.polyval(second_mode, r)
+        dy[y_modes[1]] = np.polyval(second_mode, r)
+        dz[z_modes[1]] = np.polyval(second_mode, r)
+
         freqs = np.arange(n)
         xm = np.zeros(n)
         ym = np.zeros(n)
@@ -186,7 +207,17 @@ class TestAny(unittest.TestCase):
         ym[1] = ym[4] = ym[7] = 1
         zm[2] = zm[5] = zm[8] = 1
 
-        freq_x, freq_y, freq_z, _, _, _ = util.get_xyz_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
+        if False:
+            import matplotlib.pylab as plt
+            fig, axs = plt.subplots(2, 1)
+            axs[0].plot(r, dx[x_modes[0]].T, label="x-displacement")
+            axs[1].plot(r, dx[x_modes[1]].T, label="x-displacement")
+            for ax in axs:
+                ax.legend()
+                ax.grid()
+            plt.show()
+
+        freq_x, freq_y, freq_z, _, _, _ = util.get_xyz_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm, skip_duplicates=True)
         npt.assert_array_equal(freq_x, np.r_[3, 6, 9, np.zeros(n2 - 3)])
         npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
         npt.assert_array_equal(freq_z, np.r_[2, 5, 8, np.zeros(n2 - 3)])
