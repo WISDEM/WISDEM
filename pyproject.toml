@@ -53,7 +53,7 @@ dependencies = [
   "dearpygui",
   "jsonmerge",
   "jsonschema",
-  "moorpy",
+  "moorpy<1.2",
   "numpy",
   "openmdao",
   "openpyxl",
