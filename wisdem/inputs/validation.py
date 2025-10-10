@@ -198,6 +198,10 @@ def _validate(finput, fschema, defaults=True, removal=False, restrictive=False, 
     else:
         _jsonschema_validate_modified(unique_input_dict, schema_dict, registry=registry)
 
+    
+    # New deep copy to ensure no shared references from yaml pointers and anchors
+    unique_input_dict = deep_copy_without_shared_refs(unique_input_dict)
+    
     # Old way
     #validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
     #validator(schema_dict).validate(unique_input_dict)
