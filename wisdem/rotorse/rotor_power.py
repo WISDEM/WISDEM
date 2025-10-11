@@ -816,11 +816,7 @@ class ComputePowerCurve(ExplicitComponent):
         ax_induct_rotor = np.zeros_like(Uhub)
         for i in range(len(Uhub)):
             loads, _ = self.ccblade.distributedAeroLoads(Uhub[i], Omega_rpm[i], pitch[i], 0.0)
-            try:
-                # Numpy v1/2 clash
-                ax_induct_rotor[i] = 2. / inputs["r"][-1]**2. * np.trapezoid(loads['a'] * inputs["r"], inputs["r"])
-            except AttributeError:
-                ax_induct_rotor[i] = 2. / inputs["r"][-1]**2. * np.trapz(loads['a'] * inputs["r"], inputs["r"])
+            ax_induct_rotor[i] = 2. / inputs["r"][-1]**2. * np.trapezoid(loads['a'] * inputs["r"], inputs["r"])
             if i == id_regII:
                 # outputs
                 outputs["ax_induct_regII"] = loads["a"]
@@ -985,11 +981,7 @@ class AEP(ExplicitComponent):
         CDF_V = inputs["CDF_V"]
 
         factor = lossFactor / 1e3 * 365.0 * 24.0
-        try:
-            # Numpy v1/2 clash
-            outputs["AEP"] = factor * np.trapezoid(P, CDF_V)  # in kWh
-        except AttributeError:
-            outputs["AEP"] = factor * np.trapz(P, CDF_V)  # in kWh
+        outputs["AEP"] = factor * np.trapezoid(P, CDF_V)  # in kWh
         """
         dAEP_dP, dAEP_dCDF = trapezoid_deriv(P, CDF_V)
         dAEP_dP *= factor

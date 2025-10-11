@@ -11,7 +11,7 @@ build:
   tools:
     # This leads to "excessive memory use"
     #python: "miniconda-latest"
-    python: "mambaforge-22.9"
+    python: "mambaforge-latest"
   apt_packages:
       - snapd
   jobs:

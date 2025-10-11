@@ -887,13 +887,8 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         # Integrate along span for surface area
         wetted_chord = coord_xy_dim[:,:,1].max(axis=1) - coord_xy_dim[:,:,1].min(axis=1)
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
-        try:
-            # Numpy v1/2 clash
-            outputs["wetted_area"] = np.trapezoid(wetted_chord, inputs["ref_axis"][:,2])
-            outputs["projected_area"] = np.trapezoid(projected_chord, inputs["ref_axis"][:,2])
-        except AttributeError:
-            outputs["wetted_area"] = np.trapz(wetted_chord, inputs["ref_axis"][:,2])
-            outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
+        outputs["wetted_area"] = np.trapezoid(wetted_chord, inputs["ref_axis"][:,2])
+        outputs["projected_area"] = np.trapezoid(projected_chord, inputs["ref_axis"][:,2])
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
@@ -2582,11 +2577,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
-        try:
-            # Numpy v1/2 clash
-            outputs['blade_solidity'] = np.trapezoid(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
-        except AttributeError:
-            outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
+        outputs['blade_solidity'] = np.trapezoid(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_diameter"]**2./4.)
         outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
