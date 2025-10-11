@@ -10,8 +10,8 @@ build:
   os: ubuntu-24.04
   tools:
     # This leads to "excessive memory use"
-    #python: "miniconda-latest"
-    python: "mambaforge-latest"
+    python: "miniconda-latest"
+    #python: "mambaforge-latest"
   apt_packages:
       - snapd
   jobs:
