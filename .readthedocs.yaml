@@ -9,15 +9,15 @@ version: 2
 build:
   os: ubuntu-24.04
   tools:
-    # This leads to "excessive memory use"
     python: "3.12"
-    #python: "miniconda-latest"
+    #python: "miniconda-latest" # Might lead to 'execessive memory"
     #python: "mambaforge-latest"
   apt_packages:
       - snapd
   jobs:
     # Read the docs needs a couple packages not in the environment file
     pre_install:
+      - sudo apt install gfortran
       - pip install --upgrade pip pytest numpy windIO
       #- conda install -y cmake compilers sphinx sphinxcontrib-bibtex
       #- conda install sphinx_rtd_theme>=1.3
