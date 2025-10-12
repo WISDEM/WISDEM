@@ -10,7 +10,7 @@ build:
   os: ubuntu-24.04
   tools:
     # This leads to "excessive memory use"
-    python: 3.12
+    python: "3.12"
     #python: "miniconda-latest"
     #python: "mambaforge-latest"
   apt_packages:
