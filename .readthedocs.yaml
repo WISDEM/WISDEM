@@ -15,7 +15,6 @@ build:
   apt_packages:
       - snapd
       - gfortran
-      - numpydoc
   jobs:
     # Read the docs needs a couple packages not in the environment file
     pre_install:
