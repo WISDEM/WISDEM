@@ -15,10 +15,11 @@ build:
   apt_packages:
       - snapd
       - gfortran
+      - numpydoc
   jobs:
     # Read the docs needs a couple packages not in the environment file
     pre_install:
-      - pip install --upgrade pip pytest numpy windIO
+      - pip install --upgrade pip pytest numpy numpydoc windIO
       #- conda install -y cmake compilers sphinx sphinxcontrib-bibtex
       #- conda install sphinx_rtd_theme>=1.3
       - pip install sphinx sphinxcontrib-bibtex sphinx-rtd-theme
