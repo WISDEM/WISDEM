@@ -14,10 +14,10 @@ build:
     #python: "mambaforge-latest"
   apt_packages:
       - snapd
+      - gfortran
   jobs:
     # Read the docs needs a couple packages not in the environment file
     pre_install:
-      - sudo apt install gfortran
       - pip install --upgrade pip pytest numpy windIO
       #- conda install -y cmake compilers sphinx sphinxcontrib-bibtex
       #- conda install sphinx_rtd_theme>=1.3
