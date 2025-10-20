@@ -3503,7 +3503,11 @@ class BladeCost(om.ExplicitComponent):
                 layer_volume_span = (
                     layer_volume_span_ss[i_lay, :] + layer_volume_span_ps[i_lay, :] + layer_volume_span_webs[i_lay, :]
                 )
-                layer_volume[i_lay] = np.trapezoid(layer_volume_span, s * blade_length)
+                try:
+                    # Numpy v1/2 clash
+                    layer_volume[i_lay] = np.trapezoid(layer_volume_span, s * blade_length)
+                except AttributeError:
+                    layer_volume[i_lay] = np.trapz(layer_volume_span, s * blade_length)
 
                 # Assign volume to corresponding material
                 mat_name = self.layer_mat[i_lay]
@@ -3521,27 +3525,44 @@ class BladeCost(om.ExplicitComponent):
                 if orth[i_mat]:
                     layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
                     layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
-                    add_volume_ss = np.trapezoid(
-                        np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
-                        np.r_[0, blade_length * root_preform_length],
-                    )
-                    add_volume_ps = np.trapezoid(
-                        np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
-                        np.r_[0, blade_length * root_preform_length],
-                    )
+                    try:
+                        add_volume_ss = np.trapezoid(
+                            np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                        add_volume_ps = np.trapezoid(
+                            np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                    except AttributeError:
+                        add_volume_ss = np.trapz(
+                            np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
+                        add_volume_ps = np.trapz(
+                            np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                            np.r_[0, blade_length * root_preform_length],
+                        )
                     volume_root_preform_ss += add_volume_ss
                     volume_root_preform_ps += add_volume_ps
                     mass_root_preform_ss += add_volume_ss * rho_mat[i_mat]
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
                     width_ss_interp = np.interp(root_preform_length, s, width_ss)
                     width_ps_interp = np.interp(root_preform_length, s, width_ps)
-                    area_root_ss = np.trapezoid(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
-                    area_root_ps = np.trapezoid(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
+                    try:
+                        area_root_ss = np.trapezoid(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                        area_root_ps = np.trapezoid(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
+                    except AttributeError:
+                        area_root_ss = np.trapz(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                        area_root_ps = np.trapz(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
 
                 # Fabric shear webs
                 if build_layer[i_lay] < 0:
                     web_id = int(- build_layer[i_lay] - 1)
-                    add_volume = np.trapezoid(layer_volume_span_webs[i_lay, :], s * blade_length)
+                    try:
+                        add_volume = np.trapezoid(layer_volume_span_webs[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        add_volume = np.trapz(layer_volume_span_webs[i_lay, :], s * blade_length)
                     mass_webs[web_id] += add_volume * rho_mat[i_mat]
                     if orth[i_mat]:
                         volumeskin2lay_webs[web_id] += add_volume
@@ -3553,8 +3574,12 @@ class BladeCost(om.ExplicitComponent):
                     spar_cap_length_ss = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ss = width[imin]
                     width_sc_end_ss = width[imax]
-                    area_sc_ss = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_sc_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    try:
+                        area_sc_ss = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        area_sc_ss = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                     fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
                     mass_sc_ss = volume2lay_sc_ss * rho_mat[i_mat]
                     max_n_plies_sc_ss = max(layer_thickness[i_lay, :]) / ply_t[i_mat]
@@ -3570,16 +3595,24 @@ class BladeCost(om.ExplicitComponent):
                     spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ps = width[imin]
                     width_sc_end_ps = width[imax]
-                    area_sc_ps = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_sc_ps = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    try:
+                        area_sc_ps = np.trapezoid(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ps = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        area_sc_ps = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                     fabric2lay_sc_ps = volume2lay_sc_ps / ply_t[i_mat]
                     mass_sc_ps = volume2lay_sc_ps * rho_mat[i_mat]
                     max_n_plies_sc_ps = max(layer_thickness[i_lay, :]) / ply_t[i_mat]
 
                 # Shell skins
                 elif orth[i_mat] == 1 and ply_t[i_mat] < 1.e-2 and layer_start_nd[i_lay, imin] < 0.1 and layer_end_nd[i_lay, imin] > 0.9:
-                    volume2lay_shell_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
-                    volume2lay_shell_ps = np.trapezoid(layer_volume_span_ps[i_lay, :], s * blade_length)
+                    try:
+                        volume2lay_shell_ss = np.trapezoid(layer_volume_span_ss[i_lay, :], s * blade_length)
+                        volume2lay_shell_ps = np.trapezoid(layer_volume_span_ps[i_lay, :], s * blade_length)
+                    except AttributeError:
+                        volume2lay_shell_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
+                        volume2lay_shell_ps = np.trapz(layer_volume_span_ps[i_lay, :], s * blade_length)
                     fabric2lay_shell_ss += volume2lay_shell_ss / ply_t[i_mat]
                     fabric2lay_shell_ps += volume2lay_shell_ps / ply_t[i_mat]
                     mass_shell_ss += volume2lay_shell_ss * rho_mat[i_mat]
@@ -3587,18 +3620,29 @@ class BladeCost(om.ExplicitComponent):
 
                 # Shell core
                 elif orth[i_mat] == 0 and layer_start_nd[i_lay, imin] > 0.01 and layer_end_nd[i_lay, imin] < 0.99:
-                    areacore2lay_shell_ss += np.trapezoid(width_ss[imin:imax], s[imin:imax] * blade_length)
-                    areacore2lay_shell_ps += np.trapezoid(width_ps[imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_coreshell_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_coreshell_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    try:
+                        areacore2lay_shell_ss += np.trapezoid(width_ss[imin:imax], s[imin:imax] * blade_length)
+                        areacore2lay_shell_ps += np.trapezoid(width_ps[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    except AttributeError:
+                        areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax] * blade_length)
+                        areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_coreshell_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
                     mass_shell_ss += volume2lay_coreshell_ss * rho_mat[i_mat]
                     mass_shell_ps += volume2lay_coreshell_ps * rho_mat[i_mat]
 
                 # TE/LE reinforcement
                 elif orth[i_mat] == 1:
-                    length2lay_reinf = np.trapezoid(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_reinf_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
-                    volume2lay_reinf_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    try:
+                        length2lay_reinf = np.trapezoid(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ss = np.trapezoid(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ps = np.trapezoid(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                    except AttributeError:
+                        length2lay_reinf = np.trapz(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                        volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
                     if np.mean(layer_start_nd[i_lay, :]) > 0.0 and np.mean(layer_end_nd[i_lay, :]) > 0.0:
                         LE = True
                         TE = False
@@ -3673,21 +3717,41 @@ class BladeCost(om.ExplicitComponent):
         bom = blade_bom()
         web_area = np.zeros(self.n_webs)
         for i_web in range(self.n_webs):
-            web_area[i_web] = np.trapezoid(
-                web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
-                blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
-            )
+            try:
+                web_area[i_web] = np.trapezoid(
+                    web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
+                    blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
+                )
+            except AttributeError:
+                web_area[i_web] = np.trapz(
+                    web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
+                    blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
+                )
         web_area_w_flanges = web_area + 2.0 * web_length * flange_width
-        ss_area = np.trapezoid(sect_perimeter_ss, blade_length * s)
-        ps_area = np.trapezoid(sect_perimeter_ps, blade_length * s)
+        try:
+            ss_area = np.trapezoid(sect_perimeter_ss, blade_length * s)
+            ps_area = np.trapezoid(sect_perimeter_ps, blade_length * s)
+        except AttributeError:
+            ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
+            ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
         ss_area_w_flanges = ss_area + 2.0 * flange_width * blade_length
         ps_area_w_flanges = ps_area + 2.0 * flange_width * blade_length
-        spar_cap_ss_area = np.trapezoid(spar_cap_width_ss, blade_length * s)
-        spar_cap_ps_area = np.trapezoid(spar_cap_width_ps, blade_length * s)
+        try:
+            spar_cap_ss_area = np.trapezoid(spar_cap_width_ss, blade_length * s)
+            spar_cap_ps_area = np.trapezoid(spar_cap_width_ps, blade_length * s)
+        except AttributeError:
+            spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
+            spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
         sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
-        ss_area_root = np.trapezoid(np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length])
+        try:
+            ss_area_root = np.trapezoid(np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length])
+        except AttributeError:
+            ss_area_root = np.trapz(np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length])
         sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
-        ps_area_root = np.trapezoid(np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length])
+        try:
+            ps_area_root = np.trapezoid(np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length])
+        except AttributeError:
+            ps_area_root = np.trapz(np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length])
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
         bom.blade_specs["area_lpskin_wo_flanges"] = ss_area

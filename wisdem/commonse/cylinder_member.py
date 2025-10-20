@@ -508,9 +508,16 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         # While the sections are simple, store cross section info for fatigue
         if len(z) == 1:
-            cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+            try:
+                # Numpy v1/2 clash
+                cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+            except AttributeError:
+                cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
         else:
-            cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"], z)
+            try:
+                cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"], z)
+            except AttributeError:
+                cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
             
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
@@ -2352,9 +2359,15 @@ class MemberHydro(om.ExplicitComponent):
         D = 2 * r_under.max()
         # Lxy = np.maximum(Lxy, D)
         m_a[2] = (1.0 / 6.0) * rho_water * D**3.0  # A33 heave * Lxy *
-        m_a[3:5] = (
-            np.pi * rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
-        )  # A44 roll, A55 pitch
+        try:
+            # Numpy v1/2 clash
+            m_a[3:5] = (
+                np.pi * rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
+            )  # A44 roll, A55 pitch
+        except AttributeError:
+            m_a[3:5] = (
+                np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
+            )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
 
@@ -2534,13 +2547,23 @@ class RectangularMemberHydro(om.ExplicitComponent):
         # Lxy = np.maximum(Lxy, D)
         m_a[2] = 0  # Axial added mass? A33 heave * Lxy *
         # TODO: Axial added mass needs better calculation
-        m_a[3:5] = (
-            rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
-        )  # A44 roll, A55 pitch
-        # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
-        # Make an equivalent elliptical cylinder
-        # yaw added mass per unit length
-        m_a[5] = np.trapezoid(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
+        try:
+            # Numpy v1/2 clash
+            m_a[3:5] = (
+                rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
+            )  # A44 roll, A55 pitch
+            # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
+            # Make an equivalent elliptical cylinder
+            # yaw added mass per unit length
+            m_a[5] = np.trapezoid(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
+        except AttributeError:
+            m_a[3:5] = (
+                rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
+            )  # A44 roll, A55 pitch
+            # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
+            # Make an equivalent elliptical cylinder
+            # yaw added mass per unit length
+            m_a[5] = np.trapz(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
         outputs["added_mass"] = m_a
 
 class Global2MemberLoads(om.ExplicitComponent):

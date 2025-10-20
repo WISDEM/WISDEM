@@ -851,9 +851,15 @@ class TotalBladeProperties(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         rhoA_joint = inputs["rhoA"]
-        blade_mass = np.trapezoid(rhoA_joint, inputs["r"])
-        blade_span_cg = np.trapezoid(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
-        blade_moment_of_inertia = np.trapezoid(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
+        try:
+            # Numpy v1/2 clash
+            blade_mass = np.trapezoid(rhoA_joint, inputs["r"])
+            blade_span_cg = np.trapezoid(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
+            blade_moment_of_inertia = np.trapezoid(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
+        except AttributeError:
+            blade_mass = np.trapz(rhoA_joint, inputs["r"])
+            blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
+            blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
         # tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
         mass_all_blades = n_blades * blade_mass
