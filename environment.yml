@@ -11,7 +11,7 @@ dependencies:
   - make
   - matplotlib
   - meson
-  - moorpy
+  - moorpy>=1.2
   - netcdf4
   - ninja
   - nlopt
