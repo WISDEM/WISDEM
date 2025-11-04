@@ -37,6 +37,10 @@ WISDEM:
             tol: 1e-9
     BOS:
         flag: False
+    LCOE:
+        flag: True
+        labor_rate: 58.8
+        painting_rate: 30.0
 
     Loading:
         mass: 285598.8
@@ -49,3 +53,14 @@ WISDEM:
             - force: [930198.60063279, 0.0, -2883106.12368949]
               moment: [-1683669.22411597, -2522475.34625363, 147301.97023764]
               velocity: 70.0
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+    water_depth: 30.0

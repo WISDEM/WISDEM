@@ -106,11 +106,11 @@ class TestGradients(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -3644,11 +3644,11 @@ class TestGradientsNotRotating(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -4591,11 +4591,11 @@ class TestGradientsFreestreamArray(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations
@@ -5054,11 +5054,11 @@ class TestGradients_RHub_Tip(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations

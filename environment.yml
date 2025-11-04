@@ -3,13 +3,16 @@ channels:
   - defaults
 
 dependencies:
+  - cftime
   - coveralls
   - cython
+  - jsonmerge
   - jsonschema
   - make
   - matplotlib
   - meson
-  - moorpy<1.2
+  - moorpy>=1.2
+  - netcdf4
   - ninja
   - nlopt
   - numpy
@@ -31,9 +34,11 @@ dependencies:
   - sortedcontainers
   - statsmodels>=0.14.5
   - swig
+  - xarray
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
+    - windIO
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

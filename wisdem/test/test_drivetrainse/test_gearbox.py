@@ -27,7 +27,7 @@ class TestGearbox(unittest.TestCase):
         for k in self.inputs:
             self.inputs[k] = np.array( [self.inputs[k]] )
 
-        self.myobj = gb.Gearbox(direct_drive=False, use_gb_torque_density=False)
+        self.myobj = gb.Gearbox(direct_drive=False, gearbox_torque_density=0.0)
 
     def testDirectDrive(self):
         self.myobj = gb.Gearbox(direct_drive=True)

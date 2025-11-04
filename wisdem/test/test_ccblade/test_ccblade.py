@@ -14,8 +14,8 @@ limitations under the License.
 
 import math
 import unittest
-from os import path
 import os
+from wisdem.inputs.validation import load_geometry_yaml
 
 import numpy as np
 
@@ -97,7 +97,6 @@ class TestNREL5MW(unittest.TestCase):
         rho = 1.225
         mu = 1.81206e-5
 
-        from wisdem.inputs.validation import load_geometry_yaml
         baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
         data = load_geometry_yaml(baseyaml)
         af = data['airfoils']
@@ -108,11 +107,11 @@ class TestNREL5MW(unittest.TestCase):
                 if af[j]["name"] == af_names[i]:
                     polars = af[j]['polars'][0]
                     airfoil_types[i] = CCAirfoil(
-                        np.rad2deg(polars["c_l"]["grid"]),
-                        [polars["re"]],
-                        polars["c_l"]["values"],
-                        polars["c_d"]["values"],
-                        polars["c_m"]["values"],
+                        polars["re_sets"][0]["cl"]["grid"],
+                        [polars["re_sets"][0]["re"]],
+                        polars["re_sets"][0]["cl"]["values"],
+                        polars["re_sets"][0]["cd"]["values"],
+                        polars["re_sets"][0]["cm"]["values"],
                     )
 
         # place at appropriate radial stations

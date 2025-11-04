@@ -342,6 +342,8 @@ class TestComponents(unittest.TestCase):
         inputs["tilt"] = 0.0
         inputs["constr_height"] = 2.0
         inputs["above_yaw_mass_user"] = 0.0
+        inputs["above_yaw_cm_user"] = np.zeros(3)
+        inputs["above_yaw_I_user"] = np.zeros(6)
         for k in inputs:
             inputs[k] = np.array( [inputs[k]] )
         inputs["x_bedplate"] = -2 * np.ones(5)
@@ -413,6 +415,8 @@ class TestComponents(unittest.TestCase):
         tr = 5 * np.pi / 180.0
         inputs["constr_height"] = 2.0
         inputs["above_yaw_mass_user"] = 0.0
+        inputs["above_yaw_cm_user"] = np.zeros(3)
+        inputs["above_yaw_I_user"] = np.zeros(6)
         for k in inputs:
             inputs[k] = np.array( [inputs[k]] )
         inputs["x_bedplate"] = -2 * np.ones(5)

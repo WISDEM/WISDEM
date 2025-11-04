@@ -15,11 +15,11 @@ test_dir = os.path.join(
 
 
 class TestRegression(unittest.TestCase):
-    def test15MW(self):
+    def test_nrel5mw_user(self):
         ## IEA 15MW
         fname_wt_input = os.path.join(test_dir, "nrel5mw-spar_oc3_user_mass.yaml")
-        fname_modeling_options = os.path.join(test_dir, "modeling_options.yaml")
-        fname_analysis_options = os.path.join(test_dir, "analysis_options.yaml")
+        fname_modeling_options = os.path.join(test_dir, "modeling_options_spar.yaml")
+        fname_analysis_options = os.path.join(test_dir, "analysis_options_null.yaml")
         wt_opt, modeling_options, opt_options = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )
@@ -39,7 +39,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["floatingse.platform_hull_mass"][0], 203000.0)
 
 
-    def testElastic(self):
+    def testElastic15mw(self):
         fname_wt_input = os.path.join(test_dir, "IEA-15-240-RWT_VolturnUS-S_user_elastic.yaml")
         fname_modeling_options = os.path.join(test_dir, "modeling_options_user_elastic.yaml")
         fname_analysis_options = os.path.join(test_dir, "analysis_options_null.yaml")
@@ -55,9 +55,9 @@ class TestRegression(unittest.TestCase):
         npt.assert_almost_equal(wt_opt['drivese.above_yaw_cm'], [-4.528, -0.14 ,  4.098])
         npt.assert_almost_equal(wt_opt['drivese.above_yaw_I_TT'], [ 9912933., 10862815., 10360761., 0.0, 0.0, 0.0])
         npt.assert_almost_equal(wt_opt['drivese.above_yaw_I'], [ 9912933., 10862815., 10360761., 0.0, 0.0, 0.0])
-        npt.assert_almost_equal(wt_opt['nacelle.uptilt'][0], 0.10471976)
-        npt.assert_almost_equal(wt_opt['nacelle.overhang'][0], 12.032)
-        npt.assert_almost_equal(wt_opt['nacelle.distance_tt_hub'][0], 5.6141)
+        npt.assert_almost_equal(wt_opt['drivetrain.uptilt'][0], 6.)
+        npt.assert_almost_equal(wt_opt['drivetrain.overhang'][0], 12.0313)
+        npt.assert_almost_equal(wt_opt['drivetrain.distance_tt_hub'][0], 5.614)
         
 if __name__ == "__main__":
     unittest.main()

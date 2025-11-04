@@ -85,8 +85,9 @@ class TestMooring(unittest.TestCase):
         mymap = mm.Mooring(options=opt, gamma=1.35)
 
         mymap.compute(self.inputs, self.outputs)
-        npt.assert_almost_equal(self.outputs["mooring_mass"], 6 * 270 * 199.0 + 6 * 0)
-        npt.assert_almost_equal(self.outputs["mooring_cost"], 6 * 270 * 514.415)
+                                                          # Number of lines, length, mass density
+        npt.assert_almost_equal(self.outputs["mooring_mass"], 6 * 270 * 61.72839506 + 6 * 0, 3)
+        npt.assert_almost_equal(self.outputs["mooring_cost"], 6 * 270 * 159.5679012345679, 3)
 
 
 if __name__ == "__main__":

@@ -1,74 +1,69 @@
+windIO_version: '2.0'
 name: 5MW Tower only
-
 assembly:
     turbine_class: I
     turbulence_class: B
     drivetrain: Geared
     rotor_orientation: Upwind
     number_of_blades: 3
-    hub_height: 90.
-    rotor_diameter: 126.
-    rated_power: 5.e+6
-
+    hub_height: 90.0
+    rotor_diameter: 126.0
+    rated_power: 5000000.0
 components:
     tower:
-        outer_shape_bem:
-            reference_axis: &ref_axis_tower
-                x:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                y:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                z:
-                    grid: &grid_tower [0., 0.5, 1.]
-                    values: [10., 43.8, 87.6]
+        outer_shape:
             outer_diameter:
-                grid: *grid_tower
-                values: [6., 4.935, 3.87]
-            drag_coefficient:
+                grid: &id001 [0.0, 0.5, 1.0]
+                values: [6.0, 4.935, 3.87]
+            cd:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
-        internal_structure_2d_fem:
+        structure:
             outfitting_factor: 1.07
-            reference_axis: *ref_axis_tower
             layers:
-                - name: tower_wall
+               -  name: tower_wall
                   material: steel
                   thickness:
-                    grid: *grid_tower
-                    values: [0.027, 0.0222, 0.019]
-
+                      grid: *id001
+                      values: [0.027, 0.0222, 0.019]
+        reference_axis:
+            x:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            y:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            z:
+                grid: *id001
+                values: [0.0, 43.8, 87.6974416]
     monopile:
-        transition_piece_mass: 100e3
-        transition_piece_cost: 100e3
-        outer_shape_bem:
-            reference_axis: &ref_axis_mono
-                x:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                y:
-                    grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                z:
-                    grid: &grid_mono [0., 0.3846, 0.8462, 1.0]
-                    values: [-55.0, -30.0, 0.0, 10.0]
+        transition_piece_mass: 100000.0
+        transition_piece_cost: 100000.0
+        outer_shape:
             outer_diameter:
-                grid: *grid_mono
+                grid: &id002 [0.0, 0.3846, 0.8462, 1.0]
                 values: [8.0, 8.0, 8.0, 8.0]
-            drag_coefficient:
+            cd:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
-        internal_structure_2d_fem:
+        structure:
             outfitting_factor: 1.07
-            reference_axis: *ref_axis_mono
             layers:
-                - name: tower_wall
+               -  name: tower_wall
                   material: steel
                   thickness:
-                    grid: *grid_mono
-                    values: [0.055, 0.055, 0.055, 0.055]
-
+                      grid: *id002
+                      values: [0.055, 0.055, 0.055, 0.055]
+        reference_axis:
+            x:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            y:
+                grid: [0.0, 1.0]
+                values: [0.0, 0.0]
+            z:
+                grid: *id002
+                values: [-55.0, -30.0, 0.0, 10.0]
 materials:
    -  name: steel
       description: Steel of the tower and monopile, ASTM A572 Grade 50
@@ -76,34 +71,16 @@ materials:
       orth: 0
       rho: 7800
       alpha: 0.0
-      E: 200.e+009
+      E: 200000000000.0
       nu: 0.265
-      G: 79.3e+009
-      GIc: 0  #Place holder, currently not used
-      GIIc: 0  #Place holder, currently not used
-      alp0: 0  #Place holder, currently not used
-      Xt: 1.12e+9
-      Xc: 2.16e+9
+      G: 79300000000.0
+      GIc: 0
+      GIIc: 0
+      alp0: 0.0
+      Xt: 1120000000.0
+      Xc: 2160000000.0
       S: 0
-      Xy: 345.e+6
+      Xy: 345000000.0
       m: 3
-      A: 3.5534648443719767e10
+      A: 35534648443.719765
       unit_cost: 0.7
-
-environment:
-    air_density: 1.225
-    air_dyn_viscosity: 1.81e-5
-    weib_shape_parameter: 2.
-    air_speed_sound: 340.
-    shear_exp: 0.1
-    water_density: 1025.0
-    water_dyn_viscosity: 1.3351e-3
-    water_depth: 30.0
-    significant_wave_height: 4.52
-    significant_wave_period: 9.45
-    soil_shear_modulus: 140.e+6
-    soil_poisson: 0.4
-
-costs:
-    labor_rate: 58.8
-    painting_rate: 30.0

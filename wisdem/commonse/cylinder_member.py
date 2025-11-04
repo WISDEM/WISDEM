@@ -508,9 +508,16 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         # While the sections are simple, store cross section info for fatigue
         if len(z) == 1:
-            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+            try:
+                # Numpy v1/2 clash
+                cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
+            except AttributeError:
+                cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"]*np.ones(z_param.shape), z_param)
         else:
-            cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
+            try:
+                cross_section_xz = 2.0 * np.trapezoid(outputs["wall_thickness"], z)
+            except AttributeError:
+                cross_section_xz = 2.0 * np.trapz(outputs["wall_thickness"], z)
             
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
@@ -1310,11 +1317,11 @@ class MemberComplex(om.ExplicitComponent):
         s_ghost1 = make_float(inputs["s_ghost1"])
         s_ghost2 = make_float(inputs["s_ghost2"])
 
-        t_web = inputs["axial_stiffener_web_thickness"]
-        t_flange = inputs["axial_stiffener_flange_thickness"]
-        h_web = inputs["axial_stiffener_web_height"]
-        w_flange = inputs["axial_stiffener_flange_width"]
-        th_stiffener = inputs["axial_stiffener_spacing"]
+        t_web = make_float(inputs["axial_stiffener_web_thickness"])
+        t_flange = make_float(inputs["axial_stiffener_flange_thickness"])
+        h_web = make_float(inputs["axial_stiffener_web_height"])
+        w_flange = make_float(inputs["axial_stiffener_flange_width"])
+        th_stiffener = make_float(inputs["axial_stiffener_spacing"])
 
         # Number of axial stiffeners
         n_stiff = 0 if th_stiffener == 0.0 else 2 * np.pi / th_stiffener
@@ -1369,6 +1376,7 @@ class MemberComplex(om.ExplicitComponent):
                     sigy=sigymat[k],
                 )
                 self.add_section(s_full[k], s_full[k + 1], iprop)
+
         elif self.shape == "rectangular":
             for k in range(len(s_full) - 1):
                 irect = cs.Rectangle(a_sec[k], b_sec[k], t_full[k])
@@ -1715,7 +1723,7 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack variables
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
-        L = inputs["height"]
+        L = make_float(inputs["height"])
         R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
         rho = inputs["rho_full"]
@@ -1728,10 +1736,10 @@ class MemberComplex(om.ExplicitComponent):
         s_ghost1 = make_float(inputs["s_ghost1"])
         s_ghost2 = make_float(inputs["s_ghost2"])
 
-        t_web = inputs["ring_stiffener_web_thickness"]
-        t_flange = inputs["ring_stiffener_flange_thickness"]
-        h_web = inputs["ring_stiffener_web_height"]
-        w_flange = inputs["ring_stiffener_flange_width"]
+        t_web = make_float(inputs["ring_stiffener_web_thickness"])
+        t_flange = make_float(inputs["ring_stiffener_flange_thickness"])
+        h_web = make_float(inputs["ring_stiffener_web_height"])
+        w_flange = make_float(inputs["ring_stiffener_flange_width"])
         L_stiffener = make_float(inputs["ring_stiffener_spacing"])
 
         n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(1 / L_stiffener))
@@ -2280,6 +2288,9 @@ class MemberHydro(om.ExplicitComponent):
         dxyz = xyz1 - xyz0
         xyz = inputs["nodes_xyz"]
 
+        if dxyz[2] < 0:
+            raise Exception(f'FloatingSE assumes members go from bottom to top, but joint1 (z = {xyz0[2]}) is above joint2 (z = {xyz1[2]}).')
+
         # Dimensions away from vertical
         tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
         outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
@@ -2288,6 +2299,7 @@ class MemberHydro(om.ExplicitComponent):
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
         if xyz[:, 2].min() < 0.0 and xyz[:, 2].max() > 0.0:
+            # np.interp assumes that xyz[:, 2] is increasing, hence the exception above
             s_waterline = np.interp(0.0, xyz[:, 2], s_full)
             ind = np.where(xyz[:, 2] < 0.0)[0]
             s_under = np.r_[s_full[ind], s_waterline]
@@ -2347,9 +2359,15 @@ class MemberHydro(om.ExplicitComponent):
         D = 2 * r_under.max()
         # Lxy = np.maximum(Lxy, D)
         m_a[2] = (1.0 / 6.0) * rho_water * D**3.0  # A33 heave * Lxy *
-        m_a[3:5] = (
-            np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
-        )  # A44 roll, A55 pitch
+        try:
+            # Numpy v1/2 clash
+            m_a[3:5] = (
+                np.pi * rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
+            )  # A44 roll, A55 pitch
+        except AttributeError:
+            m_a[3:5] = (
+                np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
+            )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
 
@@ -2529,13 +2547,23 @@ class RectangularMemberHydro(om.ExplicitComponent):
         # Lxy = np.maximum(Lxy, D)
         m_a[2] = 0  # Axial added mass? A33 heave * Lxy *
         # TODO: Axial added mass needs better calculation
-        m_a[3:5] = (
-            rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
-        )  # A44 roll, A55 pitch
-        # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
-        # Make an equivalent elliptical cylinder
-        # yaw added mass per unit length
-        m_a[5] = np.trapz(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
+        try:
+            # Numpy v1/2 clash
+            m_a[3:5] = (
+                rho_water * np.trapezoid((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
+            )  # A44 roll, A55 pitch
+            # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
+            # Make an equivalent elliptical cylinder
+            # yaw added mass per unit length
+            m_a[5] = np.trapezoid(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
+        except AttributeError:
+            m_a[3:5] = (
+                rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
+            )  # A44 roll, A55 pitch
+            # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
+            # Make an equivalent elliptical cylinder
+            # yaw added mass per unit length
+            m_a[5] = np.trapz(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
         outputs["added_mass"] = m_a
 
 class Global2MemberLoads(om.ExplicitComponent):

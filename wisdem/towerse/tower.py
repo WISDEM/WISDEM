@@ -5,6 +5,8 @@ import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
 from wisdem.commonse import NFREQ, gravity
+from wisdem.commonse.cylinder_member import get_nfull
+import copy
 
 RIGID = 1e30
 
@@ -222,6 +224,9 @@ class TowerFrame(om.ExplicitComponent):
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
+        # Add point masses
+        self.add_input("lumped_mass", np.zeros(n_full), units="kg")
+
         # For modal analysis only
         self.add_input("rna_mass", val=0.0, units="kg")
         self.add_input("rna_I", np.zeros(6), units="kg*m**2")
@@ -352,24 +357,31 @@ class TowerFrame(om.ExplicitComponent):
 
             self.frame.addLoadCase(load)
 
+        # Add lumped masses
+        # Add RNA mass to lumped mass
+        total_lumped_mass = copy.copy(inputs["lumped_mass"])
+        total_lumped_mass[-1] += inputs["rna_mass"][0] 
+        
         # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
-        mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
-        m_add = float(inputs["rna_mass"][0])
-        cg_add = inputs["rna_cg"].reshape((-1, 1))
-        I_add = inputs["rna_I"].reshape((-1, 1))
+        mID = np.arange(n, dtype=np.int_)+1 # 1-based indexing for frame3dd
+        m_add = total_lumped_mass
+        cg_add = np.zeros([3, n])
+        cg_add[:,n-1] = inputs["rna_cg"]/total_lumped_mass[-1]
+        I_add = np.zeros([6,n])
+        I_add[:,n-1] = inputs["rna_I"]
         add_gravity = False
         self.frame.changeExtraNodeMass(
             mID,
             m_add,
-            I_add[0, :],
-            I_add[1, :],
-            I_add[2, :],
-            I_add[3, :],
-            I_add[4, :],
-            I_add[5, :],
-            cg_add[0, :],
-            cg_add[1, :],
-            cg_add[2, :],
+            I_add[0,:],
+            I_add[1,:],
+            I_add[2,:],
+            I_add[3,:],
+            I_add[4,:],
+            I_add[5,:],
+            cg_add[0,:],
+            cg_add[1,:],
+            cg_add[2,:],
             add_gravity,
         )
 
@@ -508,13 +520,112 @@ class TowerSEProp(om.Group):
         temp_opt["n_height"] = [n_height]
         temp_opt["n_layers"] = [mod_opt["n_layers"]]
         temp_opt["n_ballasts"] = [0]
+
+        self.add_subsystem(
+            "refine_lumped_mass",
+            RefineLumpedMass(modeling_options=mod_opt),
+            promotes=["lumped_mass_in", "lumped_mass"],
+        )
+
         self.add_subsystem(
             "member",
             mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"], member_shape = "circular"),
             promotes=promlist
         )
 
+        # Add lumped mass into mass_den
+        self.add_subsystem(
+            "distribute_lumped_mass",
+            DistributeLumpedMass(modeling_options=mod_opt),
+            promotes=["lumped_mass_in", "total_mass_den"],
+        )
+        self.connect("member.mass_den", "distribute_lumped_mass.mass_den")
+        self.connect("tower_section_height", "distribute_lumped_mass.section_height")
 
+
+class RefineLumpedMass(om.ExplicitComponent):
+    """
+    This is to refine the lumped mass considering the refinement
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]
+
+        if "n_height" in mod_opt:
+            n_height = mod_opt["n_height"]
+        else:
+            n_height_tow = mod_opt["n_height_tower"]
+            n_height = mod_opt["n_height"] = n_height_tow
+        n_full = get_nfull(n_height, nref=mod_opt["n_refine"])
+
+        self.add_input("lumped_mass_in", np.zeros(n_height), units="kg")
+        self.add_output("lumped_mass", np.zeros(n_full), units="kg")
+    
+    def compute(self, inputs, outputs):
+        mod_opt = self.options["modeling_options"]
+        n_height = mod_opt["n_height"]
+        n_full = get_nfull(n_height, nref=mod_opt["n_refine"])
+
+        # Refine the lumped mass
+        lumped_mass_input = inputs["lumped_mass_in"]
+        lumped_mass_refined = np.zeros(n_full)
+        lumped_mass_refined[0] = lumped_mass_input[0]  # base mass
+        for i in range(1, n_height):
+            start_idx = (i - 1) * mod_opt["n_refine"]
+            end_idx = i * mod_opt["n_refine"]
+            lumped_mass_refined[start_idx:end_idx] = 0 # insert zeros to match the refined nodes
+            lumped_mass_refined[end_idx - 1] = lumped_mass_input[i]  # last point of the segment
+        
+        outputs["lumped_mass"] = lumped_mass_refined
+
+class DistributeLumpedMass(om.ExplicitComponent):
+    """
+    This is to distribute the lumped mass to mass density
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]
+
+        if "n_height" in mod_opt:
+            n_height = mod_opt["n_height"]
+        else:
+            n_height_tow = mod_opt["n_height_tower"]
+            n_height = mod_opt["n_height"] = n_height_tow
+        n_full = get_nfull(n_height, nref=mod_opt["n_refine"])
+
+        self.add_input("mass_den", np.zeros(n_height-1), units="kg/m")
+        self.add_input("section_height", np.zeros(n_height - 1), units="m")
+        self.add_input("lumped_mass_in", np.zeros(n_height), units="kg")
+        self.add_output("total_mass_den", np.zeros(n_height-1), units="kg/m")
+    
+    def compute(self, inputs, outputs):
+        mod_opt = self.options["modeling_options"]
+        n_height = mod_opt["n_height"]
+
+        # Refine the lumped mass
+        lumped_mass_input = inputs["lumped_mass_in"]
+        total_mass_den = copy.copy(inputs["mass_den"])
+
+        if lumped_mass_input[0] > 0:
+            total_mass_den[0] += lumped_mass_input[0] / inputs["section_height"][0]
+
+        for i in range(1, n_height-1):
+            added_mass_den2 = lumped_mass_input[i]*inputs["section_height"][i-1] / (inputs["section_height"][i-1]*inputs["section_height"][i]+inputs["section_height"][i]**2)
+            total_mass_den[i] += added_mass_den2 
+            total_mass_den[i-1] += (lumped_mass_input[i] - added_mass_den2*inputs["section_height"][i]) / inputs["section_height"][i-1]
+
+        if lumped_mass_input[-1] > 0:
+            total_mass_den[-1] += lumped_mass_input[-1] / inputs["section_height"][-1]
+
+        outputs["total_mass_den"] = total_mass_den
 
 class TowerSEPerf(om.Group):
     """
@@ -562,6 +673,7 @@ class TowerSEPerf(om.Group):
                 "rna_mass",
                 "rna_cg",
                 "rna_I",
+                "lumped_mass",
             ],
         )
 

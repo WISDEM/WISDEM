@@ -23,7 +23,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
-        environment = wt_init["environment"]
+        environment = modeling_options["WISDEM"]["Environment"]
         blade_flag = modeling_options["flags"]["blade"]
         wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
@@ -38,7 +38,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["airfoils"]:
         airfoils = wt_init["airfoils"]
-        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils)
+        airfoils_master = wt_init["components"]["blade"]["outer_shape"]["airfoils"]
+        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils)
     else:
         airfoils = {}
 
@@ -48,17 +49,17 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
-    user_elastic = (modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["nacelle"])
+    user_elastic = (modeling_options["user_elastic"]["hub"] or modeling_options["user_elastic"]["drivetrain"])
     if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"] or user_elastic or modeling_options["user_elastic"]["blade"]:
         hub = wt_init["components"]["hub"]
         wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"], user_elastic)
 
-    if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"] or user_elastic or modeling_options["user_elastic"]["blade"]:
-        nacelle = wt_init["components"]["nacelle"]
-        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
+    if modeling_options["flags"]["drivetrain"] or modeling_options["flags"]["blade"] or user_elastic or modeling_options["user_elastic"]["blade"]:
+        drivetrain = wt_init["components"]["drivetrain"]
+        wt_opt = assign_drivetrain_values(wt_opt, modeling_options, drivetrain, modeling_options["flags"], user_elastic)
 
-        if modeling_options["flags"]["nacelle"] or user_elastic:
-            wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle, modeling_options["flags"], user_elastic)
+        if modeling_options["flags"]["drivetrain"] or user_elastic:
+            wt_opt = assign_generator_values(wt_opt, modeling_options, drivetrain, modeling_options["flags"], user_elastic)
 
     if modeling_options["flags"]["RNA"]:
         RNA = wt_init["components"]["RNA"]
@@ -90,13 +91,13 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options["flags"]["bos"]:
-        bos = wt_init["bos"]
+        bos = modeling_options["WISDEM"]["BOS"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
         bos = {}
 
     if modeling_options["flags"]["costs"]:
-        costs = wt_init["costs"]
+        costs = modeling_options["WISDEM"]["LCOE"]
         wt_opt = assign_costs_values(wt_opt, costs)
     else:
         costs = {}
@@ -113,544 +114,498 @@ def MoI_setter(wt_opt, varstr, listin):
     else:
         raise ValueError(f"When setting, {varstr}, expected 3 or 6 elements but found {nn}")
 
+
 def assign_blade_values(wt_opt, modeling_options, blade_DV, blade, user_elastic):
     # Function to assign values to the openmdao group Blade
+
+    nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
+    wt_opt["blade.ref_axis"][:, 0] = PchipInterpolator(
+    blade["reference_axis"]["x"]["grid"], blade["reference_axis"]["x"]["values"]
+    )(nd_span)
+    wt_opt["blade.ref_axis"][:, 1] = PchipInterpolator(
+        blade["reference_axis"]["y"]["grid"], blade["reference_axis"]["y"]["values"]
+    )(nd_span)
+    wt_opt["blade.ref_axis"][:, 2] = PchipInterpolator(
+        blade["reference_axis"]["z"]["grid"], blade["reference_axis"]["z"]["values"]
+    )(nd_span)
+
+
     blade_DV_aero = blade_DV["aero_shape"]
-    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
+    wt_opt = assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape"])
     if not user_elastic:
-        wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
+        wt_opt = assign_blade_structural_webs_values(wt_opt, modeling_options, blade["structure"])
+        wt_opt = assign_blade_structural_layers_values(wt_opt, modeling_options, blade["structure"])
+        wt_opt = assign_blade_root_joint_values(wt_opt, blade["structure"])
     else:
-        wt_opt = assign_user_elastic(wt_opt, modeling_options, blade["elastic_properties"])
-    wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
+        wt_opt = assign_user_elastic(wt_opt, blade["elastic_properties"])
 
     return wt_opt
 
 
-def assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, outer_shape_bem):
+def assign_outer_shape_values(wt_opt, modeling_options, blade_DV_aero, outer_shape):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
+    n_af_master = modeling_options["WISDEM"]["RotorSE"]["n_af_master"]
 
-    wt_opt["blade.outer_shape_bem.af_position"] = outer_shape_bem["airfoil_position"]["grid"]
-    wt_opt["blade.opt_var.af_position"] = outer_shape_bem["airfoil_position"]["grid"]
+    for i in range(n_af_master):
+        wt_opt["blade.outer_shape.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
+        wt_opt["blade.opt_var.af_position"][i] = outer_shape["airfoils"][i]["spanwise_position"]
 
-    wt_opt["blade.outer_shape_bem.s_default"] = nd_span
-    wt_opt["blade.outer_shape_bem.chord_yaml"] = PchipInterpolator(
-        outer_shape_bem["chord"]["grid"], outer_shape_bem["chord"]["values"]
+    wt_opt["blade.outer_shape.s"] = nd_span
+    wt_opt["blade.outer_shape.chord"] = PchipInterpolator(
+        outer_shape["chord"]["grid"], outer_shape["chord"]["values"]
     )(nd_span)
-    wt_opt["blade.outer_shape_bem.twist_yaml"] = PchipInterpolator(
-        outer_shape_bem["twist"]["grid"], outer_shape_bem["twist"]["values"]
+    wt_opt["blade.outer_shape.twist"] = PchipInterpolator(
+        outer_shape["twist"]["grid"], outer_shape["twist"]["values"]
     )(nd_span)
-    wt_opt["blade.outer_shape_bem.pitch_axis_yaml"] = PchipInterpolator(
-        outer_shape_bem["pitch_axis"]["grid"], outer_shape_bem["pitch_axis"]["values"]
+    wt_opt["blade.outer_shape.section_offset_y"] = PchipInterpolator(
+        outer_shape["section_offset_y"]["grid"], outer_shape["section_offset_y"]["values"]
     )(nd_span)
-    af_opt_flag = blade_DV_aero["af_positions"]["flag"]
-    if "rthick" in outer_shape_bem and af_opt_flag == False:
-        # If rthick is defined in input yaml and we are NOT optimizing airfoil positions
-        wt_opt["blade.outer_shape_bem.r_thick_yaml"] = PchipInterpolator(
-            outer_shape_bem["rthick"]["grid"], outer_shape_bem["rthick"]["values"]
+    if "section_offset_x" in outer_shape:
+        wt_opt["blade.outer_shape.section_offset_x"] = PchipInterpolator(
+            outer_shape["section_offset_x"]["grid"], outer_shape["section_offset_x"]["values"]
         )(nd_span)
-    elif "rthick" in outer_shape_bem and af_opt_flag == True:
+    af_opt_flag = blade_DV_aero["af_positions"]["flag"]
+    if "rthick" in outer_shape and af_opt_flag == False:
+        # If rthick is defined in input yaml and we are NOT optimizing airfoil positions
+        wt_opt["blade.outer_shape.rthick_yaml"] = PchipInterpolator(
+            outer_shape["rthick"]["grid"], outer_shape["rthick"]["values"]
+        )(nd_span)
+    elif "rthick" in outer_shape and af_opt_flag == True:
         logger.debug("rthick field in input geometry yaml is specified but neglected since you are optimizing airfoil positions")
     else:
         logger.debug("rthick field in input geometry yaml not specified. rthick is reconstructed from discrete airfoil positions")
-    wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 0] = PchipInterpolator(
-        outer_shape_bem["reference_axis"]["x"]["grid"], outer_shape_bem["reference_axis"]["x"]["values"]
-    )(nd_span)
-    wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 1] = PchipInterpolator(
-        outer_shape_bem["reference_axis"]["y"]["grid"], outer_shape_bem["reference_axis"]["y"]["values"]
-    )(nd_span)
-    wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 2] = PchipInterpolator(
-        outer_shape_bem["reference_axis"]["z"]["grid"], outer_shape_bem["reference_axis"]["z"]["values"]
-    )(nd_span)
-
-    # # Smoothing of the shapes
-    # # Chord
-    # chord_init      = wt_opt["blade.outer_shape_bem.chord"]
-    # s_interp_c      = np.array([0.0, 0.05, 0.2, 0.35, 0.65, 0.9, 1.0 ])
-    # f_interp1       = interp1d(nd_span,chord_init)
-    # chord_int1      = f_interp1(s_interp_c)
-    # f_interp2       = PchipInterpolator(s_interp_c,chord_int1)
-    # chord_int2      = f_interp2(nd_span)
-
-    # import matplotlib.pyplot as plt
-    # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
-    # axc.plot(nd_span, chord_init, c="k", label="Initial")
-    # axc.plot(s_interp_c, chord_int1, "ko", label="Interp Points")
-    # axc.plot(nd_span, chord_int2, c="b", label="PCHIP")
-    # axc.set(xlabel="r/R" , ylabel="Chord (m)")
-    # fig_name = "interp_chord.png"
-    # axc.legend()
-    # # Planform
-    # le_init = wt_opt["blade.outer_shape_bem.pitch_axis_yaml"]*wt_opt["blade.outer_shape_bem.chord_yaml"]
-    # te_init = (1. - wt_opt["blade.outer_shape_bem.pitch_axis_yaml"])*wt_opt["blade.outer_shape_bem.chord_yaml"]
-
-    # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
-    # f_interp1       = interp1d(wt_opt["blade.outer_shape_bem.s_default"],le_init)
-    # le_int1         = f_interp1(s_interp_le)
-    # f_interp2       = PchipInterpolator(s_interp_le,le_int1)
-    # le_int2         = f_interp2(wt_opt["blade.outer_shape_bem.s_default"])
-
-    # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
-    # axpl.plot(wt_opt["blade.outer_shape_bem.s_default"], -le_init, c="k", label="LE init")
-    # axpl.plot(wt_opt["blade.outer_shape_bem.s_default"], te_init, c="k", label="TE init")
-    # axpl.set(xlabel="r/R" , ylabel="Planform (m)")
-    # axpl.legend()
-    # plt.show()
-    # # exit()
-    # # np.savetxt("temp.txt", le_int2/wt_opt["blade.outer_shape_bem.chord"])
-
-    # # # Twist
-    # theta_init      = wt_opt["blade.outer_shape_bem.twist"]
-    # s_interp      = np.array([0.0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9, 1.0 ])
-    # f_interp1       = interp1d(nd_span,theta_init)
-    # theta_int1      = f_interp1(s_interp)
-    # f_interp2       = PchipInterpolator(s_interp,theta_int1)
-    # theta_int2      = f_interp2(nd_span)
-
-    # import matplotlib.pyplot as plt
-    # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
-    # axc.plot(nd_span, theta_init, c="k", label="Initial")
-    # axc.plot(s_interp, theta_int1, "ko", label="Interp Points")
-    # axc.plot(nd_span, theta_int2, c="b", label="PCHIP")
-    # axc.set(xlabel="r/R" , ylabel="Twist (deg)")
-    # axc.legend()
-    # plt.show()
 
     return wt_opt
 
 
-def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_structure_2d_fem):
-    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+def assign_blade_structural_webs_values(wt_opt, modeling_options, structure):
+    # Function to assign values to the openmdao component Blade_Structure
 
-    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
     n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
+    nd_span = wt_opt["blade.outer_shape.s"]
+    anchors = structure["anchors"]
+    n_anchors = len(anchors)
 
-    web_rotation = np.zeros((n_webs, n_span))
-    web_offset_y_pa = np.zeros((n_webs, n_span))
-    web_start_nd = np.zeros((n_webs, n_span))
-    web_end_nd = np.zeros((n_webs, n_span))
-    definition_web = np.zeros(n_webs)
-    nd_span = wt_opt["blade.outer_shape_bem.s_default"]
 
-    # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
-        if "rotation" in internal_structure_2d_fem["webs"][i] and "offset_y_pa" in internal_structure_2d_fem["webs"][i]:
-            if "fixed" in internal_structure_2d_fem["webs"][i]["rotation"].keys():
-                if internal_structure_2d_fem["webs"][i]["rotation"]["fixed"] == "twist":
-                    definition_web[i] = 1
-                else:
-                    raise ValueError(
-                        "Invalid rotation reference for web "
-                        + modeling_options["WISDEM"]["RotorSE"]["web_name"][i]
-                        + ". Please check the yaml input file"
-                    )
-            else:
-                web_rotation[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["webs"][i]["rotation"]["grid"],
-                        internal_structure_2d_fem["webs"][i]["rotation"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-                definition_web[i] = 2
-            web_offset_y_pa[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["webs"][i]["offset_y_pa"]["grid"],
-                    internal_structure_2d_fem["webs"][i]["offset_y_pa"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        elif "offset_plane" in internal_structure_2d_fem["webs"][i]:
-            web_rotation[i, :] = np.ones_like(nd_span) * internal_structure_2d_fem["webs"][i]["offset_plane"]["blade_rotation"]
-            web_offset_y_pa[i, :] = -np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["webs"][i]["offset_plane"]["offset"]["grid"],
-                    internal_structure_2d_fem["webs"][i]["offset_plane"]["offset"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            definition_web[i] = 4
-        elif (
-            "start_nd_arc" in internal_structure_2d_fem["webs"][i]
-            and "end_nd_arc" in internal_structure_2d_fem["webs"][i]
-        ):
-            definition_web[i] = 3
-            web_start_nd[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["webs"][i]["start_nd_arc"]["grid"],
-                    internal_structure_2d_fem["webs"][i]["start_nd_arc"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            web_end_nd[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["webs"][i]["end_nd_arc"]["grid"],
-                    internal_structure_2d_fem["webs"][i]["end_nd_arc"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        else:
-            raise ValueError("Webs definition not supported. Please check the yaml input.")
+        web_i = structure["webs"][i]
 
-    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
-    layer_name = n_layers * [""]
-    layer_mat = n_layers * [""]
-    thickness = np.zeros((n_layers, n_span))
-    orientation = np.zeros((n_layers, n_span))
-    layer_rotation = np.zeros((n_layers, n_span))
-    layer_offset_y_pa = np.zeros((n_layers, n_span))
-    layer_width = np.zeros((n_layers, n_span))
-    layer_midpoint_nd = np.zeros((n_layers, n_span))
-    layer_start_nd = np.zeros((n_layers, n_span))
-    layer_end_nd = np.zeros((n_layers, n_span))
-    layer_web = np.zeros(n_layers)
-    layer_side = n_layers * [""]
-    definition_layer = np.zeros(n_layers)
-    index_layer_start = np.zeros(n_layers)
-    index_layer_end = np.zeros(n_layers)
+        offset_grid = np.zeros(len(nd_span))
+        offset_values = np.zeros(len(nd_span))
+        web_start_nd_grid = np.zeros(len(nd_span))
+        web_start_nd_values = np.zeros(len(nd_span))
+        web_end_nd_grid = np.zeros(len(nd_span))
+        web_end_nd_values = np.zeros(len(nd_span))
+        build_web = False
 
-    # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
-    for i in range(n_layers):
-        layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
-        layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
-        thickness[i, :] = np.nan_to_num(
-            PchipInterpolator(
-                internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
-                internal_structure_2d_fem["layers"][i]["thickness"]["values"],
-                extrapolate=False,
-            )(nd_span)
-        )
-        orientation[i, :] = np.nan_to_num(
-            PchipInterpolator(
-                internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
-                internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
-                extrapolate=False,
-            )(nd_span)
-        )
-        if (
-            "rotation" not in internal_structure_2d_fem["layers"][i]
-            and "offset_y_pa" not in internal_structure_2d_fem["layers"][i]
-            and "width" not in internal_structure_2d_fem["layers"][i]
-            and "start_nd_arc" not in internal_structure_2d_fem["layers"][i]
-            and "end_nd_arc" not in internal_structure_2d_fem["layers"][i]
-            and "web" not in internal_structure_2d_fem["layers"][i]
-            and "offset_plane" not in internal_structure_2d_fem["layers"][i]
-        ):
-            definition_layer[i] = 1
+        # web_start_nd
+        # if anchor is defined, use that. if not, look for hard-coded start and end nd grid
+        if "anchor" in web_i["start_nd_arc"]:
+            anchor_name = web_i["start_nd_arc"]["anchor"]["name"]
+            anchor_handle = web_i["start_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    if "plane_intersection" in anchors[j]:
+                        if "plane_type1" in anchors[j]["plane_intersection"]:
+                            if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
+                                web_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
+                            else:
+                                raise Exception("in WISDEM plane_type1 requires a rotation to build web %s" % web_i["name"])
+                        else:
+                            raise Exception("in WISDEM plane_intersection requires plane_type1, which is missing in layer %s" % web_i["name"])
 
-        if (
-            "rotation" in internal_structure_2d_fem["layers"][i]
-            and "offset_y_pa" in internal_structure_2d_fem["layers"][i]
-            and "width" in internal_structure_2d_fem["layers"][i]
-            and "side" in internal_structure_2d_fem["layers"][i]
-        ):
-            if "fixed" in internal_structure_2d_fem["layers"][i]["rotation"].keys():
-                if internal_structure_2d_fem["layers"][i]["rotation"]["fixed"] == "twist":
-                    definition_layer[i] = 2
-                else:
-                    raise ValueError(
-                        "Invalid rotation reference for layer " + layer_name[i] + ". Please check the yaml input file."
-                    )
-            else:
-                layer_rotation[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["rotation"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["rotation"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-                definition_layer[i] = 3
-            layer_offset_y_pa[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["offset_y_pa"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["offset_y_pa"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-            layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
-        if (
-            "midpoint_nd_arc" in internal_structure_2d_fem["layers"][i]
-            and "width" in internal_structure_2d_fem["layers"][i]
-        ):
-            if "fixed" in internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"].keys():
-                if internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["fixed"] == "TE":
-                    layer_midpoint_nd[i, :] = np.ones(n_span)
-                    definition_layer[i] = 4
-                elif internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 5
-            else:
-                layer_midpoint_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
-            )
-        if "start_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
-            if "fixed" in internal_structure_2d_fem["layers"][i]["start_nd_arc"].keys():
-                if internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] == "TE":
-                    layer_start_nd[i, :] = np.zeros(n_span)
-                elif internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 11
-                else:
-                    definition_layer[i] = 6
-                    flag = False
-                    for k in range(n_layers):
-                        if layer_name[k] == internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"]:
-                            index_layer_start[i] = k
-                            flag = True
-                            break
-                    if flag == False:
-                        raise ValueError(
-                            "The start position of the layer "
-                            + internal_structure_2d_fem["layers"][i]["name"]
-                            + " is linked to the layer "
-                            + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"]
-                            + " , but this layer does not exist in the yaml."
-                        )
-            else:
-                layer_start_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["start_nd_arc"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["start_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-                if np.min(layer_start_nd[i, :]) < 0.0 or np.max(layer_start_nd[i, :]) > 1.0:
-                    raise Exception(
-                        """The start_nd_arc layer cannot be smaller than 0 nor
-                    larger than 1. Check the input yaml for layer """,
-                        layer_name[i],
-                    )
-
-            if "end_nd_arc" in internal_structure_2d_fem["layers"][i]:
-                if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
-                    if internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"] == "TE":
-                        layer_end_nd[i, :] = np.ones(n_span)
-                        # raise ValueError("No need to fix element to TE, set it to 0.")
-                    elif internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"] == "LE":
-                        definition_layer[i] = 12
-                    else:
-                        flag = False
-                        for k in range(n_layers):
-                            if layer_name[k] == internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]:
-                                index_layer_end[i] = k
-                                flag = True
-                                break
-                        if flag == False:
-                            raise ValueError(
-                                "The end position of the layer "
-                                + internal_structure_2d_fem["layers"][i]["name"]
-                                + " is linked to the layer "
-                                + internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]
-                                + " , but this layer does not exist in the yaml."
+                        if "offset" in anchors[j]["plane_intersection"]:
+                            offset_grid = anchors[j]["plane_intersection"]["offset"]["grid"]
+                            offset_values = anchors[j]["plane_intersection"]["offset"]["values"]
+                            build_web = True
+                        if anchors[j]["plane_intersection"]["side"] != "both":
+                            raise Exception(
+                                "Blade structure anchor %s plane_intersection must be defined both start and end" % anchor_name
                             )
-            if "width" in internal_structure_2d_fem["layers"][i]:
-                definition_layer[i] = 7
-                layer_width[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["width"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-        if "end_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
-            if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
-                if internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"] == "TE":
-                    layer_end_nd[i, :] = np.ones(n_span)
-                    # raise ValueError("No need to fix element to TE, set it to 0.")
-                elif internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"] == "LE":
-                    definition_layer[i] = 12
-                else:
-                    definition_layer[i] = 6
-                    flag = False
-                    for k in range(n_layers):
-                        if layer_name[k] == internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]:
-                            index_layer_end[i] = k
-                            flag = True
-                            break
-                    if flag == False:
-                        raise ValueError("Error with layer " + internal_structure_2d_fem["layers"][i]["name"])
-            else:
-                layer_end_nd[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["end_nd_arc"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["end_nd_arc"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-
-            if np.min(layer_end_nd[i, :]) < 0.0 or np.max(layer_end_nd[i, :]) > 1.0:
-                raise Exception(
-                    """The end_nd_arc layer cannot be smaller than 0 nor
-                larger than 1. Check the input yaml for layer """,
-                    layer_name[i],
-                )
-
-            if "width" in internal_structure_2d_fem["layers"][i]:
-                definition_layer[i] = 8
-                layer_width[i, :] = np.nan_to_num(
-                    PchipInterpolator(
-                        internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                        internal_structure_2d_fem["layers"][i]["width"]["values"],
-                        extrapolate=False,
-                    )(nd_span)
-                )
-            if "start_nd_arc" in internal_structure_2d_fem["layers"][i]:
-                definition_layer[i] = 9
-
-        if "web" in internal_structure_2d_fem["layers"][i]:
-            web_name_i = internal_structure_2d_fem["layers"][i]["web"]
-            for j in range(modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                if web_name_i == modeling_options["WISDEM"]["RotorSE"]["web_name"][j]:
-                    k = j + 1
+                    if anchor_handle in anchors[j]:
+                        web_start_nd_grid = anchors[j][anchor_handle]["grid"]
+                        web_start_nd_values = anchors[j][anchor_handle]["values"]
                     break
-            layer_web[i] = k
-            definition_layer[i] = 10
-
-        if "offset_plane" in internal_structure_2d_fem["layers"][i]:
-            layer_rotation[i, :] = np.ones_like(nd_span) * internal_structure_2d_fem["layers"][i]["offset_plane"]["blade_rotation"]
-            layer_offset_y_pa[i, :] = -np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["offset_plane"]["offset"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["offset_plane"]["offset"]["values"],
-                    extrapolate=False,
-                )(nd_span)
+        elif "grid" in web_i["start_nd_arc"] and "values" in web_i["start_nd_arc"]:
+            web_start_nd_grid = web_i["start_nd_arc"]["grid"]
+            web_start_nd_values = web_i["start_nd_arc"]["values"]
+        else:
+            raise Exception(
+                "Blade structure web start_nd_arc must be defined by either grid/values or anchor"
             )
-            layer_width[i, :] = np.nan_to_num(
-                PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["width"]["values"],
-                    extrapolate=False,
-                )(nd_span)
+
+
+        web_start_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        web_start_nd_grid,
+                        web_start_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+
+        web_offset = np.nan_to_num(
+                    PchipInterpolator(
+                        offset_grid,
+                        offset_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+
+        wt_opt["blade.structure.web_start_nd_yaml"][i, :] = web_start_nd
+        wt_opt["blade.structure.web_offset"][i, :] = web_offset
+        wt_opt["blade.structure.web_rotation"][i] = web_rotation
+        wt_opt["blade.structure.build_web"][i] = build_web
+
+        # web_end_nd
+        if "grid" in web_i["end_nd_arc"] and "values" in web_i["end_nd_arc"]:
+            web_end_nd_grid = web_i["end_nd_arc"]["grid"]
+            web_end_nd_values = web_i["end_nd_arc"]["values"]
+        elif "anchor" in web_i["end_nd_arc"]:
+            anchor_name = web_i["end_nd_arc"]["anchor"]["name"]
+            anchor_handle = web_i["end_nd_arc"]["anchor"]["handle"]
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    web_end_nd_grid = anchors[j][anchor_handle]["grid"]
+                    web_end_nd_values = anchors[j][anchor_handle]["values"]
+                    break
+        else:
+            raise Exception(
+                "Blade structure web end_nd_arc must be defined by either grid/values or anchor"
             )
-            definition_layer[i] = 13
-            layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
 
-        # Fatigue params
-        if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-        elif layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.sparL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.teU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.teU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.teU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
-            k = wt_opt["materials.name"].index(layer_mat[i])
-            wt_opt["blade.fatigue.teL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
-            wt_opt["blade.fatigue.teL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
-            wt_opt["blade.fatigue.teL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
-
-    # Assign the openmdao values
-    wt_opt["blade.internal_structure_2d_fem.layer_side"] = layer_side
-    wt_opt["blade.internal_structure_2d_fem.layer_thickness"] = thickness
-    wt_opt["blade.internal_structure_2d_fem.layer_orientation"] = orientation
-    wt_opt["blade.internal_structure_2d_fem.layer_midpoint_nd"] = layer_midpoint_nd
-    wt_opt["blade.internal_structure_2d_fem.layer_web"] = layer_web
-    wt_opt["blade.internal_structure_2d_fem.definition_web"] = definition_web
-    wt_opt["blade.internal_structure_2d_fem.definition_layer"] = definition_layer
-    wt_opt["blade.internal_structure_2d_fem.index_layer_start"] = index_layer_start
-    wt_opt["blade.internal_structure_2d_fem.index_layer_end"] = index_layer_end
-
-    wt_opt["blade.internal_structure_2d_fem.web_offset_y_pa_yaml"] = web_offset_y_pa
-    wt_opt["blade.internal_structure_2d_fem.web_rotation_yaml"] = web_rotation
-    wt_opt["blade.internal_structure_2d_fem.web_start_nd_yaml"] = web_start_nd
-    wt_opt["blade.internal_structure_2d_fem.web_end_nd_yaml"] = web_end_nd
-    wt_opt["blade.internal_structure_2d_fem.layer_offset_y_pa_yaml"] = layer_offset_y_pa
-    wt_opt["blade.internal_structure_2d_fem.layer_width_yaml"] = layer_width
-    wt_opt["blade.internal_structure_2d_fem.layer_start_nd_yaml"] = layer_start_nd
-    wt_opt["blade.internal_structure_2d_fem.layer_end_nd_yaml"] = layer_end_nd
-    wt_opt["blade.internal_structure_2d_fem.layer_rotation_yaml"] = layer_rotation
-
-    # Spanwise joint
-    wt_opt["blade.internal_structure_2d_fem.joint_bolt"] = internal_structure_2d_fem["joint"]["bolt"]
-    wt_opt["blade.internal_structure_2d_fem.joint_position"] = internal_structure_2d_fem["joint"]["position"]
-    wt_opt["blade.internal_structure_2d_fem.joint_mass"] = internal_structure_2d_fem["joint"]["mass"]
-    wt_opt["blade.internal_structure_2d_fem.joint_nonmaterial_cost"] = internal_structure_2d_fem["joint"][
-        "nonmaterial_cost"
-    ]
-    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ss"] = internal_structure_2d_fem["joint"][
-        "reinforcement_layer_ss"
-    ]
-    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ps"] = internal_structure_2d_fem["joint"][
-        "reinforcement_layer_ps"
-    ]
-
-    # Blade root
-    wt_opt["blade.internal_structure_2d_fem.d_f"] = internal_structure_2d_fem["root"]["d_f"]
-    wt_opt["blade.internal_structure_2d_fem.sigma_max"] = internal_structure_2d_fem["root"]["sigma_max"]
+        web_end_nd = np.nan_to_num(
+                    PchipInterpolator(
+                        web_end_nd_grid,
+                        web_end_nd_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.web_end_nd_yaml"][i, :] = web_end_nd
 
     return wt_opt
 
-def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
 
-    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-    nd_span = wt_opt["blade.outer_shape_bem.s_default"]
+def assign_blade_structural_layers_values(wt_opt, modeling_options, structure):
+    # Function to assign values to the openmdao component Blade_Structure
+    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+    n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
+    nd_span = wt_opt["blade.outer_shape.s"]
+    anchors = structure["anchors"]
+    webs = structure["webs"]
+    n_anchors = len(anchors)
+    for i in range(n_layers):
 
-    stiff_grid = user_elastic_properties["six_x_six"]["stiff_matrix"]["grid"]
-    stiff_matrix = user_elastic_properties["six_x_six"]["stiff_matrix"]
+        layer_i = structure["layers"][i]
+        offset_grid = np.zeros(len(nd_span))
+        offset_values = np.zeros(len(nd_span))
+        width_grid = np.zeros(len(nd_span))
+        width_values = np.zeros(len(nd_span))
+        layer_start_nd_grid = np.zeros(len(nd_span))
+        layer_start_nd_values = np.zeros(len(nd_span))
+        layer_end_nd_grid = np.zeros(len(nd_span))
+        layer_end_nd_values = np.zeros(len(nd_span))
+        build_layer = -100
 
-    inertia_grid = user_elastic_properties["six_x_six"]["inertia_matrix"]["grid"]
-    inertia_matrix = user_elastic_properties["six_x_six"]["inertia_matrix"]
+        # layer_start_nd
+        # if anchor is defined, use that. if not, look for hard-coded start and end nd grid
+        if "anchor" in layer_i["start_nd_arc"]:
+            anchor_name = layer_i["start_nd_arc"]["anchor"]["name"]
+            anchor_handle = layer_i["start_nd_arc"]["anchor"]["handle"]
+            anchor_start_found = False
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    anchor_start_found = True
+                    if "plane_intersection" in anchors[j] and anchor_handle == "start_nd_arc":
+                        if "plane_type1" in anchors[j]["plane_intersection"]:
+                            if "rotation" in anchors[j]["plane_intersection"]["plane_type1"]:
+                                layer_rotation = anchors[j]["plane_intersection"]["plane_type1"]["rotation"]
+                            else:
+                                raise Exception("in WISDEM plane_type1 requires a rotation to build layer %s" % layer_i["name"])
+                            if anchors[j]["plane_intersection"]["side"] == "suction":
+                                build_layer = 1
+                            elif anchors[j]["plane_intersection"]["side"] == "pressure":
+                                build_layer = 2
+                            else:
+                                raise Exception(
+                                    "Blade structure anchor %s plane_intersection must be defined suction or pressure" % anchor_name
+                                )
+                        else:
+                            raise Exception("in WISDEM plane_intersection requires plane_type1, which is missing in layer %s" % layer_i["name"])
 
-    # 21-element inertia matrix
-    # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
-    # M   = [m, 0, 0, 0, 0, -mYcm, m, 0, 0, 0, mXcm, m,  mYcm, -mXcm, 0,  iedge, -icp, 0,  iflap, 0,  iplr]
+                        if "offset" in anchors[j]["plane_intersection"]:
+                            offset_grid = anchors[j]["plane_intersection"]["offset"]["grid"]
+                            offset_values = anchors[j]["plane_intersection"]["offset"]["values"]
+                        if anchors[j]["plane_intersection"]["side"] != "suction" and anchors[j]["plane_intersection"]["side"] != "pressure":
+                            raise Exception(
+                                "Blade structure anchor %s plane_intersection must be defined either suction or pressure" % anchor_name
+                            )
+                        if "width" in anchors[j]:
+                            width_grid = anchors[j]["width"]["grid"]
+                            width_values = anchors[j]["width"]["values"]
+                        else:
+                            raise Exception(
+                                "Blade structure anchor %s plane_intersection must be defined with width" % anchor_name
+                            )
+                    elif "width" in anchors[j] and "midpoint_nd_arc" in anchors[j] and anchor_handle == "start_nd_arc":
+                        build_layer = 3
+                        width_grid = anchors[j]["width"]["grid"]
+                        width_values = anchors[j]["width"]["values"]
+                        if anchors[j]["midpoint_nd_arc"]["anchor"]["name"] != "LE":
+                            raise Exception("WISDEM currently only supports LE midpoint_nd_arc anchor. Please contact the NREL developers.")
 
-    # 21-element stiffness matrix
-    # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
-    # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
+                    elif "width" in anchors[j]:
+                        width_grid = anchors[j]["width"]["grid"]
+                        width_values = anchors[j]["width"]["values"]
+                        # layers that are anchored to a pair of anchors that end at the TE and have a width
+                        if build_layer == -100 and "end_nd_arc" in anchors[j]:
+                            if "anchor" in anchors[j]["end_nd_arc"]:
+                                if anchors[j]["end_nd_arc"]["anchor"]["name"] == "TE" and layer_i["end_nd_arc"]["anchor"]["name"] == "TE":
+                                    build_layer = 5
+                        # layers anchored to anchors that are anchored themselves
+                        if build_layer == -100 and anchor_handle in anchors[j]:
+                            index_layer_start = 0
+                            for k in range(n_layers):
+                                if structure["layers"][k][anchor_handle]["anchor"]["name"] == anchors[j]["name"]:
+                                    index_layer_start = k
+                                    build_layer = 6
+                                    break
+
+
+                        if build_layer == -100:
+                            raise Exception(
+                                f"Blade structure anchor {anchor_name} does not have a start_nd_arc or end_nd_arc defined"
+                            )
+
+                    elif anchor_handle in anchors[j]:
+                        build_layer = 0
+                        layer_start_nd_grid = anchors[j][anchor_handle]["grid"]
+                        layer_start_nd_values = anchors[j][anchor_handle]["values"]
+
+                    else:
+                        raise Exception(
+                            f"Blade structure anchor {anchor_name} does not have a plane_intersection, width, or start_nd_arc defined"
+                        )
+                    break
+
+            if not anchor_start_found:
+                for j in range(n_webs):
+                    if len(webs[j]["anchors"]) > 1:
+                        raise Exception(
+                            f"WISDEM does not support multiple anchors per web yet. Please contact the NREL developers."
+                        )
+                    if anchor_name == webs[j]["anchors"][0]["name"]:
+                        anchor_start_found = True
+                        # associate negative indices to webs
+                        build_layer = -j -1
+                        layer_start_nd_grid = np.linspace(0., 1., len(nd_span))
+                        layer_start_nd_values = np.zeros(len(nd_span))
+                        break
+
+            if not anchor_start_found:
+
+                layer_name = layer_i["name"]
+                raise Exception(
+                    f"Blade structure layer {layer_name} start_nd_arc anchor {anchor_name} not found in anchors list"
+                )
+        elif "grid" in layer_i["start_nd_arc"] and "values" in layer_i["start_nd_arc"]:
+            layer_start_nd_grid = layer_i["start_nd_arc"]["grid"]
+            layer_start_nd_values = layer_i["start_nd_arc"]["values"]
+        else:
+            raise Exception(
+                "Blade structure layer start_nd_arc must be defined by either grid/values or anchor"
+            )
+
+
+        if build_layer == 0:
+            layer_start_nd = np.nan_to_num(
+                        PchipInterpolator(
+                            layer_start_nd_grid,
+                            layer_start_nd_values,
+                            extrapolate=False,
+                        )(nd_span)
+                )
+            wt_opt["blade.structure.layer_start_nd_yaml"][i, :] = layer_start_nd
+
+        if build_layer == 1 or build_layer == 2:
+            layer_offset = np.nan_to_num(
+                        PchipInterpolator(
+                            offset_grid,
+                            offset_values,
+                            extrapolate=False,
+                        )(nd_span)
+                    )
+            wt_opt["blade.structure.layer_offset"][i, :] = layer_offset
+            wt_opt["blade.structure.layer_rotation"][i] = layer_rotation
+
+        if build_layer == 6:
+            wt_opt["blade.structure.index_layer_start"][i] = index_layer_start
+
+
+        # layer_end_nd
+        if "anchor" in layer_i["end_nd_arc"]:
+            anchor_name = layer_i["end_nd_arc"]["anchor"]["name"]
+            anchor_handle = layer_i["end_nd_arc"]["anchor"]["handle"]
+            anchor_end_found = False
+            for j in range(n_anchors):
+                if anchors[j]["name"] == anchor_name:
+                    anchor_end_found = True
+                    if build_layer == 6:
+                        index_layer_end = 0
+                        for k in range(n_layers):
+                            if structure["layers"][k][anchor_handle]["anchor"]["name"] == anchors[j]["name"]:
+                                index_layer_end = k
+                                break
+                    elif "width" in anchors[j]:
+                        width_grid = anchors[j]["width"]["grid"]
+                        width_values = anchors[j]["width"]["values"]
+                        # layers that are anchored to a pair of anchors that start at the TE and have a width
+                        if "start_nd_arc" in anchors[j]:
+                            if "anchor" in anchors[j]["start_nd_arc"]:
+                                if anchors[j]["start_nd_arc"]["anchor"]["name"] == "TE" and layer_i["start_nd_arc"]["anchor"]["name"] == "TE":
+                                    build_layer = 4
+
+                    elif anchor_handle in anchors[j]:
+                        layer_end_nd_grid = anchors[j][anchor_handle]["grid"]
+                        layer_end_nd_values = anchors[j][anchor_handle]["values"]
+
+                    elif build_layer != 1 and build_layer != 2 and "plane_intersection" in anchors[j]:
+                        raise Exception("WISDEM does not yet support an end anchor with plane_intersection or width defined where the start anchor is not defined this way. Please contact the NREL developers.")
+
+                    break
+
+            if not anchor_end_found:
+                for j in range(n_webs):
+                    if len(webs[j]["anchors"]) > 1:
+                        raise Exception(
+                            f"WISDEM does not support multiple anchors per web yet. Please contact the NREL developers."
+                        )
+                    if anchor_name == webs[j]["anchors"][0]["name"]:
+                        anchor_end_found = True
+                        if build_layer != -j -1:
+                            raise Exception(
+                                f"WISDEM does not support a layer that starts on one web and ends on another. Please contact the NREL developers."
+                            )
+                        layer_end_nd_grid = np.linspace(0., 1., len(nd_span))
+                        layer_end_nd_values = np.zeros(len(nd_span))
+                        break
+
+            if not anchor_end_found:
+                layer_name = layer_i["name"]
+                raise Exception(
+                    f"Blade structure layer {layer_name} end_nd_arc anchor {anchor_name} not found in anchors list"
+                )
+        elif "grid" in layer_i["end_nd_arc"] and "values" in layer_i["end_nd_arc"]:
+            layer_end_nd_grid = layer_i["end_nd_arc"]["grid"]
+            layer_end_nd_values = layer_i["end_nd_arc"]["values"]
+        else:
+            raise Exception(
+                "Blade structure layer end_nd_arc must be defined by either grid/values or anchor"
+            )
+
+        if build_layer == 0:
+            layer_end_nd = np.nan_to_num(
+                        PchipInterpolator(
+                            layer_end_nd_grid,
+                            layer_end_nd_values,
+                            extrapolate=False,
+                        )(nd_span)
+                    )
+
+            wt_opt["blade.structure.layer_end_nd_yaml"][i, :] = layer_end_nd
+
+        if build_layer == 6:
+            wt_opt["blade.structure.index_layer_end"][i] = index_layer_end
+
+        if build_layer > 0:
+            layer_width = np.nan_to_num(
+                        PchipInterpolator(
+                            width_grid,
+                            width_values,
+                            extrapolate=False,
+                        )(nd_span)
+                    )
+            wt_opt["blade.structure.layer_width"][i, :] = layer_width
+
+        # thickness
+        if "thickness" in layer_i:
+            layer_thickness_grid = layer_i["thickness"]["grid"]
+            layer_thickness_values = layer_i["thickness"]["values"]
+
+        layer_thickness = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_thickness_grid,
+                        layer_thickness_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_thickness"][i, :] = layer_thickness
+
+        # fiber_orientation
+        if "fiber_orientation" in layer_i:
+            layer_fiber_orientation_grid = layer_i["fiber_orientation"]["grid"]
+            layer_fiber_orientation_values = layer_i["fiber_orientation"]["values"]
+
+        layer_fiber_orientation = np.nan_to_num(
+                    PchipInterpolator(
+                        layer_fiber_orientation_grid,
+                        layer_fiber_orientation_values,
+                        extrapolate=False,
+                    )(nd_span)
+                )
+        wt_opt["blade.structure.layer_fiber_orientation"][i, :] = layer_fiber_orientation
+        wt_opt["blade.structure.build_layer"][i] = build_layer
+
+    if np.any(build_layer == -100):
+        raise Exception("WISDEM could not build all layers. Please check your input yaml file for the blade structure layers.")
+
+    return wt_opt
+
+
+def assign_blade_root_joint_values(wt_opt, structure):
+
+    wt_opt["blade.structure.joint_position"] = structure["joint"]["position"]
+    wt_opt["blade.structure.joint_mass"] = structure["joint"]["mass"]
+    wt_opt["blade.structure.joint_cost"] = structure["joint"]["cost"]
+    wt_opt["blade.structure.d_f"] = structure["root"]["d_f"]
+    wt_opt["blade.structure.sigma_max"] = structure["root"]["sigma_max"]
+
+    return wt_opt
+
+
+def assign_user_elastic(wt_opt, user_elastic_properties):
+
+    nd_span = wt_opt["blade.outer_shape.s"]
+
+    stiff_grid = user_elastic_properties["stiffness_matrix"]["grid"]
+    stiffness_matrix = user_elastic_properties["stiffness_matrix"]
+
+    inertia_grid = user_elastic_properties["inertia_matrix"]["grid"]
+    inertia_matrix = user_elastic_properties["inertia_matrix"]
 
     # Assemble stiffnees and inertia matrices
-    K11 = PchipInterpolator(stiff_grid, stiff_matrix["K11"][:])(nd_span)
-    K22 = PchipInterpolator(stiff_grid, stiff_matrix["K22"][:])(nd_span)
-    K33 = PchipInterpolator(stiff_grid, stiff_matrix["K33"][:])(nd_span)
-    K44 = PchipInterpolator(stiff_grid, stiff_matrix["K44"][:])(nd_span)
-    K55 = PchipInterpolator(stiff_grid, stiff_matrix["K55"][:])(nd_span)
-    K66 = PchipInterpolator(stiff_grid, stiff_matrix["K66"][:])(nd_span)
-    K12 = PchipInterpolator(stiff_grid, stiff_matrix["K12"][:])(nd_span)
-    K13 = PchipInterpolator(stiff_grid, stiff_matrix["K13"][:])(nd_span)
-    K14 = PchipInterpolator(stiff_grid, stiff_matrix["K14"][:])(nd_span)
-    K15 = PchipInterpolator(stiff_grid, stiff_matrix["K15"][:])(nd_span)
-    K16 = PchipInterpolator(stiff_grid, stiff_matrix["K16"][:])(nd_span)
-    K23 = PchipInterpolator(stiff_grid, stiff_matrix["K23"][:])(nd_span)
-    K24 = PchipInterpolator(stiff_grid, stiff_matrix["K24"][:])(nd_span)
-    K25 = PchipInterpolator(stiff_grid, stiff_matrix["K25"][:])(nd_span)
-    K26 = PchipInterpolator(stiff_grid, stiff_matrix["K26"][:])(nd_span)
-    K34 = PchipInterpolator(stiff_grid, stiff_matrix["K34"][:])(nd_span)
-    K35 = PchipInterpolator(stiff_grid, stiff_matrix["K35"][:])(nd_span)
-    K36 = PchipInterpolator(stiff_grid, stiff_matrix["K36"][:])(nd_span)
-    K45 = PchipInterpolator(stiff_grid, stiff_matrix["K45"][:])(nd_span)
-    K46 = PchipInterpolator(stiff_grid, stiff_matrix["K46"][:])(nd_span)
-    K56 = PchipInterpolator(stiff_grid, stiff_matrix["K56"][:])(nd_span)
+    K11 = PchipInterpolator(stiff_grid, stiffness_matrix["K11"][:])(nd_span)
+    K22 = PchipInterpolator(stiff_grid, stiffness_matrix["K22"][:])(nd_span)
+    K33 = PchipInterpolator(stiff_grid, stiffness_matrix["K33"][:])(nd_span)
+    K44 = PchipInterpolator(stiff_grid, stiffness_matrix["K44"][:])(nd_span)
+    K55 = PchipInterpolator(stiff_grid, stiffness_matrix["K55"][:])(nd_span)
+    K66 = PchipInterpolator(stiff_grid, stiffness_matrix["K66"][:])(nd_span)
+    K12 = PchipInterpolator(stiff_grid, stiffness_matrix["K12"][:])(nd_span)
+    K13 = PchipInterpolator(stiff_grid, stiffness_matrix["K13"][:])(nd_span)
+    K14 = PchipInterpolator(stiff_grid, stiffness_matrix["K14"][:])(nd_span)
+    K15 = PchipInterpolator(stiff_grid, stiffness_matrix["K15"][:])(nd_span)
+    K16 = PchipInterpolator(stiff_grid, stiffness_matrix["K16"][:])(nd_span)
+    K23 = PchipInterpolator(stiff_grid, stiffness_matrix["K23"][:])(nd_span)
+    K24 = PchipInterpolator(stiff_grid, stiffness_matrix["K24"][:])(nd_span)
+    K25 = PchipInterpolator(stiff_grid, stiffness_matrix["K25"][:])(nd_span)
+    K26 = PchipInterpolator(stiff_grid, stiffness_matrix["K26"][:])(nd_span)
+    K34 = PchipInterpolator(stiff_grid, stiffness_matrix["K34"][:])(nd_span)
+    K35 = PchipInterpolator(stiff_grid, stiffness_matrix["K35"][:])(nd_span)
+    K36 = PchipInterpolator(stiff_grid, stiffness_matrix["K36"][:])(nd_span)
+    K45 = PchipInterpolator(stiff_grid, stiffness_matrix["K45"][:])(nd_span)
+    K46 = PchipInterpolator(stiff_grid, stiffness_matrix["K46"][:])(nd_span)
+    K56 = PchipInterpolator(stiff_grid, stiffness_matrix["K56"][:])(nd_span)
 
     wt_opt["blade.user_KI.K33"] = K33
     wt_opt["blade.user_KI.K11"] = K11
@@ -685,108 +640,6 @@ def assign_user_elastic(wt_opt, modeling_options, user_elastic_properties):
     return wt_opt
 
 
-def assign_te_flaps_values(wt_opt, modeling_options, blade):
-    # Function to assign the trailing edge flaps data to the openmdao data structure
-    if modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] > 0:
-        n_te_flaps = modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"]
-        for i in range(n_te_flaps):
-            wt_opt["dac_ivc.te_flap_start"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-            wt_opt["dac_ivc.te_flap_end"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-            wt_opt["dac_ivc.chord_start"][i] = blade["aerodynamic_control"]["te_flaps"][i]["chord_start"]
-            wt_opt["dac_ivc.delta_max_pos"][i] = blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"]
-            wt_opt["dac_ivc.delta_max_neg"][i] = blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"]
-
-            wt_opt["dac_ivc.te_flap_ext"] = (
-                blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-                - blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-            )
-            # wt_opt["dac_ivc.te_flap_end"] = blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-
-            # Checks for consistency
-            if blade["aerodynamic_control"]["te_flaps"][i]["span_start"] < 0.0:
-                raise ValueError(
-                    "Error: the start along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined smaller than 0, which corresponds to blade root. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_start"] > 1.0:
-                raise ValueError(
-                    "Error: the start along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined bigger than 1, which corresponds to blade tip. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_end"] < 0.0:
-                raise ValueError(
-                    "Error: the end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined smaller than 0, which corresponds to blade root. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["span_end"] > 1.0:
-                raise ValueError(
-                    "Error: the end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " is defined bigger than 1, which corresponds to blade tip. Please check the yaml input."
-                )
-            elif (
-                blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-                == blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
-            ):
-                raise ValueError(
-                    "Error: the start and end along blade span of the trailing edge flap number "
-                    + str(i)
-                    + " are defined equal. Please check the yaml input."
-                )
-            elif i > 0:
-                if (
-                    blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
-                    < blade["aerodynamic_control"]["te_flaps"][i - 1]["span_end"]
-                ):
-                    raise ValueError(
-                        "Error: the start along blade span of the trailing edge flap number "
-                        + str(i)
-                        + " is smaller than the end of the trailing edge flap number "
-                        + str(i - 1)
-                        + ". Please check the yaml input."
-                    )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["chord_start"] < 0.2:
-                raise ValueError(
-                    "Error: the start along the chord of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than 0.2, which is too close to the leading edge. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["chord_start"] > 1.0:
-                raise ValueError(
-                    "Error: the end along the chord of the trailing edge flap number "
-                    + str(i)
-                    + " is larger than 1., which is beyond the trailing edge. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"] > 30.0 / 180.0 * np.pi:
-                raise ValueError(
-                    "Error: the max positive deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input."
-                )
-            elif blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"] < -30.0 / 180.0 * np.pi:
-                raise ValueError(
-                    "Error: the max negative deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input."
-                )
-            elif (
-                blade["aerodynamic_control"]["te_flaps"][i]["delta_max_pos"]
-                < blade["aerodynamic_control"]["te_flaps"][i]["delta_max_neg"]
-            ):
-                raise ValueError(
-                    "Error: the max positive deflection of the trailing edge flap number "
-                    + str(i)
-                    + " is smaller than the max negative deflection. Please check the yaml input."
-                )
-            else:
-                pass
-
-    return wt_opt
-
-
 def assign_hub_values(wt_opt, hub, flags, user_elastic):
     if flags["hub"] or flags["blade"]:
         wt_opt["hub.diameter"] = hub["diameter"]
@@ -795,22 +648,26 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         # wt_opt["hub.drag_coeff"] = hub["drag_coefficient"] # GB: This doesn"t connect to anything
 
     if flags["hub"]:
-        wt_opt["hub.flange_t2shell_t"]            = hub["flange_t2shell_t"]
-        wt_opt["hub.flange_OD2hub_D"]             = hub["flange_OD2hub_D"]
-        wt_opt["hub.flange_ID2flange_OD"]         = hub["flange_ID2OD"]
-        wt_opt["hub.hub_in2out_circ"]             = hub["hub_blade_spacing_margin"]
-        wt_opt["hub.hub_stress_concentration"]    = hub["hub_stress_concentration"]
-        wt_opt["hub.n_front_brackets"]            = hub["n_front_brackets"]
-        wt_opt["hub.n_rear_brackets"]             = hub["n_rear_brackets"]
-        wt_opt["hub.clearance_hub_spinner"]       = hub["clearance_hub_spinner"]
-        wt_opt["hub.spin_hole_incr"]              = hub["spin_hole_incr"]
+        wt_opt["hub.flange_t2shell_t"] = hub["flange_t2shell_t"]
+        wt_opt["hub.flange_OD2hub_D"] = hub["flange_OD2hub_D"]
+        wt_opt["hub.flange_ID2flange_OD"] = hub["flange_ID2OD"]
+        wt_opt["hub.hub_in2out_circ"] = hub["hub_blade_spacing_margin"]
+        wt_opt["hub.hub_stress_concentration"] = hub["hub_stress_concentration"]
+        wt_opt["hub.n_front_brackets"] = hub["n_front_brackets"]
+        wt_opt["hub.n_rear_brackets"] = hub["n_rear_brackets"]
+        wt_opt["hub.clearance_hub_spinner"] = hub["clearance_hub_spinner"]
+        wt_opt["hub.spin_hole_incr"] = hub["spin_hole_incr"]
         wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
-        wt_opt["hub.hub_material"]                = hub["hub_material"]
-        wt_opt["hub.spinner_material"]            = hub["spinner_material"]
-        wt_opt["hub.spinner_mass_user"]           = hub["spinner_mass_user"]
-        wt_opt["hub.pitch_system_mass_user"]      = hub["pitch_system_mass_user"]
-        wt_opt["hub.hub_shell_mass_user"]         = hub["hub_shell_mass_user"]
-        wt_opt["hub.hub_system_mass_user"]        = hub["hub_system_mass_user"]
+        wt_opt["hub.hub_material"] = hub["hub_material"]
+        wt_opt["hub.spinner_material"] = hub["spinner_material"]
+        if "spinner_mass_user" in hub:
+            wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
+        if "pitch_system_mass_user" in hub:
+            wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
+        if "hub_shell_mass_user" in hub:
+            wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
+        if "hub_system_mass_user" in hub:
+            wt_opt["hub.hub_system_mass_user"] = hub["hub_system_mass_user"]
 
     elif user_elastic:
         # Note that this is stored in the drivese namespace per gc_WT_DataStruct to mimic DrivetrainSE
@@ -819,216 +676,234 @@ def assign_hub_values(wt_opt, hub, flags, user_elastic):
         #wt_opt["drivese.hub_system_cm"]           = hub["elastic_properties"]["location"]
         #MoI_setter(wt_opt, "drivese.hub_system_I", hub["elastic_properties"]["inertia"])
         # windio v1
-        wt_opt["drivese.hub_system_mass"]         = hub["elastic_properties_mb"]["system_mass"]
-        wt_opt["drivese.hub_system_cm"]           = hub["elastic_properties_mb"]["system_center_mass"][0]
+        wt_opt["drivese.hub_system_mass"] = hub["elastic_properties_mb"]["system_mass"]
+        wt_opt["drivese.hub_system_cm"] = hub["elastic_properties_mb"]["system_center_mass"][0]
         MoI_setter(wt_opt, "drivese.hub_system_I", hub["elastic_properties_mb"]["system_inertia"])
         # TODO: This cm isn"t right.  OpenFAST CM is measured from rotor apex.  WISDEM CM is measured from hub flange.
 
     return wt_opt
 
 
-def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
+def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, flags, user_elastic):
     # Common direct and geared
-    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
-    wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
-    wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
-    wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
-    wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
+    wt_opt["drivetrain.uptilt"] = drivetrain["outer_shape"]["uptilt"]
+    wt_opt["drivetrain.distance_tt_hub"] = drivetrain["outer_shape"]["distance_tt_hub"]
+    wt_opt["drivetrain.overhang"] = drivetrain["outer_shape"]["overhang"]
+    wt_opt["drivetrain.gear_ratio"] = drivetrain["gearbox"]["gear_ratio"]
+    wt_opt["drivetrain.gearbox_efficiency"] = drivetrain["gearbox"]["efficiency"]
 
-    if flags["nacelle"]:
-        wt_opt["nacelle.distance_hub_mb"] = nacelle["drivetrain"]["distance_hub_mb"]
-        wt_opt["nacelle.distance_mb_mb"] = nacelle["drivetrain"]["distance_mb_mb"]
-        wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
-        wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
-        wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
-        wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
-        wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
-        wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
-        wt_opt["nacelle.lss_material"] = nacelle["drivetrain"]["lss_material"]
-        wt_opt["nacelle.bedplate_material"] = nacelle["drivetrain"]["bedplate_material"]
-        wt_opt["nacelle.bedplate_mass_user"] = nacelle["drivetrain"]["bedplate_mass_user"]
-        wt_opt["nacelle.brake_mass_user"] = nacelle["drivetrain"]["brake_mass_user"]
-        wt_opt["nacelle.mb1_mass_user"] = nacelle["drivetrain"]["mb1_mass_user"]
-        wt_opt["nacelle.mb2_mass_user"] = nacelle["drivetrain"]["mb2_mass_user"]
-        wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
-        wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
-        wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
-        wt_opt["nacelle.yaw_mass_user"]          = nacelle["drivetrain"]["yaw_mass_user"]
-        wt_opt["nacelle.above_yaw_mass_user"]    = nacelle["drivetrain"]["above_yaw_mass_user"]
-        wt_opt["nacelle.drivetrain_spring_constant_user"]     = nacelle["drivetrain"]["spring_constant_user"]
-        wt_opt["nacelle.drivetrain_damping_coefficient_user"] = nacelle["drivetrain"]["damping_coefficient_user"]
+    if flags["drivetrain"]:
+        wt_opt["drivetrain.distance_hub_mb"] = drivetrain["outer_shape"]["distance_hub_mb"]
+        wt_opt["drivetrain.distance_mb_mb"] = drivetrain["outer_shape"]["distance_mb_mb"]
+        wt_opt["drivetrain.damping_ratio"] = drivetrain["gearbox"]["damping_ratio"]
+        wt_opt["drivetrain.lss_wall_thickness"] = drivetrain["lss"]["wall_thickness"]
+        wt_opt["drivetrain.lss_diameter"] = drivetrain["lss"]["diameter"]
+        wt_opt["drivetrain.lss_material"] = drivetrain["lss"]["material"]
+        wt_opt["drivetrain.mb1Type"] = drivetrain["other_components"]["mb1Type"]
+        wt_opt["drivetrain.mb2Type"] = drivetrain["other_components"]["mb2Type"]
+        wt_opt["drivetrain.uptower"] = drivetrain["other_components"]["uptower"]
+        wt_opt["drivetrain.hvac_mass_coeff"] = drivetrain["other_components"]["hvac_mass_coefficient"]
+        wt_opt["drivetrain.bedplate_material"] = drivetrain["bedplate"]["material"]
+        if "mass_user" in drivetrain["bedplate"]:
+            wt_opt["drivetrain.bedplate_mass_user"] = drivetrain["bedplate"]["mass_user"]
+        if "brake_mass_user" in drivetrain["other_components"]:
+            wt_opt["drivetrain.brake_mass_user"] = drivetrain["other_components"]["brake_mass_user"]
+        if "mb1_mass_user" in drivetrain["other_components"]:
+            wt_opt["drivetrain.mb1_mass_user"] = drivetrain["other_components"]["mb1_mass_user"]
+        if "mb2_mass_user" in drivetrain["other_components"]:
+            wt_opt["drivetrain.mb2_mass_user"] = drivetrain["other_components"]["mb2_mass_user"]
+        if "converter_mass_user" in drivetrain["other_components"]:
+            wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass_user"]
+        if "transformer_mass_user" in drivetrain["other_components"]:
+            wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass_user"]
+
+        # if "yaw_mass_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.yaw_mass_user"] = drivetrain["other_components"]["yaw_mass_user"]
+        # if "above_yaw_mass_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_mass_user"] = drivetrain["other_components"]["above_yaw_mass_user"]
+        # if "above_yaw_I_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_I_user"] = drivetrain["other_components"]["above_yaw_I_user"]
+        # if "above_yaw_cm_user" in drivetrain["other_components"]:
+        #     wt_opt["drivetrain.above_yaw_cm_user"] = drivetrain["other_components"]["above_yaw_cm_user"]
+
+        if "spring_constant_user" in drivetrain:
+            wt_opt["drivetrain.drivetrain_spring_constant_user"]     = drivetrain["spring_constant_user"]
+        if "damping_coefficient_user" in drivetrain:
+            wt_opt["drivetrain.drivetrain_damping_coefficient_user"] = drivetrain["damping_coefficient_user"]
 
         if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-            if wt_opt["nacelle.gear_ratio"] > 1:
+            if wt_opt["drivetrain.gear_ratio"] > 1:
                 raise Exception(
                     "The gear ratio is larger than 1, but the wind turbine is marked as direct drive. Please check the input yaml file."
                 )
             # Direct only
-            wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
-            wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
+            wt_opt["drivetrain.nose_wall_thickness"] = drivetrain["nose"]["wall_thickness"]
+            wt_opt["drivetrain.nose_diameter"] = drivetrain["nose"]["diameter"]
 
-            s_bedplate = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"]))
-            s_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["grid"]
-            v_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["values"]
-            wt_opt["nacelle.bedplate_wall_thickness"] = PchipInterpolator(s_bed_thick_in, v_bed_thick_in)(s_bedplate)
+            s_bedplate = np.linspace(0.0, 1.0, len(wt_opt["drivetrain.bedplate_wall_thickness"]))
+            s_bed_thick_in = drivetrain["bedplate"]["wall_thickness"]["grid"]
+            v_bed_thick_in = drivetrain["bedplate"]["wall_thickness"]["values"]
+            wt_opt["drivetrain.bedplate_wall_thickness"] = PchipInterpolator(s_bed_thick_in, v_bed_thick_in)(s_bedplate)
         else:
-            if wt_opt["nacelle.gear_ratio"] == 1:
+            if wt_opt["drivetrain.gear_ratio"] == 1:
                 raise Exception(
                     "The gear ratio is set to 1, but the wind turbine is marked as geared. Please check the input yaml file."
                 )
             # Geared only
-            wt_opt["nacelle.hss_wall_thickness"] = nacelle["drivetrain"]["hss_wall_thickness"]
-            wt_opt["nacelle.hss_diameter"] = nacelle["drivetrain"]["hss_diameter"]
-
-            wt_opt["nacelle.hss_length"] = nacelle["drivetrain"]["hss_length"]
-            wt_opt["nacelle.bedplate_flange_width"] = nacelle["drivetrain"]["bedplate_flange_width"]
-            wt_opt["nacelle.bedplate_flange_thickness"] = nacelle["drivetrain"]["bedplate_flange_thickness"]
-            wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
-            wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
-            wt_opt["nacelle.gearbox_mass_user"] = nacelle["drivetrain"]["gearbox_mass_user"]
-            wt_opt["nacelle.gearbox_torque_density"] = nacelle["drivetrain"]["gearbox_torque_density"]
-            wt_opt["nacelle.gearbox_radius_user"] = nacelle["drivetrain"]["gearbox_radius_user"]
-            wt_opt["nacelle.gearbox_length_user"] = nacelle["drivetrain"]["gearbox_length_user"]
-            wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
-            wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
+            wt_opt["drivetrain.hss_wall_thickness"] = drivetrain["hss"]["wall_thickness"]
+            wt_opt["drivetrain.hss_diameter"] = drivetrain["hss"]["diameter"]
+            wt_opt["drivetrain.hss_length"] = drivetrain["hss"]["length"]
+            wt_opt["drivetrain.hss_material"] = drivetrain["hss"]["material"]
+            wt_opt["drivetrain.bedplate_flange_width"] = drivetrain["bedplate"]["flange_width"]
+            wt_opt["drivetrain.bedplate_flange_thickness"] = drivetrain["bedplate"]["flange_thickness"]
+            wt_opt["drivetrain.bedplate_web_thickness"] = drivetrain["bedplate"]["web_thickness"]
+            wt_opt["drivetrain.gear_configuration"] = drivetrain["gearbox"]["gear_configuration"].lower()
+            wt_opt["drivetrain.planet_numbers"] = drivetrain["gearbox"]["planet_numbers"]
+            if "mass_user" in drivetrain["gearbox"]:
+                wt_opt["drivetrain.gearbox_mass_user"] = drivetrain["gearbox"]["mass_user"]
+            if "gearbox_radius_user" in drivetrain["gearbox"]:
+                wt_opt["drivetrain.gearbox_radius_user"] = drivetrain["gearbox_radius_user"]
+            if "gearbox_length_user" in drivetrain["gearbox"]:
+                wt_opt["drivetrain.gearbox_length_user"] = drivetrain["gearbox_length_user"]
 
 
     elif user_elastic:
         # windio v2
-        #wt_opt["drivese.yaw_mass"]          = nacelle["yaw"]["elastic_properties"]["mass"]
-        #wt_opt["drivese.above_yaw_mass"]    = nacelle["drivetrain"]["elastic_properties"]["mass"]
-        #wt_opt["drivese.above_yaw_cm"]      = nacelle["drivetrain"]["elastic_properties"]["location"]
-        #wt_opt["drivese.drivetrain_spring_constant"]     = nacelle["elastic_properties"]["spring_constant"]
-        #wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties"]["damping_coefficient"]
-        #MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["drivetrain"]["elastic_properties"]["inertia"])
-        #MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["drivetrain"]["elastic_properties"]["inertia"])
-        #if wt_opt["nacelle.gear_ratio"] > 1:
-        #    wt_opt["drivese.gearbox_mass"]  = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["mass"]
-        #    wt_opt["drivese.gearbox_I"]     = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["inertia"]
-        #    #wt_opt["drivese.gearbox_cm"]    = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["location"]
-        #    #wt_opt["drivese.gearbox_stiffness"] = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["torsional_stiffness"]
-        #    #wt_opt["drivese.gearbox_damping"] = nacelle["drivetrain"]["gearbox"]["elastic_properties"]["torsional_damping"]
+        #wt_opt["drivese.yaw_mass"]          = drivetrain["yaw"]["elastic_properties"]["mass"]
+        #wt_opt["drivese.above_yaw_mass"]    = drivetrain["elastic_properties"]["mass"]
+        #wt_opt["drivese.above_yaw_cm"]      = drivetrain["elastic_properties"]["location"]
+        #wt_opt["drivese.drivetrain_spring_constant"]     = drivetrain["elastic_properties"]["spring_constant"]
+        #wt_opt["drivese.drivetrain_damping_coefficient"] = drivetrain["elastic_properties"]["damping_coefficient"]
+        #MoI_setter(wt_opt, "drivese.above_yaw_I_TT", drivetrain["elastic_properties"]["inertia"])
+        #MoI_setter(wt_opt, "drivese.above_yaw_I", drivetrain["elastic_properties"]["inertia"])
+        #if wt_opt["drivetrain.gear_ratio"] > 1:
+        #    wt_opt["drivese.gearbox_mass"]  = drivetrain["gearbox"]["elastic_properties"]["mass"]
+        #    wt_opt["drivese.gearbox_I"]     = drivetrain["gearbox"]["elastic_properties"]["inertia"]
+        #    #wt_opt["drivese.gearbox_cm"]    = drivetrain["gearbox"]["elastic_properties"]["location"]
+        #    #wt_opt["drivese.gearbox_stiffness"] = drivetrain["gearbox"]["elastic_properties"]["torsional_stiffness"]
+        #    #wt_opt["drivese.gearbox_damping"] = drivetrain["gearbox"]["elastic_properties"]["torsional_damping"]
         # windio v1
-        wt_opt["drivese.yaw_mass"]          = nacelle["elastic_properties_mb"]["yaw_mass"]
-        wt_opt["drivese.above_yaw_mass"]    = nacelle["elastic_properties_mb"]["system_mass"]
-        wt_opt["drivese.above_yaw_cm"]      = nacelle["elastic_properties_mb"]["system_center_mass"]
-        wt_opt["drivese.drivetrain_spring_constant"]     = nacelle["elastic_properties_mb"]["spring_constant"]
-        wt_opt["drivese.drivetrain_damping_coefficient"] = nacelle["elastic_properties_mb"]["damping_coefficient"]
-        MoI_setter(wt_opt, "drivese.above_yaw_I_TT", nacelle["elastic_properties_mb"]["system_inertia_tt"])
-        MoI_setter(wt_opt, "drivese.above_yaw_I", nacelle["elastic_properties_mb"]["system_inertia"])
+        wt_opt["drivese.yaw_mass"]          = drivetrain["elastic_properties_mb"]["yaw_mass"]
+        wt_opt["drivese.above_yaw_mass"]    = drivetrain["elastic_properties_mb"]["system_mass"]
+        wt_opt["drivese.above_yaw_cm"]      = drivetrain["elastic_properties_mb"]["system_center_mass"]
+        wt_opt["drivese.drivetrain_spring_constant"]     = drivetrain["elastic_properties_mb"]["spring_constant"]
+        wt_opt["drivese.drivetrain_damping_coefficient"] = drivetrain["elastic_properties_mb"]["damping_coefficient"]
+        MoI_setter(wt_opt, "drivese.above_yaw_I_TT", drivetrain["elastic_properties_mb"]["system_inertia_tt"])
+        MoI_setter(wt_opt, "drivese.above_yaw_I", drivetrain["elastic_properties_mb"]["system_inertia"])
         wt_opt["drivese.rna_mass"] = wt_opt["drivese.above_yaw_mass"] + wt_opt["drivese.yaw_mass"]
         wt_opt["drivese.rna_cm"]   = wt_opt["drivese.above_yaw_cm"]
         wt_opt["drivese.rna_I_TT"] = wt_opt["drivese.above_yaw_I_TT"]
 
     return wt_opt
 
-def assign_generator_values(wt_opt, modeling_options, nacelle, flags, user_elastic):
+
+def assign_generator_values(wt_opt, modeling_options, drivetrain, flags, user_elastic):
     if user_elastic:
-        #MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties"]["rotor_inertia"])
-        MoI_setter(wt_opt, "drivese.generator_rotor_I", nacelle["generator"]["elastic_properties_mb"]["rotor_inertia"])
+        #MoI_setter(wt_opt, "drivese.generator_rotor_I", drivetrain["generator"]["elastic_properties"]["rotor_inertia"])
+        MoI_setter(wt_opt, "drivese.generator_rotor_I", drivetrain["generator"]["elastic_properties_mb"]["rotor_inertia"])
     else:
-        wt_opt["generator.L_generator"] = nacelle["generator"]["generator_length"]
-        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["generator_mass_user"]
+        wt_opt["generator.L_generator"] = drivetrain["generator"]["length"]
+        if "mass_user" in drivetrain["generator"]:
+            wt_opt["generator.generator_mass_user"] = drivetrain["generator"]["mass_user"]
 
         if not flags["generator"]:
-            wt_opt["generator.generator_radius_user"] = nacelle["generator"]["generator_radius_user"]
+            if "radius_user" in drivetrain["generator"]:
+                wt_opt["generator.generator_radius_user"] = drivetrain["generator"]["radius_user"]
 
-            eff_user = np.c_[
-                nacelle["generator"]["generator_rpm_efficiency_user"]["grid"],
-                nacelle["generator"]["generator_rpm_efficiency_user"]["values"],
-            ]
-            n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
-            if np.any(eff_user):
-                newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
-                neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
-                myeff = np.c_[newrpm, neweff]
-            else:
-                myeff = np.zeros((n_pc, 2))
-            wt_opt["generator.generator_efficiency_user"] = myeff
+            if "rpm_efficiency_user" in drivetrain["generator"]:
+                eff_user = np.c_[
+                    drivetrain["generator"]["rpm_efficiency_user"]["grid"],
+                    drivetrain["generator"]["rpm_efficiency_user"]["values"],
+                ]
+                n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+                if np.any(eff_user):
+                    newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
+                    neweff = PchipInterpolator(eff_user[:, 0], eff_user[:, 1])(newrpm)
+                    myeff = np.c_[newrpm, neweff]
+                else:
+                    myeff = np.zeros((n_pc, 2))
+                wt_opt["generator.generator_efficiency_user"] = myeff
 
         else:
-            wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
-            wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
-            wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
-            wt_opt["generator.S_N"] = nacelle["generator"]["S_N"]
-            wt_opt["generator.alpha_p"] = nacelle["generator"]["alpha_p"]
-            wt_opt["generator.b_r_tau_r"] = nacelle["generator"]["b_r_tau_r"]
-            wt_opt["generator.b_ro"] = nacelle["generator"]["b_ro"]
-            wt_opt["generator.b_s_tau_s"] = nacelle["generator"]["b_s_tau_s"]
-            wt_opt["generator.b_so"] = nacelle["generator"]["b_so"]
-            wt_opt["generator.cofi"] = nacelle["generator"]["cofi"]
-            wt_opt["generator.freq"] = nacelle["generator"]["freq"]
-            wt_opt["generator.h_i"] = nacelle["generator"]["h_i"]
-            wt_opt["generator.h_sy0"] = nacelle["generator"]["h_sy0"]
-            wt_opt["generator.h_w"] = nacelle["generator"]["h_w"]
-            wt_opt["generator.k_fes"] = nacelle["generator"]["k_fes"]
-            wt_opt["generator.k_fillr"] = nacelle["generator"]["k_fillr"]
-            wt_opt["generator.k_fills"] = nacelle["generator"]["k_fills"]
-            wt_opt["generator.k_s"] = nacelle["generator"]["k_s"]
-            wt_opt["generator.m"] = nacelle["generator"]["m"]
-            wt_opt["generator.mu_0"] = nacelle["generator"]["mu_0"]
-            wt_opt["generator.mu_r"] = nacelle["generator"]["mu_r"]
-            wt_opt["generator.p"] = nacelle["generator"]["p"]
-            wt_opt["generator.phi"] = nacelle["generator"]["phi"]
-            wt_opt["generator.q1"] = nacelle["generator"]["q1"]
-            wt_opt["generator.q2"] = nacelle["generator"]["q2"]
-            wt_opt["generator.ratio_mw2pp"] = nacelle["generator"]["ratio_mw2pp"]
-            wt_opt["generator.resist_Cu"] = nacelle["generator"]["resist_Cu"]
-            wt_opt["generator.sigma"] = nacelle["generator"]["sigma"]
-            wt_opt["generator.y_tau_p"] = nacelle["generator"]["y_tau_p"]
-            wt_opt["generator.y_tau_pr"] = nacelle["generator"]["y_tau_pr"]
+            wt_opt["generator.B_r"] = drivetrain["generator"]["B_r"]
+            wt_opt["generator.P_Fe0e"] = drivetrain["generator"]["P_Fe0e"]
+            wt_opt["generator.P_Fe0h"] = drivetrain["generator"]["P_Fe0h"]
+            wt_opt["generator.S_N"] = drivetrain["generator"]["S_N"]
+            wt_opt["generator.alpha_p"] = drivetrain["generator"]["alpha_p"]
+            wt_opt["generator.b_r_tau_r"] = drivetrain["generator"]["b_r_tau_r"]
+            wt_opt["generator.b_ro"] = drivetrain["generator"]["b_ro"]
+            wt_opt["generator.b_s_tau_s"] = drivetrain["generator"]["b_s_tau_s"]
+            wt_opt["generator.b_so"] = drivetrain["generator"]["b_so"]
+            wt_opt["generator.cofi"] = drivetrain["generator"]["cofi"]
+            wt_opt["generator.freq"] = drivetrain["generator"]["freq"]
+            wt_opt["generator.h_i"] = drivetrain["generator"]["h_i"]
+            wt_opt["generator.h_sy0"] = drivetrain["generator"]["h_sy0"]
+            wt_opt["generator.h_w"] = drivetrain["generator"]["h_w"]
+            wt_opt["generator.k_fes"] = drivetrain["generator"]["k_fes"]
+            wt_opt["generator.k_fillr"] = drivetrain["generator"]["k_fillr"]
+            wt_opt["generator.k_fills"] = drivetrain["generator"]["k_fills"]
+            wt_opt["generator.k_s"] = drivetrain["generator"]["k_s"]
+            wt_opt["generator.m"] = drivetrain["generator"]["m"]
+            wt_opt["generator.mu_0"] = drivetrain["generator"]["mu_0"]
+            wt_opt["generator.mu_r"] = drivetrain["generator"]["mu_r"]
+            wt_opt["generator.p"] = drivetrain["generator"]["p"]
+            wt_opt["generator.phi"] = drivetrain["generator"]["phi"]
+            wt_opt["generator.q1"] = drivetrain["generator"]["q1"]
+            wt_opt["generator.q2"] = drivetrain["generator"]["q2"]
+            wt_opt["generator.ratio_mw2pp"] = drivetrain["generator"]["ratio_mw2pp"]
+            wt_opt["generator.resist_Cu"] = drivetrain["generator"]["resist_Cu"]
+            wt_opt["generator.sigma"] = drivetrain["generator"]["sigma"]
+            wt_opt["generator.y_tau_p"] = drivetrain["generator"]["y_tau_p"]
+            wt_opt["generator.y_tau_pr"] = drivetrain["generator"]["y_tau_pr"]
 
-            wt_opt["generator.I_0"] = nacelle["generator"]["I_0"]
-            wt_opt["generator.d_r"] = nacelle["generator"]["d_r"]
-            wt_opt["generator.h_m"] = nacelle["generator"]["h_m"]
-            wt_opt["generator.h_0"] = nacelle["generator"]["h_0"]
-            wt_opt["generator.h_s"] = nacelle["generator"]["h_s"]
-            wt_opt["generator.len_s"] = nacelle["generator"]["len_s"]
-            wt_opt["generator.n_r"] = nacelle["generator"]["n_r"]
-            wt_opt["generator.rad_ag"] = nacelle["generator"]["rad_ag"]
-            wt_opt["generator.t_wr"] = nacelle["generator"]["t_wr"]
+            wt_opt["generator.I_0"] = drivetrain["generator"]["I_0"]
+            wt_opt["generator.h_m"] = drivetrain["generator"]["h_m"]
+            wt_opt["generator.h_0"] = drivetrain["generator"]["h_0"]
+            wt_opt["generator.h_s"] = drivetrain["generator"]["h_s"]
+            wt_opt["generator.len_s"] = drivetrain["generator"]["len_s"]
+            wt_opt["generator.rad_ag"] = drivetrain["generator"]["rad_ag"]
 
-            wt_opt["generator.n_s"] = nacelle["generator"]["n_s"]
-            wt_opt["generator.b_st"] = nacelle["generator"]["b_st"]
-            wt_opt["generator.d_s"] = nacelle["generator"]["d_s"]
-            wt_opt["generator.t_ws"] = nacelle["generator"]["t_ws"]
+            # These inputs were not set in windIO v1.0
+            wt_opt["generator.b_st"] = 0.
+            wt_opt["generator.d_s"] = 0.
+            wt_opt["generator.t_ws"] = 0.
 
-            wt_opt["generator.rho_Copper"] = nacelle["generator"]["rho_Copper"]
-            wt_opt["generator.rho_Fe"] = nacelle["generator"]["rho_Fe"]
-            wt_opt["generator.rho_Fes"] = nacelle["generator"]["rho_Fes"]
-            wt_opt["generator.rho_PM"] = nacelle["generator"]["rho_PM"]
+            wt_opt["generator.rho_Copper"] = drivetrain["generator"]["rho_Copper"]
+            wt_opt["generator.rho_Fe"] = drivetrain["generator"]["rho_Fe"]
+            wt_opt["generator.rho_Fes"] = drivetrain["generator"]["rho_Fes"]
+            wt_opt["generator.rho_PM"] = drivetrain["generator"]["rho_PM"]
 
-            wt_opt["generator.C_Cu"] = nacelle["generator"]["C_Cu"]
-            wt_opt["generator.C_Fe"] = nacelle["generator"]["C_Fe"]
-            wt_opt["generator.C_Fes"] = nacelle["generator"]["C_Fes"]
-            wt_opt["generator.C_PM"] = nacelle["generator"]["C_PM"]
+            wt_opt["generator.C_Cu"] = drivetrain["generator"]["C_Cu"]
+            wt_opt["generator.C_Fe"] = drivetrain["generator"]["C_Fe"]
+            wt_opt["generator.C_Fes"] = drivetrain["generator"]["C_Fes"]
+            wt_opt["generator.C_PM"] = drivetrain["generator"]["C_PM"]
 
             if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["pmsg_outer"]:
-                wt_opt["generator.N_c"] = nacelle["generator"]["N_c"]
-                wt_opt["generator.b"] = nacelle["generator"]["b"]
-                wt_opt["generator.c"] = nacelle["generator"]["c"]
-                wt_opt["generator.E_p"] = nacelle["generator"]["E_p"]
-                wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
-                wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
-                wt_opt["generator.h_sr"] = nacelle["generator"]["h_sr"]
-                wt_opt["generator.h_ss"] = nacelle["generator"]["h_ss"]
-                wt_opt["generator.t_r"] = nacelle["generator"]["t_r"]
-                wt_opt["generator.t_s"] = nacelle["generator"]["t_s"]
+                wt_opt["generator.N_c"] = drivetrain["generator"]["N_c"]
+                wt_opt["generator.b"] = drivetrain["generator"]["b"]
+                wt_opt["generator.c"] = drivetrain["generator"]["c"]
+                wt_opt["generator.E_p"] = drivetrain["generator"]["E_p"]
+                wt_opt["generator.h_yr"] = drivetrain["generator"]["h_yr"]
+                wt_opt["generator.h_ys"] = drivetrain["generator"]["h_ys"]
+                wt_opt["generator.h_sr"] = drivetrain["generator"]["h_sr"]
+                wt_opt["generator.h_ss"] = drivetrain["generator"]["h_ss"]
+                wt_opt["generator.t_r"] = drivetrain["generator"]["t_r"]
+                wt_opt["generator.t_s"] = drivetrain["generator"]["t_s"]
 
-                wt_opt["generator.u_allow_pcent"] = nacelle["generator"]["u_allow_pcent"]
-                wt_opt["generator.y_allow_pcent"] = nacelle["generator"]["y_allow_pcent"]
-                wt_opt["generator.z_allow_deg"] = nacelle["generator"]["z_allow_deg"]
-                wt_opt["generator.B_tmax"] = nacelle["generator"]["B_tmax"]
+                wt_opt["generator.u_allow_pcent"] = drivetrain["generator"]["u_allow_pcent"]
+                wt_opt["generator.y_allow_pcent"] = drivetrain["generator"]["y_allow_pcent"]
+                wt_opt["generator.z_allow_deg"] = drivetrain["generator"]["z_allow_deg"]
+                wt_opt["generator.B_tmax"] = drivetrain["generator"]["B_tmax"]
 
             if modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
-                wt_opt["generator.tau_p"] = nacelle["generator"]["tau_p"]
-                wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
-                wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
-                wt_opt["generator.b_arm"] = nacelle["generator"]["b_arm"]
+                wt_opt["generator.tau_p"] = drivetrain["generator"]["tau_p"]
+                wt_opt["generator.h_ys"] = drivetrain["generator"]["h_ys"]
+                wt_opt["generator.h_yr"] = drivetrain["generator"]["h_yr"]
+                wt_opt["generator.b_arm"] = drivetrain["generator"]["b_arm"]
 
             elif modeling_options["WISDEM"]["DriveSE"]["generator"]["type"] in ["scig", "dfig"]:
-                wt_opt["generator.B_symax"] = nacelle["generator"]["B_symax"]
-                wt_opt["generator.S_Nmax"] = nacelle["generator"]["S_Nmax"]
+                wt_opt["generator.B_symax"] = drivetrain["generator"]["B_symax"]
+                wt_opt["generator.S_Nmax"] = drivetrain["generator"]["S_Nmax"]
 
     return wt_opt
 
@@ -1040,52 +915,55 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     svec = np.unique(
         np.r_[
-            tower["outer_shape_bem"]["outer_diameter"]["grid"],
-            tower["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-            tower["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-            tower["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+            tower["outer_shape"]["outer_diameter"]["grid"],
+            tower["reference_axis"]["x"]["grid"],
+            tower["reference_axis"]["y"]["grid"],
+            tower["reference_axis"]["z"]["grid"],
         ]
     )
 
     # wt_opt["tower.s"] = svec
     wt_opt["tower.diameter"] = PchipInterpolator(
-        tower["outer_shape_bem"]["outer_diameter"]["grid"], tower["outer_shape_bem"]["outer_diameter"]["values"]
+        tower["outer_shape"]["outer_diameter"]["grid"], tower["outer_shape"]["outer_diameter"]["values"]
     )(svec)
     wt_opt["tower.cd"] = PchipInterpolator(
-        tower["outer_shape_bem"]["drag_coefficient"]["grid"],
-        tower["outer_shape_bem"]["drag_coefficient"]["values"],
+        tower["outer_shape"]["cd"]["grid"],
+        tower["outer_shape"]["cd"]["values"],
     )(svec)
 
     wt_opt["tower.ref_axis"][:, 0] = PchipInterpolator(
-        tower["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-        tower["outer_shape_bem"]["reference_axis"]["x"]["values"],
+        tower["reference_axis"]["x"]["grid"],
+        tower["reference_axis"]["x"]["values"],
     )(svec)
     wt_opt["tower.ref_axis"][:, 1] = PchipInterpolator(
-        tower["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-        tower["outer_shape_bem"]["reference_axis"]["y"]["values"],
+        tower["reference_axis"]["y"]["grid"],
+        tower["reference_axis"]["y"]["values"],
     )(svec)
     wt_opt["tower.ref_axis"][:, 2] = PchipInterpolator(
-        tower["outer_shape_bem"]["reference_axis"]["z"]["grid"],
-        tower["outer_shape_bem"]["reference_axis"]["z"]["values"],
+        tower["reference_axis"]["z"]["grid"],
+        tower["reference_axis"]["z"]["values"],
     )(svec)
 
     layer_name = n_layers * [""]
     layer_mat = n_layers * [""]
     thickness = np.zeros((n_layers, n_height))
     for i in range(n_layers):
-        layer_name[i] = tower["internal_structure_2d_fem"]["layers"][i]["name"]
-        layer_mat[i] = tower["internal_structure_2d_fem"]["layers"][i]["material"]
+        layer_name[i] = tower["structure"]["layers"][i]["name"]
+        layer_mat[i] = tower["structure"]["layers"][i]["material"]
         thickness[i] = PchipInterpolator(
-            tower["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-            tower["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+            tower["structure"]["layers"][i]["thickness"]["grid"],
+            tower["structure"]["layers"][i]["thickness"]["values"],
         )(svec)
 
     wt_opt["tower.layer_name"] = layer_name
     wt_opt["tower.layer_mat"] = layer_mat
     wt_opt["tower.layer_thickness"] = thickness
 
-    wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
-    wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    wt_opt["tower.outfitting_factor"] = tower["structure"]["outfitting_factor"]
+    if "tower_mass_user" in tower:
+        wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
+    if "lumped_mass" in tower:
+        wt_opt["tower.lumped_mass"] = tower["lumped_mass"]["values"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []
@@ -1126,52 +1004,53 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
 
     svec = np.unique(
         np.r_[
-            monopile["outer_shape_bem"]["outer_diameter"]["grid"],
-            monopile["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-            monopile["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-            monopile["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+            monopile["outer_shape"]["outer_diameter"]["grid"],
+            monopile["reference_axis"]["x"]["grid"],
+            monopile["reference_axis"]["y"]["grid"],
+            monopile["reference_axis"]["z"]["grid"],
         ]
     )
 
     wt_opt["monopile.s"] = svec
     wt_opt["monopile.diameter"] = PchipInterpolator(
-        monopile["outer_shape_bem"]["outer_diameter"]["grid"],
-        monopile["outer_shape_bem"]["outer_diameter"]["values"],
+        monopile["outer_shape"]["outer_diameter"]["grid"],
+        monopile["outer_shape"]["outer_diameter"]["values"],
     )(svec)
 
     wt_opt["monopile.ref_axis"][:, 0] = PchipInterpolator(
-        monopile["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-        monopile["outer_shape_bem"]["reference_axis"]["x"]["values"],
+        monopile["reference_axis"]["x"]["grid"],
+        monopile["reference_axis"]["x"]["values"],
     )(svec)
     wt_opt["monopile.ref_axis"][:, 1] = PchipInterpolator(
-        monopile["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-        monopile["outer_shape_bem"]["reference_axis"]["y"]["values"],
+        monopile["reference_axis"]["y"]["grid"],
+        monopile["reference_axis"]["y"]["values"],
     )(svec)
     wt_opt["monopile.ref_axis"][:, 2] = PchipInterpolator(
-        monopile["outer_shape_bem"]["reference_axis"]["z"]["grid"],
-        monopile["outer_shape_bem"]["reference_axis"]["z"]["values"],
+        monopile["reference_axis"]["z"]["grid"],
+        monopile["reference_axis"]["z"]["values"],
     )(svec)
 
     layer_name = n_layers * [""]
     layer_mat = n_layers * [""]
     thickness = np.zeros((n_layers, n_height))
     for i in range(n_layers):
-        layer_name[i] = monopile["internal_structure_2d_fem"]["layers"][i]["name"]
-        layer_mat[i] = monopile["internal_structure_2d_fem"]["layers"][i]["material"]
+        layer_name[i] = monopile["structure"]["layers"][i]["name"]
+        layer_mat[i] = monopile["structure"]["layers"][i]["material"]
         thickness[i] = PchipInterpolator(
-            monopile["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-            monopile["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+            monopile["structure"]["layers"][i]["thickness"]["grid"],
+            monopile["structure"]["layers"][i]["thickness"]["values"],
         )(svec)
 
     wt_opt["monopile.layer_name"] = layer_name
     wt_opt["monopile.layer_mat"] = layer_mat
     wt_opt["monopile.layer_thickness"] = thickness
 
-    wt_opt["monopile.outfitting_factor"] = monopile["internal_structure_2d_fem"]["outfitting_factor"]
+    wt_opt["monopile.outfitting_factor"] = monopile["structure"]["outfitting_factor"]
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
-    wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
+    if "monopile_mass_user" in monopile:
+        wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
 
     return wt_opt
 
@@ -1251,7 +1130,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             if isinstance(floating["members"][i][coeff], list):
                 coeff_length = len(floating["members"][i][coeff])
                 if usr_defined_flag[coeff]:
-                        assert grid_length == coeff_length, f"Users define {coeff} array along member {name_member} for different sectitions, but the coefficient array length is different from grid length. Please correct them to consistent or you can also define {coeff} as a scalar constant."
+                    assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length ({grid_length}). Please correct."
             else:
             # If the coefficient is a constant, make it a list with one constant. Just for each of operation and simplicity, so the we can uniformlly treat it as list later and no need for extra conditionals.
                 floating["members"][i][coeff] = [floating["members"][i][coeff]]*grid_length
@@ -1274,8 +1153,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
                             "outer_diameter"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Cd"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Ca"]))
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(np.array(floating["members"][i]["Cd"])>0.0) else np.ones(len(floating["members"][i]["Cd"]))
                     diameter_assigned = True
                 if "side_length_a" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_a"]["constant"]:
@@ -1288,8 +1167,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.side_length_a_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_a"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Ca"]))
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(np.array(floating["members"][i]["Ca"])>0.0) else np.ones(len(floating["members"][i]["Cd"]))
                 if "side_length_b" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_b"]["constant"]:
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"] = floating["members"][i]["outer_shape"][
@@ -1301,8 +1180,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_b"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"] if np.all(floating["members"][i]["Cay"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"] if np.all(floating["members"][i]["Cdy"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"] if np.all(np.array(floating["members"][i]["Cay"])>0.0) else np.ones(len(floating["members"][i]["Cay"]))
+                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"] if np.all(np.array(floating["members"][i]["Cdy"])>0.0) else np.ones(len(floating["members"][i]["Cdy"]))
                     diameter_assigned = True
 
         if not diameter_assigned:
@@ -1334,15 +1213,9 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         floating["members"][i][coeff],
                         )(grid_geom)
 
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
+        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["structure"]["outfitting_factor"]
 
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
-
-        istruct = floating["members"][i]["internal_structure"]
+        istruct = floating["members"][i]["structure"]
         if "bulkhead" in istruct:
             wt_opt[f"floating.memgrp{idx}.bulkhead_grid"] = istruct["bulkhead"]["thickness"]["grid"]
             wt_opt[f"floating.memgrp{idx}.bulkhead_thickness"] = istruct["bulkhead"]["thickness"]["values"]
@@ -1385,10 +1258,10 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
         ballast_mat = [""] * n_ballasts
         for j in range(n_ballasts):
-            wt_opt[f"floating.memgrp{idx}.ballast_grid"][j, :] = istruct["ballasts"][j]["grid"]
+            wt_opt[f"floating.memgrp{idx}.ballast_grid"][j, :] = istruct["ballast"][j]["grid"]
             if floating_init_options["members"]["ballast_flag_member_" + name_member][j] == False:
-                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = istruct["ballasts"][j]["volume"]
-                ballast_mat[j] = istruct["ballasts"][j]["material"]
+                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = istruct["ballast"][j]["volume"]
+                ballast_mat[j] = istruct["ballast"][j]["material"]
             else:
                 wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = 0.0
                 ballast_mat[j] = "seawater"
@@ -1496,11 +1369,17 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
-    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
-    wt_opt["control.fix_pitch_regI12"] = control["pitch"]["fix_pitch_regI12"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
+
+    if 'ROSCO' in modeling_options:  # Will only be there if called by WEIS
+        if modeling_options['ROSCO']['ps_percent'] != control["pitch"]["ps_percent"]:
+            logger.warning(
+                f"The ROSCO (modeling) ps_percent does not match the WindIO (geometry) ps_percent.  Using the ROSCO value of {modeling_options['ROSCO']['ps_percent']:.2f}."
+            )
+    else:
+        wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
 
     return wt_opt
 
@@ -1576,7 +1455,7 @@ def assign_bos_values(wt_opt, bos, offshore):
         wt_opt["bos.contingency"] = bos["contingency"]
         wt_opt["bos.construction_plan_cost"] = bos["construction_plan_cost"]
         wt_opt["bos.installation_plan_cost"] = bos["installation_plan_cost"]
-        wt_opt["bos.boem_review_cost"] = bos["boem_review_cost"]
+        wt_opt["bos.boem_review_cost"] = bos["review_cost"]
     else:
         wt_opt["bos.interconnect_voltage"] = bos["interconnect_voltage"]
 
@@ -1623,139 +1502,142 @@ def assign_costs_values(wt_opt, costs):
     return wt_opt
 
 
-def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=False):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
+    # airfoils_master are the airfoils used along blade span
+    # airfoils are the airfoils in the full database
 
-    n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
+
+    n_af_database = modeling_options["WISDEM"]["RotorSE"]["n_af_database"]
+    n_af_master = modeling_options["WISDEM"]["RotorSE"]["n_af_master"]
+    af_master = modeling_options["WISDEM"]["RotorSE"]["af_master"]
     n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]
     aoa = modeling_options["WISDEM"]["RotorSE"]["aoa"]
     n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]
-    n_tab = modeling_options["WISDEM"]["RotorSE"]["n_tab"]
+    Re = modeling_options["WISDEM"]["RotorSE"]["Re"]
     n_xy = modeling_options["WISDEM"]["RotorSE"]["n_xy"]
 
-    name = n_af * [""]
-    ac = np.zeros(n_af)
-    r_thick = np.zeros(n_af)
-    Re_all = []
-    for i in range(n_af):
-        name[i] = airfoils[i]["name"]
-        ac[i] = airfoils[i]["aerodynamic_center"]
-        r_thick[i] = airfoils[i]["relative_thickness"]
-        for j in range(len(airfoils[i]["polars"])):
-            Re_all.append(airfoils[i]["polars"][j]["re"])
-    Re = np.unique(Re_all)
+    coord_xy_master = np.zeros((n_af_master, n_xy, 2))
 
-    cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    ac_master = np.zeros(n_af_master)
+    rthick_master = np.zeros(n_af_master)
+    cl_master = np.zeros((n_af_master, n_aoa, n_Re))
+    cd_master = np.zeros((n_af_master, n_aoa, n_Re))
+    cm_master = np.zeros((n_af_master, n_aoa, n_Re))
 
-    coord_xy = np.zeros((n_af, n_xy, 2))
 
-    # Interp cl-cd-cm along predefined grid of angle of attack
-    for i in range(n_af):
-        Re_i = np.array( [airfoils[i]["polars"][j]["re"] for j in range(len(airfoils[i]["polars"]))] )
-        n_Re_i = len(np.unique(Re_i))
-        Re_j = np.zeros(n_Re_i)
-        j_Re = np.zeros(n_Re_i, dtype=int)
-        for j in range(n_Re_i):
-            Re_j[j] = airfoils[i]["polars"][j]["re"]
-            j_Re[j] = np.argmin(np.abs(Re - Re_j[j]))
-            for k in range(n_tab):
-                cl[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
-                )(aoa)
-                cd[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_d"]["grid"], airfoils[i]["polars"][j]["c_d"]["values"]
-                )(aoa)
-                cm[i, :, j_Re[j], k] = PchipInterpolator(
-                    airfoils[i]["polars"][j]["c_m"]["grid"], airfoils[i]["polars"][j]["c_m"]["values"]
-                )(aoa)
+    for i in range(n_af_master):
+        airfoil_exists = False
+        for j in range(n_af_database):
+            if af_master[i] == airfoils[j]["name"]:
+                airfoil_exists = True
+                ac_master[i] = airfoils[j]["aerodynamic_center"]
+                rthick_master[i] = airfoils[j]["rthick"]
+                points = np.column_stack((airfoils[j]["coordinates"]["x"], airfoils[j]["coordinates"]["y"]))
+                # Check that airfoil points are declared from the TE suction side to TE pressure side
+                idx_le = np.argmin(points[:, 0])
+                if np.mean(points[:idx_le, 1]) > 0.0:
+                    points = np.flip(points, axis=0)
 
-                if np.abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
-                    cl[i, 0, j, k] = cl[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the lift coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
+                # Remap points using class AirfoilShape
+                af = AirfoilShape(points=points)
+                af.redistribute(n_xy, even=False, dLE=True)
+                af_points = af.points
+
+                # Add trailing edge point if not defined
+                if [1, 0] not in af_points.tolist():
+                    af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
+                c = max(af_points[:, 0]) - min(af_points[:, 0])
+                af_points[:, :] /= c
+
+                coord_xy_master[i, :, :] = af_points
+
+                if coordinates_only:
+                    break
+
+                # now move on to the polars, first combining polars across configurations
+                n_configs = len(airfoils_master[i]["configuration"])
+                configuration = [''] * n_configs
+                weights = np.zeros(n_configs)
+                for k in range(n_configs):
+                    configuration[k] = airfoils_master[i]["configuration"][k]
+                    weights[k] = airfoils_master[i]["weight"][k]
+                    config_exist = False
+                    for l in range(len(airfoils[j]["polars"])):
+                        if configuration[k] == airfoils[j]["polars"][l]["configuration"]:
+                            config_exist = True
+                            n_re_config = len(airfoils[j]["polars"][l]["re_sets"])
+                            re_config = np.zeros(n_re_config)
+                            cl_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            cd_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            cm_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            for re_i in range(len(airfoils[j]["polars"][l]["re_sets"])):
+                                cl_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["values"]
+                                )(aoa)
+
+                                cd_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["values"]
+                                )(aoa)
+                                cm_config[:, re_i, k] = PchipInterpolator(
+                                    airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["values"]
+                                )(aoa)
+
+                                re_config = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
+
+                                break
+                    # Check if the configuration exists
+                    if not config_exist:
+                        raise ValueError(
+                            f"Configuration {configuration[k]} not found for airfoil {af_master[i]}. Please check the configuration names for airfoil polars."
+                        )
+
+                # Perform weighted average across configurations
+                if abs(sum(weights) - 1.0) > 1e-6:
+                    raise ValueError(
+                        f"Configuration weights for airfoil {af_master[i]} do not sum to 1.0. Please check the configuration weights."
                     )
-                if np.abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
-                    cd[i, 0, j, k] = cd[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the drag coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                    )
-                if np.abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
-                    cm[i, 0, j, k] = cm[i, -1, j, k]
-                    logger.debug(
-                        "WARNING: Airfoil "
-                        + name[i]
-                        + " has the moment coefficient at Re "
-                        + str(Re_j[j])
-                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                    )
 
-        # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
-        for l in range(n_aoa):
-            for k in range(n_tab):
-                cl[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cl[i, l, j_Re, k])(Re)
-                    if (len(cl[i, l, j_Re, k]) != 1)
-                    else cl[i, l, j_Re, k]
-                )
-                cd[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cd[i, l, j_Re, k])(Re)
-                    if (len(cd[i, l, j_Re, k]) != 1)
-                    else cd[i, l, j_Re, k]
-                )
-                cm[i, l, :, k] = (
-                    PchipInterpolator(Re_j, cm[i, l, j_Re, k])(Re)
-                    if (len(cm[i, l, j_Re, k]) != 1)
-                    else cm[i, l, j_Re, k]
-                )
+                cl_master_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
+                cd_master_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
+                cm_master_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
 
-        points = np.column_stack((airfoils[i]["coordinates"]["x"], airfoils[i]["coordinates"]["y"]))
-        # Check that airfoil points are declared from the TE suction side to TE pressure side
-        idx_le = np.argmin(points[:, 0])
-        if np.mean(points[:idx_le, 1]) > 0.0:
-            points = np.flip(points, axis=0)
+                # Interpolate across Re sets
+                if n_re_config == 1:
+                    for j in range(n_Re):
+                        cl_master[i, :, j] = cl_master_i[:, 0]
+                        cd_master[i, :, j] = cd_master_i[:, 0]
+                        cm_master[i, :, j] = cm_master_i[:, 0]
+                else:
+                    for j in range(n_aoa):
+                        cl_master[i, j, :] = PchipInterpolator(
+                                            re_config, cl_master_i[j, :]
+                                        )(Re)
+                        cd_master[i, j, :] = PchipInterpolator(
+                                            re_config, cd_master_i[j, :]
+                                        )(Re)
+                        cm_master[i, j, :] = PchipInterpolator(
+                                            re_config, cm_master_i[j, :]
+                                        )(Re)
 
-        # Remap points using class AirfoilShape
-        af = AirfoilShape(points=points)
-        af.redistribute(n_xy, even=False, dLE=True)
-        s = af.s
-        af_points = af.points
+                break
 
-        # Add trailing edge point if not defined
-        if [1, 0] not in af_points.tolist():
-            af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
-        c = max(af_points[:, 0]) - min(af_points[:, 0])
-        af_points[:, :] /= c
-
-        coord_xy[i, :, :] = af_points
-
-        # Plotting
-        # import matplotlib.pyplot as plt
-        # plt.plot(af_points[:,0], af_points[:,1], ".")
-        # plt.plot(af_points[:,0], af_points[:,1])
-        # plt.show()
+        if not airfoil_exists:
+            raise ValueError(
+                f"Airfoil {af_master[i]} not found in airfoil database. Please check the airfoil names."
+            )
 
     # Assign to openmdao structure
-    wt_opt["airfoils.name"] = name
-    wt_opt["airfoils.r_thick"] = r_thick
+    wt_opt["airfoils.coord_xy"] = coord_xy_master
+    wt_opt["airfoils.rthick_master"] = rthick_master
     if coordinates_only == False:
         wt_opt["airfoils.aoa"] = aoa
-        wt_opt["airfoils.ac"] = ac
+        wt_opt["airfoils.ac"] = ac_master
         wt_opt["airfoils.Re"] = Re
-        wt_opt["airfoils.cl"] = cl
-        wt_opt["airfoils.cd"] = cd
-        wt_opt["airfoils.cm"] = cm
+        wt_opt["airfoils.cl"] = cl_master
+        wt_opt["airfoils.cd"] = cd_master
+        wt_opt["airfoils.cm"] = cm_master
 
-    wt_opt["airfoils.coord_xy"] = coord_xy
 
     return wt_opt
 
@@ -1767,7 +1649,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
 
     name = n_mat * [""]
     orth = np.zeros(n_mat)
-    component_id = -np.ones(n_mat)
     rho = np.zeros(n_mat)
     E = np.zeros([n_mat, 3])
     G = np.zeros([n_mat, 3])
@@ -1791,8 +1672,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
         name[i] = materials[i]["name"]
         orth[i] = materials[i]["orth"]
         rho[i] = materials[i]["rho"]
-        if "component_id" in materials[i]:
-            component_id[i] = materials[i]["component_id"]
         if orth[i] == 0:
             if "E" in materials[i]:
                 E[i, :] = np.ones(3) * materials[i]["E"]
@@ -1820,12 +1699,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
             Xc[i, :] = materials[i]["Xc"]
             if "S" in materials[i]:
                 S[i, :] = materials[i]["S"]
-            else:
-                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    raise Exception(
-                        "The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material "
-                        + materials[i]["name"]
-                    )
 
         else:
             raise ValueError("The flag orth must be set to either 0 or 1. Error in material " + name[i])
@@ -1860,7 +1733,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt["materials.orth"] = orth
     wt_opt["materials.rho"] = rho
     wt_opt["materials.sigma_y"] = sigma_y
-    wt_opt["materials.component_id"] = component_id
     wt_opt["materials.E"] = E
     wt_opt["materials.G"] = G
     wt_opt["materials.Xt"] = Xt

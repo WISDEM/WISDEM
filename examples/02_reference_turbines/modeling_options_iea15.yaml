@@ -1,0 +1,80 @@
+# Generic modeling options file to run standard WISDEM case
+General:
+    verbosity: True  # When set to True, the code prints to screen many infos
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS # Name in the yaml of the spar cap laminate on the suction side
+        spar_cap_ps: Spar_Cap_PS # Name in the yaml of the spar cap laminate on the suction side
+        te_ss: TE_reinforcement_SS # Name in the yaml of the spar cap laminate on the suction side
+        te_ps: TE_reinforcement_PS # Name in the yaml of the spar cap laminate on the suction side
+    DriveSE:
+        flag: True
+    TowerSE:             # Options of TowerSE module
+        flag: True
+    FixedBottomSE:
+        flag: True
+        soil_springs: True
+    BOS:
+        flag: True
+        plant_turbine_spacing: 7
+        plant_row_spacing: 7
+        commissioning_cost_kW: 44.0
+        decommissioning_cost_kW: 58.0
+        distance_to_substation: 1.0
+        distance_to_interconnection: 8.5
+        interconnect_voltage: 130.
+        distance_to_site: 115.
+        distance_to_landfall: 50.
+        port_cost_per_month: 2e6
+        review_cost: 0.0
+        construction_insurance: 44.0
+        construction_financing: 183.0
+        contingency: 316.0
+        site_auction_price: 100e6
+        site_assessment_cost: 50e6
+        construction_plan_cost: 2.5e5
+        installation_plan_cost: 1e6
+    LCOE:
+        flag: True
+        wake_loss_factor: 0.15
+        fixed_charge_rate: 0.056
+        bos_per_kW: 4053.0
+        opex_per_kW: 137.0
+        turbine_number: 40.0
+        labor_rate: 58.8
+        painting_rate: 30.0
+        blade_mass_cost_coeff: 14.6
+        hub_mass_cost_coeff: 3.9
+        pitch_system_mass_cost_coeff: 22.1
+        spinner_mass_cost_coeff: 11.1
+        lss_mass_cost_coeff: 11.9
+        bearing_mass_cost_coeff: 4.5
+        gearbox_mass_cost_coeff: 12.9
+        hss_mass_cost_coeff: 6.8
+        generator_mass_cost_coeff: 12.4
+        bedplate_mass_cost_coeff: 2.9
+        yaw_mass_cost_coeff: 8.3
+        converter_mass_cost_coeff: 18.8
+        transformer_mass_cost_coeff: 18.8
+        hvac_mass_cost_coeff: 124.0
+        cover_mass_cost_coeff: 5.7
+        elec_connec_machine_rating_cost_coeff: 41.85
+        platforms_mass_cost_coeff: 17.1
+        tower_mass_cost_coeff: 2.9
+        controls_machine_rating_cost_coeff: 21.15
+        crane_cost: 12000.0
+
+Environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-05
+    weib_shape_parameter: 2.0
+    air_speed_sound: 340.0
+    shear_exp: 0.12
+    water_density: 1025.0
+    water_dyn_viscosity: 0.0013351
+    soil_shear_modulus: 140000000.0
+    soil_poisson: 0.4
+    water_depth: 30.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45

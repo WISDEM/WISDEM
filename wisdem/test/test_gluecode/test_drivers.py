@@ -25,7 +25,7 @@ class TestRegression(unittest.TestCase):
         new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
         write_yaml(analysis_options, new_fname_analysis_options)
 
-        wt_opt, modeling_options, opt_options = run_wisdem(
+        _, _, _ = run_wisdem(
             fname_wt_input, fname_modeling_options, new_fname_analysis_options
         )
 
@@ -40,7 +40,7 @@ class TestRegression(unittest.TestCase):
         new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
         write_yaml(analysis_options, new_fname_analysis_options)
 
-        wt_opt, modeling_options, opt_options = run_wisdem(
+        _, _, _ = run_wisdem(
             fname_wt_input, fname_modeling_options, new_fname_analysis_options
         )
 
@@ -55,7 +55,7 @@ class TestRegression(unittest.TestCase):
         new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
         write_yaml(analysis_options, new_fname_analysis_options)
 
-        wt_opt, modeling_options, opt_options = run_wisdem(
+        _, _, _ = run_wisdem(
             fname_wt_input, fname_modeling_options, new_fname_analysis_options
         )
 
@@ -69,7 +69,7 @@ class TestRegression(unittest.TestCase):
         new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
         write_yaml(analysis_options, new_fname_analysis_options)
 
-        wt_opt, modeling_options, opt_options = run_wisdem(
+        _, _, _ = run_wisdem(
             fname_wt_input, fname_modeling_options, new_fname_analysis_options
         )
 

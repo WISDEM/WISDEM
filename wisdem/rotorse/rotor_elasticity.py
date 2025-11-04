@@ -47,9 +47,10 @@ class RunPreComp(ExplicitComponent):
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
-            "pitch_axis",
+            "section_offset_y",
             val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. 0 means that the airfoil is pinned at the leading edge, a positive offset means that the leading edge is upstream of the reference axis in local chordline coordinates, and a negative offset that the leading edge aft of the reference axis.",
         )
         self.add_input("precurve", val=np.zeros(n_span), units="m", desc="precurve at each section")
         self.add_input("presweep", val=np.zeros(n_span), units="m", desc="presweep at each section")
@@ -69,44 +70,39 @@ class RunPreComp(ExplicitComponent):
         self.add_input(
             "web_start_nd",
             val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each entry along blade span, the second dimension represents each web.",
         )
         self.add_input(
             "web_end_nd",
             val=np.zeros((n_webs, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "layer_web",
-            val=np.zeros(n_layers),
-            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
-        )
-        self.add_discrete_input(
-            "definition_layer",
-            val=np.zeros(n_layers),
-            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1.  The first dimension represents each entry along blade span, the second dimension represents each web.",
         )
         self.add_input(
             "layer_thickness",
             val=np.zeros((n_layers, n_span)),
             units="m",
-            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "layer_start_nd",
             val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the start_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "layer_end_nd",
             val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the end_nd_arc of the anchors. The first dimension represents each entry along blade span, the second dimension represents each layer.",
         )
         self.add_input(
             "fiber_orientation",
             val=np.zeros((n_layers, n_span)),
             units="deg",
-            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the orientation of the layers of the blade structure. The first dimension represents each entry along blade span, the second dimension represents each layer.",
+        )
+        self.add_discrete_input(
+            "build_layer",
+            val=-np.ones(n_layers),
+            desc="1D array of boolean values indicating how to build a layer.",
         )
 
         # Materials
@@ -404,10 +400,10 @@ class RunPreComp(ExplicitComponent):
                 dp = np.mean((np.abs(web_start_nd_arc), np.abs(web_start_nd_arc)), axis=0).tolist()
 
                 dp_all = [
-                    [-1.0 * start_nd_arci, -1.0 * end_nd_arci]
+                    [start_nd_arci, end_nd_arci]
                     for start_nd_arci, end_nd_arci in zip(web_start_nd_arc, web_end_nd_arc)
                 ]
-                web_dp, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
+                _, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
                 for webi in np.unique(web_ids):
                     # store variable values (thickness, orientation, material) for layers that make up each web, based on the mapping array web_ids
                     n_pliesi = [1.0 for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi]
@@ -477,18 +473,6 @@ class RunPreComp(ExplicitComponent):
             # rotate
             profile_i = inputs["coord_xy_interp"][i, :, :]
             profile_i_rot = profile_i
-            # Trying to ensure all shear webs are in perpendicular orientation,
-            # but this probably doesn't work as robustly as hoped.
-            #profile_i_rot = np.column_stack(
-            #    rotate(inputs["pitch_axis"][i], 0.0, profile_i[:, 0], profile_i[:, 1], np.radians(inputs["theta"][i]))
-            #)
-
-            # import matplotlib.pyplot as plt
-            # plt.plot(profile_i[:,0], profile_i[:,1])
-            # plt.plot(profile_i_rot[:,0], profile_i_rot[:,1])
-            # plt.axis('equal')
-            # plt.title(i)
-            # plt.show()
 
             # normalize
             profile_i_rot[:, 0] -= min(profile_i_rot[:, 0])
@@ -500,7 +484,7 @@ class RunPreComp(ExplicitComponent):
             if idx_le_precomp != 0:
                 if profile_i_rot_precomp[0, 0] == profile_i_rot_precomp[-1, 0]:
                     idx_s = 1
-                profile_i_rot_precomp = np.row_stack(
+                profile_i_rot_precomp = np.vstack(
                     (profile_i_rot_precomp[idx_le_precomp:], profile_i_rot_precomp[idx_s:idx_le_precomp, :])
                 )
             profile_i_rot_precomp[:, 1] -= profile_i_rot_precomp[np.argmin(profile_i_rot_precomp[:, 0]), 1]
@@ -510,7 +494,7 @@ class RunPreComp(ExplicitComponent):
             profile_i_rot_precomp = profile_i_rot_precomp / max(profile_i_rot_precomp[:, 0])
 
             if profile_i_rot_precomp[-1, 0] != 1.0:
-                profile_i_rot_precomp = np.row_stack((profile_i_rot_precomp, profile_i_rot_precomp[0, :]))
+                profile_i_rot_precomp = np.vstack((profile_i_rot_precomp, profile_i_rot_precomp[0, :]))
 
             # 'web' at trailing edge needed for flatback airfoils
             if (
@@ -557,7 +541,7 @@ class RunPreComp(ExplicitComponent):
 
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
-                if discrete_inputs["definition_layer"][idx_sec] != 10:
+                if discrete_inputs["build_layer"][idx_sec] >= 0:
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         area[i] += arc_L_m * (inputs["layer_end_nd"][idx_sec, i] - 
                                               inputs["layer_start_nd"][idx_sec, i]) * (
@@ -632,7 +616,7 @@ class RunPreComp(ExplicitComponent):
                             else:
                                 ps_start_nd_arc.append(float(spline_arc2xnd(inputs["layer_start_nd"][idx_sec, i])))
                 else:
-                    target_idx = inputs["layer_web"][idx_sec] - 1
+                    target_idx = - discrete_inputs["build_layer"][idx_sec] - 1
 
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)
@@ -723,7 +707,7 @@ class RunPreComp(ExplicitComponent):
             inputs["r"],
             inputs["chord"],
             inputs["theta"],
-            inputs["pitch_axis"],
+            inputs["section_offset_y"]/inputs["chord"],
             inputs["precurve"],
             inputs["presweep"],
             profile,
@@ -867,9 +851,15 @@ class TotalBladeProperties(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         rhoA_joint = inputs["rhoA"]
-        blade_mass = np.trapz(rhoA_joint, inputs["r"])
-        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
-        blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
+        try:
+            # Numpy v1/2 clash
+            blade_mass = np.trapezoid(rhoA_joint, inputs["r"])
+            blade_span_cg = np.trapezoid(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
+            blade_moment_of_inertia = np.trapezoid(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
+        except AttributeError:
+            blade_mass = np.trapz(rhoA_joint, inputs["r"])
+            blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
+            blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
         # tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
         mass_all_blades = n_blades * blade_mass
@@ -1546,7 +1536,7 @@ class RotorElasticity(Group):
                     "A",
                     "precurve",
                     "presweep",
-                    "pitch_axis",
+                    "section_offset_y",
                     "coord_xy_interp",
                     "sc_ss_mats",
                     "sc_ps_mats",

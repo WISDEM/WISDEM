@@ -21,14 +21,14 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = os.path.join(test_dir, "IEA-15-240-RWT_VolturnUS-S.yaml")
-        wt_opt, modeling_options, opt_options = run_wisdem(
+        wt_opt, _, _ = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )
 
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.00735886752878, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.blade_mass"][0], 68375.20114828358, -1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 85.55178788445798, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 26.179096107022136, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.8999255816596, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.blade_mass"][0], 68233.0936092383, -1) # new value: improved interpolation
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 85.5805069497228, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.838654170633227, 1)
 
 
 if __name__ == "__main__":
