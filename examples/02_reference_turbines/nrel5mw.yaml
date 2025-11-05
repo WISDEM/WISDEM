@@ -1,6 +1,6 @@
 windIO_version: '2.0'
 name: 5MW
-comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realistic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG. The blade elastic properties are the ones from the original NREL 5MW baseline turbine. Running PreComp will get different blade elastic properties.
+comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realistic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG. The blade and drivetrain elastic properties are the ones from the original NREL 5MW baseline turbine. Running WISDEM will get different elastic properties.
 assembly:
     turbine_class: I
     turbulence_class: B
@@ -724,6 +724,10 @@ components:
             C_PM: 50.0
             type: DFIG
             length: 2.0
+        elastic_properties:
+            mass: 240000.0
+            inertia: [0., 0., 0., 0., 0., 2607890.0]
+            location: [0., 0., 0.]
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
