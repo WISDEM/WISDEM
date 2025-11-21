@@ -8,8 +8,8 @@ dependencies:
   # - m2w64-toolchain  # [win]
   # - libpython  # [win]
   # - gfortran  # [osx]  # only if not installed via homebrew or macports
-  - petsc4py  # [unix]
-  - mpi4py  # [unix] # only needed if local system has mpi built and is used
+  # - petsc4py  # [unix]
+  # - mpi4py  # [unix] # only needed if local system has mpi built and is used
   - cftime
   - coveralls
   - cython
