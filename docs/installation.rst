@@ -40,9 +40,10 @@ Install For Direct Use or Development
 These instructions are for interaction with WISDEM directly, the use of its examples, and the direct inspection of its source code.
 
 The installation instructions below use the environment name, "wisdem-env," but any name is acceptable. Below are a series of considerations:
-- For those working behind company firewalls, you may have to change the conda authentication with ``conda config --set ssl_verify no``.
-- Proxy servers can also be set with ``conda config --set proxy_servers.http http://id:pw@address:port`` and ``conda config --set proxy_servers.https https://id:pw@address:port``.
-- To setup an environment based on a different Github branch of WISDEM, simply substitute the branch name for ``master`` in the setup line.
+
+* For those working behind company firewalls, you may have to change the conda authentication with ``conda config --set ssl_verify no``.
+* Proxy servers can also be set with ``conda config --set proxy_servers.http http://id:pw@address:port`` and ``conda config --set proxy_servers.https https://id:pw@address:port``.
+* To setup an environment based on a different Github branch of WISDEM, simply substitute the branch name for ``master`` in the setup line.
 
 .. important::
     For Windows users, we recommend installing ``git`` and the ``m2w64`` packages in separate environments as some of the
@@ -121,9 +122,9 @@ dependencies for building, testing, and documentation are also installed:
 5. Install WISDEM. Please note the ``-e`` (editable) flag used to ensure your code changes are registered dynamically every
    time you save modifications.
 
-        .. code-block:: bash
+    .. code-block:: bash
 
-            pip install --no-deps -e . -v
+        pip install --no-deps -e . -v
 
 
 
