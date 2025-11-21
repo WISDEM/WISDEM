@@ -10,19 +10,15 @@ dependencies:
   # - gfortran  # [osx]  # only if not installed via homebrew or macports
   - petsc4py  # [unix]
   - mpi4py  # [unix] # only needed if local system has mpi built and is used
-  - cftime
   - coveralls
   - cython
   - jsonmerge
   - jsonschema
-  - make
   - matplotlib
   - moorpy>=1.2
-  - netcdf4
   - ninja
   - nlopt
   - numpy
-  - numpydoc
   - openmdao
   - openpyxl
   - pandas
@@ -32,8 +28,6 @@ dependencies:
   - scipy
   - sortedcontainers
   - statsmodels>=0.14.5
-  - swig
-  - xarray
   - pip
   - pip:
     - orbit-nrel>=1.2.1

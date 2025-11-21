@@ -44,6 +44,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_rtd_theme",
     "sphinx-jsonschema",
+    "sphinx_copybutton",
     # 'autoapi.extension',
     # 'embed-n2',
 ]
@@ -102,20 +103,20 @@ html_theme_options = {
 html_sidebars = {"**": ["about.html", "navigation.html", "searchbox.html"]}
 
 html_css_files = [
-    'https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css',
+    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
     "custom.css",
 ]
 
 html_js_files = [
-    'https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js',
-    'main.js',
+    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
+    "main.js",
 ]
 
 # Bibtex configuration
 bibtex_bibfiles = ["references.bib"]
 
 jsonschema_options = {
-    'lift_title': True,
-    'lift_description': True,
-    'lift_definitions': True,
+    "lift_title": True,
+    "lift_description": True,
+    "lift_definitions": True,
 }

@@ -10,36 +10,37 @@ dependencies:
   # - gfortran  # [osx]  # only if not installed via homebrew or macports
   # - petsc4py  # [unix]
   # - mpi4py  # [unix] # only needed if local system has mpi built and is used
-  - cftime
-  - coveralls
   - cython
   - jsonmerge
   - jsonschema
-  - make
   - matplotlib
-  - meson
   - moorpy>=1.2
-  - netcdf4
   - ninja
   - nlopt
   - numpy
-  - numpydoc
   - openmdao
   - openpyxl
   - pandas
-  - pip
   - pydoe3
   - pyoptsparse
-  - pytest
-  - pytest-cov
   - pyyaml
   - scipy
-  - setuptools
   - sortedcontainers
   - statsmodels>=0.14.5
   - swig
-  - xarray
+  - meson
+  - setuptools
+  - sphinx
+  - numpydoc
+  - coveralls
+  - pytest
+  - pytest-cov
+  - pip
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
     - windIO
+    - sphinxcontrib-bibtex
+    - sphinx_rtd_theme>=1.3
+    - sphinx-jsonschema
+    - sphinx-copybutton
