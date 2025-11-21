@@ -101,35 +101,35 @@ Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell
 
 1. Install `git` if you don't already have it:
 
-        ```console
-        conda install git
-        ```
+    ```console
+    conda install git
+    ```
 
 2. Clone the repository and enter it:
 
-        ```console
-        git clone https://github.com/WISDEM/WISDEM.git
-        cd WISDEM
-        ```
+    ```console
+    git clone https://github.com/WISDEM/WISDEM.git
+    cd WISDEM
+    ```
 
 3. Checkout the desired branch, if necessary:
 
-        ```console
-        git checkout <branch>
-        ```
+    ```console
+    git checkout <branch>
+    ```
 
 4. Create and activate your `wisdem-env` environment, substituting "wisdem-env" with a different desired name.
 
-        ```console
-        conda env create --name wisdem-env -f environment.yml
-        conda activate wisdem-env
-        ```
+    ```console
+    conda env create --name wisdem-env -f environment.yml
+    conda activate wisdem-env
+    ```
 
 5. Install WISDEM.
 
-        ```console
-        pip install --no-deps . -v
-        ```
+    ```console
+    pip install --no-deps . -v
+    ```
 
 #### Development
 
@@ -145,17 +145,17 @@ dependencies for building, testing, and documentation are also installed:
 
 4. Create and activate your `wisdem-env` environment, substituting "wisdem-env" with a different desired name.
 
-        ```console
-        conda env create --name wisdem-env -f environment_dev.yml
-        conda activate wisdem-env
-        ```
+    ```console
+    conda env create --name wisdem-env -f environment_dev.yml
+    conda activate wisdem-env
+    ```
 
 5. Install WISDEM. Please note the `-e` (editable) flag used to ensure your code changes are registered dynamically every
    time you save modifications.
 
-        ```console
-        pip install --no-deps -e . -v
-        ```
+    ```console
+    pip install --no-deps -e . -v
+    ```
 
 ## Run Unit Tests
 
