@@ -17,6 +17,7 @@ dependencies:
   - jsonschema
   - make
   - matplotlib
+  - meson
   - moorpy>=1.2
   - netcdf4
   - ninja
@@ -26,17 +27,20 @@ dependencies:
   - openmdao
   - openpyxl
   - pandas
+  - pip
   - pydoe3
   - pyoptsparse
+  - pytest
+  - pytest-cov
   - pyyaml
   - scipy
+  - setuptools
   - sortedcontainers
   - statsmodels>=0.14.5
   - swig
   - xarray
-  - pip
   - pip:
     - orbit-nrel>=1.2.1
     - dearpygui
     - windIO
-    - "."
+    - "-e ."
