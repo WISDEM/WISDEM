@@ -157,9 +157,18 @@ length_sort = "1"
 profile = "black"
 skip_glob = ['__init__.py']
 atomic = true
-#lines_after_imports = 2
-#lines_between_types = 1
-#src_paths=isort,test
+# lines_after_imports = 2
+# lines_between_types = 1
+# src_paths=isort,test
+
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["wisdem/test"]
+cache_dir = ".cache"
+# filterwarnings = [
+#   "ignore::DeprecationWarning:simpy.*:",
+#   "ignore::DeprecationWarning:pkg_resources.*:",
+# ]
 
 [tool.coverage.run]
 source = ["wisdem"]
