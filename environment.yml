@@ -39,4 +39,3 @@ dependencies:
     - orbit-nrel>=1.2.1
     - dearpygui
     - windIO
-    - "."
