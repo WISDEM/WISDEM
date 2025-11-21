@@ -159,7 +159,18 @@ dependencies for building, testing, and documentation are also installed:
 
 ## Run Unit Tests
 
-Each package has its own set of unit tests.  These can be run in batch with the `test_all.py` script located in the top level `test`-directory.
+Each package has its own set of unit tests, and the project runs the examples as integration tests. These can be run in batch with the following command:
+
+```console
+pytest
+```
+
+Users can add either the `--unit` or `--integration` flags if they would like to skip running
+the examples or just run the examples. Otherwise, all tests will be run.
+
+> [!Note]
+> Legacy users can continue to run `python test/test_all.py` to run the scipts, though it is recommend to adopt the
+> simpler `pytest` call. In a future version, `test_all.py` will be removed.
 
 ## Feedback
 

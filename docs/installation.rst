@@ -133,12 +133,20 @@ to ensure the development dependencies for building, testing, and documentation 
         pre-commit install
 
 
-Run Unit Tests
---------------
+Run Unit and Integration Tests
+------------------------------
 
-Each package has its own set of unit tests.  These can be run in batch with the ``test_all.py`` script located in the top level ``test``-directory:
+Each package has its own set of unit tests, and the project runs the examples as integration tests.
+
+These can be run in batch with the following command
 
 .. code-block:: bash
 
-    cd test
-    python test_all.py
+    pytest
+
+Users can add either the ``--unit`` or ``--integration`` flags if they would like to skip running
+the examples or just run the examples. Otherwise, all tests will be run.
+
+.. note::
+    Legacy users can continue to run ``python test/test_all.py`` to run the scipts, though it is recommend to adopt the
+    simpler ``pytest`` call. In a future version, ``test_all.py`` will be removed.
