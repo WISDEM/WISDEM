@@ -108,8 +108,8 @@ In order to directly use the examples in the repository and peek at the code whe
 
     For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-Please follow steps 1-3 in the Direct Use section above, replacing steps 4 & 5 with the following to ensure the development
-dependencies for building, testing, and documentation are also installed:
+Please follow steps 1-3 in the Direct Use section above, replacing steps 4 & 5 (and the additional 6) with the following
+to ensure the development dependencies for building, testing, and documentation are also installed:
 
 4. Create and activate your ``wisdem-env`` environment, substituting "wisdem-env" with a different desired name.
 
@@ -126,6 +126,11 @@ dependencies for building, testing, and documentation are also installed:
 
         pip install --no-deps -e . -v
 
+6. Register the pre-commit hooks for automatic code linting and formatting.
+
+    .. code-block:: bash
+
+        pre-commit install
 
 
 Run Unit Tests
