@@ -3,7 +3,6 @@ channels:
   - defaults
 
 dependencies:
-  - python=3.13
 # NOTE: uncomment the OS-dependent lines below as needed
   # - m2w64-toolchain  # [win]
   # - libpython  # [win]
