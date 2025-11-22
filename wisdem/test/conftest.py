@@ -28,14 +28,14 @@ def pytest_configure(config):  # noqa: D103
     # Provide the appropriate directories
     unit_tests = [
         str(name)
-        for el in TEST_ROOT.iterdir()
+        for el in sorted(TEST_ROOT.iterdir())
         if "test_examples" not in el.parts and el.is_dir()
-        for name in el.iterdir()
+        for name in sorted(el.iterdir())
         if name.name.startswith("test_") and name.suffix == ".py"
     ]
     integration_tests = [
         str(name)
-        for name in (TEST_ROOT / "test_examples").iterdir()
+        for name in sorted((TEST_ROOT / "test_examples").iterdir())
         if name.name.startswith("test_") and name.suffix == ".py"
     ]
 
