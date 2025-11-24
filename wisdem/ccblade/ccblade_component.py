@@ -498,7 +498,7 @@ class CCBladeTwist(ExplicitComponent):
             alpha = np.zeros(self.n_span)
             Emax = np.zeros(self.n_span)
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
-            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"][0] / inputs["mu"][0])
+            Re = np.array(Omega / 30. * np.pi * inputs["r"] * inputs["chord"] * inputs["rho"][0] / inputs["mu"][0])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
