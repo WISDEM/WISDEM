@@ -1583,9 +1583,16 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["values"]
                                 )(aoa)
 
-                                re_config = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
+                                re_config[re_i] = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
 
-                                break
+                            # Sort re_config and corresponding polars
+                            sort_idx = np.argsort(re_config)
+                            re_config = re_config[sort_idx]
+                            cl_config[:, :, k] = cl_config[:, sort_idx, k]
+                            cd_config[:, :, k] = cd_config[:, sort_idx, k]
+                            cm_config[:, :, k] = cm_config[:, sort_idx, k]
+
+                            break
                     # Check if the configuration exists
                     if not config_exist:
                         raise ValueError(
