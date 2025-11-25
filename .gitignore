@@ -138,10 +138,7 @@ examples/19_rotor_drivetrain_tower/test*
 *analysis_options_GA.yaml
 *analysis_options_LD_SLSQP.yaml
 *analysis_options_Nelder-Mead.yaml
-*pytest107_out/
-*pytest43_out/
-*pytest65_out/
-*pytest66_out/
+*pytest*_out/
 *temp1.yaml
 *temp2.yaml
 *test.csv
