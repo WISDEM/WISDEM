@@ -15,7 +15,6 @@ dependencies:
   - jsonschema
   - matplotlib
   - moorpy>=1.2
-  - ninja
   - nlopt
   - numpy
   - openmdao
