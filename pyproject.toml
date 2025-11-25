@@ -60,11 +60,8 @@ dependencies = [
   "orbit-nrel>=1.2.1",
   "pandas",
   "pydoe3",
-  "python-benedict",
   "pyyaml",
-  "ruamel.yaml",
   "scipy",
-  "simpy",
   "sortedcontainers",
   "statsmodels",
   "windIO",
@@ -79,9 +76,16 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["meson", "ninja", "swig"]
+dev = ["meson", "ninja", "swig", "black", "pre-commit", "isort"]
 test = ["coveralls", "pytest", "pytest-cov"]
-docs = ["sphinx", "sphinxcontrib-bibtex", "sphinx_rtd_theme>=1.3", "sphinx-jsonschema"]
+docs = [
+  "sphinx",
+  "sphinxcontrib-bibtex",
+  "sphinx_rtd_theme>=1.3",
+  "sphinx-jsonschema",
+  "sphinx-copybutton",
+  "numpydoc",
+]
 opt = ["pyoptsparse","nlopt<=2.8"]
 
 # List URLs that are relevant to your project
@@ -153,9 +157,18 @@ length_sort = "1"
 profile = "black"
 skip_glob = ['__init__.py']
 atomic = true
-#lines_after_imports = 2
-#lines_between_types = 1
-#src_paths=isort,test
+# lines_after_imports = 2
+# lines_between_types = 1
+# src_paths=isort,test
+
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["wisdem/test"]
+cache_dir = ".cache"
+# filterwarnings = [
+#   "ignore::DeprecationWarning:simpy.*:",
+#   "ignore::DeprecationWarning:pkg_resources.*:",
+# ]
 
 [tool.coverage.run]
 source = ["wisdem"]
