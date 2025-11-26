@@ -119,3 +119,26 @@ Thumbs.db
 # IntelliJ Things #
 ####################
 .idea/
+
+# WISDEM example and test generated data
+*outputs*
+examples/*/*_out
+examples/01_nrel_csm/*.csv
+examples/06_drivetrain/*.csv
+examples/06_drivetrain/*.npz
+examples/06_drivetrain/*.pkl
+examples/06_drivetrain/*.xlsx
+examples/11_user_custom/user_custom/
+examples/15_step_size_study/*.npy
+examples/16_inverse_design/inverse/
+examples/18_rotor_tower_monopile/20MW_opt/
+examples/19_rotor_drivetrain_tower/temp*
+examples/19_rotor_drivetrain_tower/test*
+*analysis_options_COBYLA.yaml
+*analysis_options_GA.yaml
+*analysis_options_LD_SLSQP.yaml
+*analysis_options_Nelder-Mead.yaml
+*pytest*_out/
+*temp1.yaml
+*temp2.yaml
+*test.csv

@@ -485,7 +485,8 @@ class CCBladeTwist(ExplicitComponent):
         )
 
         Omega = inputs["tsr"][0] * inputs["Uhub"][0] / (
-            inputs["Rtip"][0] * np.cos(np.deg2rad(inputs["precone"][0]))) * 30.0 / np.pi
+            inputs["Rtip"][0] * np.cos(np.deg2rad(inputs["precone"][0]))) 
+        Omega_rpm = Omega * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
@@ -533,7 +534,7 @@ class CCBladeTwist(ExplicitComponent):
             ccblade.alpha = alpha
             ccblade.cl = cl
             ccblade.cd = cd
-            _, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=False)
+            _, _ = ccblade.evaluate([inputs["Uhub"]], [Omega_rpm], [inputs["pitch"]], coefficients=False)
 
             # Cap twist root region to 20 degrees
             for i in range(len(ccblade.theta)):
@@ -560,10 +561,10 @@ class CCBladeTwist(ExplicitComponent):
         ccblade.inverse_analysis = False
 
         # Call ccblade at azimuth 0 deg
-        loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega, inputs["pitch"][0], 0.0)
+        loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega_rpm, inputs["pitch"][0], 0.0)
 
         # Call ccblade evaluate (averaging across azimuth)
-        myout, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
+        myout, _ = ccblade.evaluate([inputs["Uhub"]], [Omega_rpm], [inputs["pitch"]], coefficients=True)
         CP, CMb, W = [myout[key] for key in ["CP", "CMb", "W"]]
 
         # import matplotlib.pyplot as plt
