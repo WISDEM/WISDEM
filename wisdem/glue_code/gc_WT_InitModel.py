@@ -1559,6 +1559,9 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                 n_configs = len(airfoils_master[i]["configuration"])
                 configuration = [''] * n_configs
                 weights = np.zeros(n_configs)
+                cl_config_re = np.zeros((n_aoa, n_Re, n_configs))
+                cd_config_re = np.zeros((n_aoa, n_Re, n_configs))
+                cm_config_re = np.zeros((n_aoa, n_Re, n_configs))
                 for k in range(n_configs):
                     configuration[k] = airfoils_master[i]["configuration"][k]
                     weights[k] = airfoils_master[i]["weight"][k]
@@ -1568,59 +1571,62 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils_master, airfoils, c
                             config_exist = True
                             n_re_config = len(airfoils[j]["polars"][l]["re_sets"])
                             re_config = np.zeros(n_re_config)
-                            cl_config = np.zeros((n_aoa, n_re_config, n_configs))
-                            cd_config = np.zeros((n_aoa, n_re_config, n_configs))
-                            cm_config = np.zeros((n_aoa, n_re_config, n_configs))
+                            cl_config = np.zeros((n_aoa, n_re_config))
+                            cd_config = np.zeros((n_aoa, n_re_config))
+                            cm_config = np.zeros((n_aoa, n_re_config))
                             for re_i in range(len(airfoils[j]["polars"][l]["re_sets"])):
-                                cl_config[:, re_i, k] = PchipInterpolator(
+                                cl_config[:, re_i] = PchipInterpolator(
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cl"]["values"]
                                 )(aoa)
 
-                                cd_config[:, re_i, k] = PchipInterpolator(
+                                cd_config[:, re_i] = PchipInterpolator(
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cd"]["values"]
                                 )(aoa)
-                                cm_config[:, re_i, k] = PchipInterpolator(
+                                cm_config[:, re_i] = PchipInterpolator(
                                     airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["grid"], airfoils[j]["polars"][l]["re_sets"][re_i]["cm"]["values"]
                                 )(aoa)
 
-                                re_config = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
+                                re_config[re_i] = airfoils[j]["polars"][l]["re_sets"][re_i]["re"]
 
-                                break
+                            # Sort re_config and corresponding polars
+                            sort_idx = np.argsort(re_config)
+                            re_config = re_config[sort_idx]
+                            cl_config[:, :] = cl_config[:, sort_idx]
+                            cd_config[:, :] = cd_config[:, sort_idx]
+                            cm_config[:, :] = cm_config[:, sort_idx]
+
+                            # Interpolate across overall Re array common across master airfoils
+                            if n_re_config == 1:
+                                for i_Re in range(n_Re):
+                                    cl_config_re[:, i_Re, k] = cl_config[:, 0]
+                                    cd_config_re[:, i_Re, k] = cd_config[:, 0]
+                                    cm_config_re[:, i_Re, k] = cm_config[:, 0]
+                            else:
+                                for i_aoa in range(n_aoa):
+                                    cl_config_re[i_aoa, :, k] = PchipInterpolator(re_config, cl_config[i_aoa, :])(Re)
+                                    cd_config_re[i_aoa, :, k] = PchipInterpolator(re_config, cd_config[i_aoa, :])(Re)
+                                    cm_config_re[i_aoa, :, k] = PchipInterpolator(re_config, cm_config[i_aoa, :])(Re)
+
+                            break
                     # Check if the configuration exists
                     if not config_exist:
                         raise ValueError(
                             f"Configuration {configuration[k]} not found for airfoil {af_master[i]}. Please check the configuration names for airfoil polars."
                         )
-
+                        
                 # Perform weighted average across configurations
                 if abs(sum(weights) - 1.0) > 1e-6:
                     raise ValueError(
                         f"Configuration weights for airfoil {af_master[i]} do not sum to 1.0. Please check the configuration weights."
                     )
 
-                cl_master_i = np.average(cl_config[:, :, :], axis=2, weights=weights)
-                cd_master_i = np.average(cd_config[:, :, :], axis=2, weights=weights)
-                cm_master_i = np.average(cm_config[:, :, :], axis=2, weights=weights)
-
-                # Interpolate across Re sets
-                if n_re_config == 1:
-                    for j in range(n_Re):
-                        cl_master[i, :, j] = cl_master_i[:, 0]
-                        cd_master[i, :, j] = cd_master_i[:, 0]
-                        cm_master[i, :, j] = cm_master_i[:, 0]
-                else:
-                    for j in range(n_aoa):
-                        cl_master[i, j, :] = PchipInterpolator(
-                                            re_config, cl_master_i[j, :]
-                                        )(Re)
-                        cd_master[i, j, :] = PchipInterpolator(
-                                            re_config, cd_master_i[j, :]
-                                        )(Re)
-                        cm_master[i, j, :] = PchipInterpolator(
-                                            re_config, cm_master_i[j, :]
-                                        )(Re)
+                cl_master[i, :, :] = np.average(cl_config_re[:, :, :], axis=2, weights=weights)
+                cd_master[i, :, :] = np.average(cd_config_re[:, :, :], axis=2, weights=weights)
+                cm_master[i, :, :] = np.average(cm_config_re[:, :, :], axis=2, weights=weights)
 
                 break
+
+
 
         if not airfoil_exists:
             raise ValueError(

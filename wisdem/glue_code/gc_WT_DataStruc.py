@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
+from scipy.interpolate import PchipInterpolator
 
 from moorpy.helpers import getLineProps
 from wisdem.ccblade.Polar import Polar

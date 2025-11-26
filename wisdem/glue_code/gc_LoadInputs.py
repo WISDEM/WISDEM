@@ -1243,7 +1243,7 @@ class WindTurbineOntologyPython(object):
                         )
 
         # Update rotor nacelle assembly
-        if self.modeling_options["flags"]["RNA"]:
+        if self.modeling_options["flags"]["drivetrain"]:
             self.wt_init["components"]["RNA"] = {}
             self.wt_init["components"]["RNA"]["elastic_properties"] = {}
             self.wt_init["components"]["RNA"]["elastic_properties"]["mass"] = float(wt_opt["drivese.rna_mass"][0])

@@ -304,8 +304,10 @@ class CCAirfoil(object):
 
         # C_nalpha
         if max(np.abs(np.gradient(cm))) > 1.0e-10:
-            # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
-            unsteady["C_nalpha"] = max(np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]))
+            if idx_alpha0 < idx_Cn1:
+                unsteady["C_nalpha"] = max(np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]))
+            else:
+                unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
 
         else:
             unsteady["C_nalpha"] = 0.0
