@@ -514,7 +514,7 @@ class NSGA2:
             if compute_constrs:
                 if constrs_in is None:
                     raise ValueError("Cannot compute constraints fronts without constrs_in being provided.")
-                constrs_f = constrs_in[f, :]  # slice index in to create views
+                constrs_f = np.zeros(shape=(len(f), 0)) if len(constrs_in) == 0 else constrs_in[f, :]  # slice index in to create views
                 constrs_fronts.append(constrs_f)
 
         # compile returns and ship
@@ -833,7 +833,8 @@ class NSGA2:
         print("PROPOSING NEW GENERATION...", end="", flush=True)
         rv = self.propose_new_generation()
 
-        if self.comm_mpi and self.comm_mpi.Get_rank() == 0:
+        # run this code in serial or on root
+        if (not self.comm_mpi) or self.comm_mpi.Get_rank() == 0:
 
             design_vars_next = rv[0]
             objs_next = rv[1]

@@ -379,7 +379,7 @@ class NSGA2Driver(Driver):
         self.icase = 0
         self.optimizer_nsga2 = NSGA2_implementation(
             design_vars_init,
-            lambda XYq: self.objective_callback(XYq),
+            self.objective_callback,
             len(self._objs),
             len(self._cons),
             design_vars_l=lower_bound,
@@ -407,7 +407,7 @@ class NSGA2Driver(Driver):
             "constrs_fronts": rv[3],
         }
         # create a yaml file at the path
-        write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
+        write_yaml(nsga2_debug_collection, nsga2_output_dir / "nsga2_debug.yaml")
 
         # iterate over the specified generations
         for generation in range(max_gen + 1):
@@ -426,7 +426,8 @@ class NSGA2Driver(Driver):
                 "constrs_fronts": rv[3],
             }
             # create a yaml file at the path
-            write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
+            write_yaml(nsga2_debug_collection, nsga2_output_dir / "nsga2_debug.yaml")
+            print(f"generation: {generation} of {max_gen}")
 
         print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
 
@@ -564,7 +565,10 @@ class NSGA2Driver(Driver):
                     raise ValueError(
                         f"you've attempted to constraint {name} between numerically infinite values in both directions: \n{meta}"
                     )
-            constr = np.hstack(constr_adjusted)
+            if len(constr_adjusted):
+                constr = np.hstack(constr_adjusted)
+            else:
+                constr = np.array([])
 
         if self.options["penalty_parameter"] != 0:
             raise NotImplementedError("penalty-driven constraints not implemented.")
