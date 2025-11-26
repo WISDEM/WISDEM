@@ -1,16 +1,11 @@
-import os
 import sys
+from pathlib import Path
+from warnings import warn
 
 import pytest
 
-testpath = (
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    + os.path.sep
-    + "wisdem"
-    + os.path.sep
-    + "test"
-    + os.path.sep
-)
+testpath = Path(__file__).parents[1] / "wisdem/test"
 
 if __name__ == "__main__":
-    sys.exit(pytest.main([testpath]))
+    warn("In a future version this routine will be removed. Please run 'pytest' to run all tests.", DeprecationWarning)
+    sys.exit(pytest.main(testpath))

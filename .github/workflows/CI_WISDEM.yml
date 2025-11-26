@@ -32,7 +32,7 @@ jobs:
           miniforge-version: "latest"
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          environment-file: environment.yml
+          environment-file: environment_dev.yml
           activate-environment: test
           auto-activate-base: false
 
@@ -40,7 +40,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py gfortran
+          conda install -y petsc4py compilers
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -57,7 +57,7 @@ jobs:
       - name: Install WISDEM with setup
         run: |
           pip install --no-build-isolation --no-deps -e . -v
-    
+
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
@@ -81,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
-          
+
   build_pip:
     name: Pip Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
@@ -107,7 +107,7 @@ jobs:
         uses: rlalik/setup-cpp-compiler@master
         with:
           compiler: clang
-          
+
       - name: Install mingw-w64 on Windows
         if: contains( matrix.os, 'windows')
         uses: msys2/setup-msys2@v2
@@ -116,7 +116,7 @@ jobs:
           install: |
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-gcc-fortran
-            
+
       - name: checkout repository
         uses: actions/checkout@v5
 

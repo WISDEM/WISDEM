@@ -99,7 +99,7 @@ from wisdem.inputs.validation import load_geometry_yaml
 baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "02_reference_turbines", "nrel5mw.yaml")
 data = load_geometry_yaml(baseyaml)
 af = data['airfoils']
-af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
+af_names = ["Cylinder1", "Cylinder2", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
 airfoil_types = [0] * len(af_names)
 for i in range(len(af_names)):
     for j in range(len(af)):
