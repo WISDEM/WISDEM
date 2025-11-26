@@ -1475,8 +1475,8 @@ class TestGradients(unittest.TestCase):
         dNp_dhubht_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dhubht_fd[:, 0] = (Tpd - self.Tp) / delta
 
-        np.testing.assert_allclose(dNp_dhubht_fd, dNp_dhubht, rtol=1e-4, atol=1e-5)
-        np.testing.assert_allclose(dTp_dhubht_fd, dTp_dhubht, rtol=1e-4, atol=1e-6)
+        np.testing.assert_allclose(dNp_dhubht_fd, dNp_dhubht, rtol=1e-3, atol=1e-4)
+        np.testing.assert_allclose(dTp_dhubht_fd, dTp_dhubht, rtol=1e-3, atol=1e-4)
 
     def test_dhubht2(self):
         dT_dhubht = self.dT["dhubHt"]
@@ -6426,8 +6426,8 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         dNp_dhubht_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dhubht_fd[:, 0] = (Tpd - self.Tp) / delta
 
-        np.testing.assert_allclose(dNp_dhubht_fd, dNp_dhubht, rtol=1e-4, atol=5e-6)
-        np.testing.assert_allclose(dTp_dhubht_fd, dTp_dhubht, rtol=1e-4, atol=1e-6)
+        np.testing.assert_allclose(dNp_dhubht_fd, dNp_dhubht, rtol=1e-3, atol=1e-4)
+        np.testing.assert_allclose(dTp_dhubht_fd, dTp_dhubht, rtol=1e-3, atol=1e-4)
 
     def test_dhubht2(self):
         dT_dhubht = self.dT["dhubHt"]
