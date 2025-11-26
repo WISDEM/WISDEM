@@ -444,6 +444,12 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_output("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
 
+        for k in range(n_member):
+            kname = opt['floating']['members']['name'][k]
+            self.add_output(f"member{k}_{kname}:variable_ballast_cg", val=np.zeros(3), units="m")
+            self.add_output(f"member{k}_{kname}:variable_ballast_mass", val=0.0, units="kg")
+            self.add_output(f"member{k}_{kname}:variable_ballast_I", val=np.zeros(6), units="kg*m**2")
+
     def compute(self, inputs, outputs):
         opt = self.options["options"]
 
@@ -492,6 +498,9 @@ class PlatformTurbineSystem(om.ExplicitComponent):
 
             s_cg = np.interp(0.5 * V_variable_member[k], Vpts, spts)
             cg_variable_member[k, :] = xyz[0, :] + s_cg * dxyz
+
+            outputs[f"member{k}_{kname}:variable_ballast_cg"] = cg_variable_member[k, :]
+            outputs[f"member{k}_{kname}:variable_ballast_mass"] = m_variable_member[k]
 
             s_end = np.interp(V_variable_member[k], Vpts, spts)
             outputs["member_variable_height"][k] = s_end - spts[0]
@@ -543,7 +552,9 @@ class PlatformTurbineSystem(om.ExplicitComponent):
 
             # Now do parallel axis theorem
             R = cg_variable - cg_variable_member[k, :]
-            I_variable += np.array(I_k_rot) + m_variable_member[k] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+            I_variable_member = np.array(I_k_rot) + m_variable_member[k] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+            I_variable += I_variable_member
+            outputs[f"member{k}_{kname}:variable_ballast_I"] = util.unassembleI(I_variable_member)
 
         # Find platform I with variable contribution
         I_total = np.zeros((3, 3))
