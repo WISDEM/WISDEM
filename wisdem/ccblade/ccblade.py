@@ -85,7 +85,7 @@ class CCAirfoil(object):
         ky = min(len(Re) - 1, 3)
 
         # a small amount of smoothing is used to prevent spurious multiple solutions
-        self.cl_spline = RectBivariateSpline(alpha, Re, cl, kx=kx, ky=ky, s=0.1)
+        self.cl_spline = RectBivariateSpline(alpha, Re, cl, kx=kx, ky=ky, s=0.01)
         self.cd_spline = RectBivariateSpline(alpha, Re, cd, kx=kx, ky=ky, s=0.001)
         self.alpha = alpha
 
