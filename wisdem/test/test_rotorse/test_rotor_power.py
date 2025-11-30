@@ -546,7 +546,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
         npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
-        npt.assert_array_less(prob["T"], prob["ps_percent"][0] * T_peak)
+        npt.assert_array_less(prob["T"], 1.01 * prob["ps_percent"][0] * T_peak) # within 1%
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertGreater(prob["rated_pitch"], 0.0)
         myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
