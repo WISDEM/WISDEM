@@ -751,7 +751,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape"]["twist"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["twist"]["values"] = np.rad2deg(wt_opt["rotorse.theta"]).tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["section_offset_y"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
-            self.wt_init["components"]["blade"]["outer_shape"]["section_offset_y"]["values"] = wt_opt["blade.outer_shape.section_offset_y"].tolist()
+            self.wt_init["components"]["blade"]["outer_shape"]["section_offset_y"]["values"] = wt_opt["blade.pa.section_offset_y_param"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["rthick"] = {}
             self.wt_init["components"]["blade"]["outer_shape"]["rthick"]["grid"] = wt_opt["blade.outer_shape.s"].tolist()
             self.wt_init["components"]["blade"]["outer_shape"]["rthick"]["values"] = wt_opt["blade.interp_airfoils.rthick_interp"].tolist()

@@ -42,13 +42,12 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             units="rad",
             desc="1D array of the twist angle being optimized at the n_opt locations.",
         )
-        # Blade chord
-        # self.add_input(
-        #     "chord_original",
-        #     val=np.zeros(n_span),
-        #     units="m",
-        #     desc="1D array of the chord values defined along blade span. The chord is the one defined in the yaml.",
-        # )
+        self.add_input(
+            "chord_original",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the chord values defined along blade span. The chord is the one defined in the yaml.",
+        )
         self.add_input(
             "s_opt_chord",
             val=np.zeros(n_opt_chord),
@@ -60,7 +59,12 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             units="m",
             desc="1D array of the chord being optimized at the n_opt locations.",
         )
-
+        self.add_input(
+            "section_offset_y",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. The distribution is the original from the yaml.",
+        )
         # Outputs
         self.add_output(
             "twist_param",
@@ -73,6 +77,12 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the chord values defined along blade span. The chord is the result of the parameterization.",
+        )
+        self.add_output(
+            "section_offset_y_param",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the airfoil position relative to the reference axis, specifying the distance in meters along the chordline from the reference axis to the leading edge. The distribution is the result of the parameterization.",
         )
         self.add_output(
             "max_chord_constr",
@@ -111,6 +121,9 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         slope_twist_constr = np.diff(inputs["twist_opt"])
         slope_twist_constr[id_min_twist:] *= -1 
         outputs["slope_twist_constr"] = slope_twist_constr
+        # Update section_offset_y
+        outputs["section_offset_y_param"] = inputs["section_offset_y"] * outputs["chord_param"] / inputs["chord_original"]
+        
 
 
 class ParametrizeBladeStruct(om.ExplicitComponent):
