@@ -32,6 +32,7 @@ class Orbit(om.Group):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
         self.options.declare("jacket_legs", default=0)
+        self.options.declare("quiet", default=False)
 
     def setup(self):
         """Define all input variables from all models."""
@@ -83,6 +84,7 @@ class OrbitWisdem(om.ExplicitComponent):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
         self.options.declare("jacket_legs", default=0)
+        self.options.declare("quiet", default=False)
 
     def setup(self):
         """Define all the inputs."""
@@ -771,13 +773,17 @@ class OrbitWisdem(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """Creates and runs the project, then gathers the results."""
+        quiet_flag = self.options["quiet"]
 
         config = self.compile_orbit_config_file(
             inputs, outputs, discrete_inputs, discrete_outputs,
         )
 
         project = ProjectManager(config)
-        with HiddenPrints():
+        if quiet_flag:
+            with HiddenPrints():
+                project.run()
+        else:
             project.run()
 
         # The ORBIT version of total_capex includes turbine capex, so we do our own sum of
