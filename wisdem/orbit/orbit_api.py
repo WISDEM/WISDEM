@@ -12,6 +12,17 @@ import openmdao.api as om
 
 from ORBIT import ProjectManager
 
+#https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
+import os, sys
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        
 
 class Orbit(om.Group):
     """Orbit class for WISDEM API."""
@@ -766,7 +777,8 @@ class OrbitWisdem(om.ExplicitComponent):
         )
 
         project = ProjectManager(config)
-        project.run()
+        with HiddenPrints():
+            project.run()
 
         # The ORBIT version of total_capex includes turbine capex, so we do our own sum of
         # the parts here that wisdem doesn't account for
