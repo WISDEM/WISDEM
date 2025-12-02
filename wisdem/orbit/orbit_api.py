@@ -12,6 +12,17 @@ import openmdao.api as om
 
 from ORBIT import ProjectManager
 
+#https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
+import os, sys
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        
 
 class Orbit(om.Group):
     """Orbit class for WISDEM API."""
@@ -21,6 +32,7 @@ class Orbit(om.Group):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
         self.options.declare("jacket_legs", default=0)
+        self.options.declare("quiet", default=False)
 
     def setup(self):
         """Define all input variables from all models."""
@@ -72,6 +84,7 @@ class OrbitWisdem(om.ExplicitComponent):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
         self.options.declare("jacket_legs", default=0)
+        self.options.declare("quiet", default=False)
 
     def setup(self):
         """Define all the inputs."""
@@ -760,13 +773,18 @@ class OrbitWisdem(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """Creates and runs the project, then gathers the results."""
+        quiet_flag = self.options["quiet"]
 
         config = self.compile_orbit_config_file(
             inputs, outputs, discrete_inputs, discrete_outputs,
         )
 
         project = ProjectManager(config)
-        project.run()
+        if quiet_flag:
+            with HiddenPrints():
+                project.run()
+        else:
+            project.run()
 
         # The ORBIT version of total_capex includes turbine capex, so we do our own sum of
         # the parts here that wisdem doesn't account for

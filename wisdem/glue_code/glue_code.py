@@ -179,7 +179,7 @@ class WT_RNTA(om.Group):
             if not modeling_options["user_elastic"]["blade"]:
                 self.connect("configuration.n_blades", "rotorse.rs.constr.blade_number")
                 self.connect("drivetrain.uptilt", "rotorse.re.precomp.uptilt")
-                self.connect("blade.outer_shape.section_offset_y", "rotorse.re.section_offset_y")
+                self.connect("blade.pa.section_offset_y_param", "rotorse.re.section_offset_y")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.re.precomp.layer_thickness")
 
                 self.connect("blade.structure.layer_start_nd", "rotorse.re.precomp.layer_start_nd")
@@ -940,6 +940,7 @@ class WindPark(om.Group):
                         floating=modeling_options["flags"]["floating"],
                         jacket=modeling_options["flags"]["jacket"],
                         jacket_legs=modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"],
+                        quiet=modeling_options["WISDEM"]["BOS"]["quiet"],
                     ),
                 )
             else:
