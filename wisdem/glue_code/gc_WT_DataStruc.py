@@ -539,6 +539,8 @@ class Blade(om.Group):
         self.connect("opt_var.twist_opt", "pa.twist_opt")
         self.connect("opt_var.chord_opt", "pa.chord_opt")
         self.connect("outer_shape.s", "pa.s")
+        self.connect("outer_shape.chord", "pa.chord_original")
+        self.connect("outer_shape.section_offset_y", "pa.section_offset_y")
 
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem(
@@ -550,7 +552,7 @@ class Blade(om.Group):
         self.connect("outer_shape.s", "interp_airfoils.s")
         self.connect("outer_shape.rthick_yaml", "interp_airfoils.rthick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
-        self.connect("outer_shape.section_offset_y", ["interp_airfoils.section_offset_y", "compute_coord_xy_dim.section_offset_y"])
+        self.connect("pa.section_offset_y_param", ["interp_airfoils.section_offset_y", "compute_coord_xy_dim.section_offset_y"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
