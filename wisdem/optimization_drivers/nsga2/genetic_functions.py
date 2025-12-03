@@ -6,8 +6,7 @@ try:
     compile_numba = True
 except ImportError:
     compile_numba = False
-
-compile_numba = False  # DEBUG!!!!!
+# compile_numba = False  # DEBUG!!!!!
 
 
 def binary_tournament_selection_python(
