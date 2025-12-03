@@ -467,6 +467,10 @@ properties:
                         minimum: 0
                         maximum: 1.e+9
                         default: 2.5e5
+                    quiet:
+                        type: boolean
+                        default: False
+                        description: Suppress screen output (currently only works for ORBIT)
             FloatingSE:
                 type: object
                 default: {}

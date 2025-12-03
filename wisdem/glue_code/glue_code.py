@@ -940,6 +940,7 @@ class WindPark(om.Group):
                         floating=modeling_options["flags"]["floating"],
                         jacket=modeling_options["flags"]["jacket"],
                         jacket_legs=modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"],
+                        quiet=modeling_options["WISDEM"]["BOS"]["quiet"],
                     ),
                 )
             else:
