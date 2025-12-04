@@ -820,7 +820,8 @@ class NSGA2:
         )
 
         # run on root
-        print("PROPOSING NEW GENERATION...", end="", flush=True)
+        if self.verbose:
+            print("PROPOSING NEW GENERATION...", end="", flush=True)
         rv = self.propose_new_generation()
 
         # run this code in serial or on root
