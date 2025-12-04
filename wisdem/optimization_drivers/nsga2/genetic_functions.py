@@ -6,7 +6,6 @@ try:
     compile_numba = True
 except ImportError:
     compile_numba = False
-
 compile_numba = False  # DEBUG!!!!!
 
 

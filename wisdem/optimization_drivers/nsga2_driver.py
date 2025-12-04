@@ -379,7 +379,7 @@ class NSGA2Driver(Driver):
         self.icase = 0
         self.optimizer_nsga2 = NSGA2_implementation(
             design_vars_init,
-            lambda XYq: self.objective_callback(XYq),
+            self.objective_callback,
             len(self._objs),
             len(self._cons),
             design_vars_l=lower_bound,
@@ -407,12 +407,11 @@ class NSGA2Driver(Driver):
             "constrs_fronts": rv[3],
         }
         # create a yaml file at the path
-        write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
+        write_yaml(nsga2_debug_collection, nsga2_output_dir / "nsga2_debug.yaml")
 
         # iterate over the specified generations
         for generation in range(max_gen + 1):
             # iterate the population
-            print(f"\n\n\nDEBUG!!!!! NSGA2 OM DRIVER STARTING GENERATION {generation}\n\n\n")
             self.optimizer_nsga2.iterate_population()
 
             rv = self.optimizer_nsga2.get_fronts(
@@ -426,9 +425,8 @@ class NSGA2Driver(Driver):
                 "constrs_fronts": rv[3],
             }
             # create a yaml file at the path
-            write_yaml(nsga2_debug_collection, nsga2_output_dir + "/nsga2_debug.yaml")
-
-        print("\n\n\nDEBUG!!!!! NSGA2 OM DRIVER GENERATIONS COMPLETE\n\n\n")
+            write_yaml(nsga2_debug_collection, nsga2_output_dir / "nsga2_debug.yaml")
+            print(f"generation: {generation} of {max_gen}")
 
         if compute_pareto:  # by default we should be doing Pareto fronts -> the whole point of NSGA2
             # save the non-dominated points
@@ -545,7 +543,6 @@ class NSGA2Driver(Driver):
 
             constr_adjusted = []  # convert all bounds to leq zero
             for name, meta in self._cons.items():
-                # print(f"DEBUG!!!!! lower: {meta['lower']} upper: {meta['upper']} INF_BOUND: {INF_BOUND}")
                 if (meta["lower"] <= -INF_BOUND / 10) and (
                     meta["upper"] <= INF_BOUND / 10
                 ):  # within an order of magnitude of the inf bound
@@ -564,7 +561,10 @@ class NSGA2Driver(Driver):
                     raise ValueError(
                         f"you've attempted to constraint {name} between numerically infinite values in both directions: \n{meta}"
                     )
-            constr = np.hstack(constr_adjusted)
+            if len(constr_adjusted):
+                constr = np.hstack(constr_adjusted)
+            else:
+                constr = np.array([])
 
         if self.options["penalty_parameter"] != 0:
             raise NotImplementedError("penalty-driven constraints not implemented.")

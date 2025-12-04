@@ -66,7 +66,10 @@ def fast_nondom_sort_ranks_python(P):
 
 
 if compile_numba:
-    fast_nondom_sort_ranks = numba.njit(fast_nondom_sort_ranks_python)
+    _fast_nondom_sort_ranks = numba.njit(fast_nondom_sort_ranks_python)
+    def fast_nondom_sort_ranks(P):
+        P = numba.typed.List(P)  # type protection to avoid deprecation
+        return _fast_nondom_sort_ranks(P)
     fast_nondom_sort_ranks.is_numba = True
     fast_nondom_sort_ranks.function_nojit = fast_nondom_sort_ranks_python
 else:
