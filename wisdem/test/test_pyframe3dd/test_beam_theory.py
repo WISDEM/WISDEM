@@ -60,10 +60,10 @@ class FrameTestEXA(unittest.TestCase):
 
         # dynamics
         nM = 15  # number of desired dynamic modes of vibration
-        Mmethod = 1  # 1: subspace Jacobi     2: Stodola
+        Mmethod = 2  # 1: subspace Jacobi     2: Stodola
         lump = 0  # 0: consistent mass ... 1: lumped mass matrix
         tol = 1e-9  # mode shape tolerance
-        shift = -1e3  # shift value ... for unrestrained structures
+        shift = 0.0  # shift value ... for unrestrained structures
         frame.enableDynamics(nM, Mmethod, lump, tol, shift)
 
         # load cases 1
@@ -89,6 +89,7 @@ class FrameTestEXA(unittest.TestCase):
         self.assertAlmostEqual(modal.freq[5], anal[2], -1)
 
         #### Free-free
+        shift = 10  # shift value ... for unrestrained structures
         frame0 = Frame(nodes, reactions0, elements, options)
         frame0.enableDynamics(nM, Mmethod, lump, tol, shift)
         frame0.addLoadCase(load)
