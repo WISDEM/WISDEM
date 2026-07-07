@@ -748,16 +748,27 @@ def assign_drivetrain_values(wt_opt, modeling_options, drivetrain, yaw, flags, u
         wt_opt["drivetrain.bedplate_material"] = drivetrain["bedplate"]["material"]
         if "mass_user" in drivetrain["bedplate"]:
             wt_opt["drivetrain.bedplate_mass_user"] = drivetrain["bedplate"]["mass_user"]
-        if "brake_mass_user" in drivetrain["other_components"]:
+            
+        if "brake_mass" in drivetrain["other_components"]:
+            wt_opt["drivetrain.brake_mass_user"] = drivetrain["other_components"]["brake_mass"]
+        elif "brake_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.brake_mass_user"] = drivetrain["other_components"]["brake_mass_user"]
+            
         if "mb1_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.mb1_mass_user"] = drivetrain["other_components"]["mb1_mass_user"]
         if "mb2_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.mb2_mass_user"] = drivetrain["other_components"]["mb2_mass_user"]
-        if "converter_mass_user" in drivetrain["other_components"]:
+            
+        if "converter_mass" in drivetrain["other_components"]:
+            wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass"]
+        elif "converter_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.converter_mass_user"] = drivetrain["other_components"]["converter_mass_user"]
-        if "transformer_mass_user" in drivetrain["other_components"]:
+            
+        if "transformer_mass" in drivetrain["other_components"]:
+            wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass"]
+        elif "transformer_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.transformer_mass_user"] = drivetrain["other_components"]["transformer_mass_user"]
+            
         if "platform_mass_user" in drivetrain["other_components"]:
             wt_opt["drivetrain.platform_mass_user"] = drivetrain["other_components"]["platform_mass_user"]
         if "cover_mass_user" in drivetrain["other_components"]:
