@@ -102,13 +102,16 @@ class CCAirfoil(object):
         aoa_end = 40
 
         alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
-        cl = np.array([self.cl_spline.ev(aoa, Re) for aoa in alpha])
-        cd = np.array([self.cd_spline.ev(aoa, Re) for aoa in alpha])
+        cl = np.array([self.cl_spline.ev(aoa, Re) for aoa in alpha]).flatten()
+        cd = np.array([self.cd_spline.ev(aoa, Re) for aoa in alpha]).flatten()
 
         if np.max(cl) < 1.e-3:  # Cylinder
             alpha_Emax = 0.
             cl_Emax = self.cl_spline.ev(alpha_Emax, Re)
             cd_Emax = self.cd_spline.ev(alpha_Emax, Re)
+            if isinstance(cl_Emax, np.ndarray):
+                cl_Emax = cl_Emax.item()
+                cd_Emax = cd_Emax.item()
             Emax = cl_Emax / cd_Emax
         else:
             Eff = [cli / cdi for cli, cdi, in zip(cl, cd)]
@@ -139,7 +142,7 @@ class CCAirfoil(object):
         else:
             alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
             cl = [self.cl_spline.ev(aoa, Re) for aoa in alpha]
-            cd = [self.cd_spline.ev(aoa, Re) for aoa in alpha]
+            #cd = [self.cd_spline.ev(aoa, Re) for aoa in alpha]
 
             i_stall = np.argmax(cl)
             alpha_stall = alpha[i_stall]
@@ -147,6 +150,9 @@ class CCAirfoil(object):
 
         cl_op = self.cl_spline.ev(alpha_op, Re)
         cd_op = self.cd_spline.ev(alpha_op, Re)
+        if isinstance(cl_op, np.ndarray):
+            cl_op = cl_op.item()
+            cd_op = cd_op.item()
         Eff_op = cl_op / cd_op
 
         # print Emax, np.deg2rad(alpha_Emax), cl_Emax, cd_Emax
