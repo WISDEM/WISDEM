@@ -1254,13 +1254,13 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["tower"]["reference_axis"]["x"]["grid"] = wt_opt["tower_grid.s"].tolist()
             self.wt_init["components"]["tower"]["reference_axis"]["y"]["grid"] = wt_opt["tower_grid.s"].tolist()
             self.wt_init["components"]["tower"]["reference_axis"]["z"]["grid"] = wt_opt["tower_grid.s"].tolist()
-            self.wt_init["components"]["tower"]["reference_axis"]["x"]["values"] = wt_opt["tower.ref_axis"][
+            self.wt_init["components"]["tower"]["reference_axis"]["x"]["values"] = wt_opt["high_level_tower_props.tower_ref_axis"][
                 :, 0
             ].tolist()
-            self.wt_init["components"]["tower"]["reference_axis"]["y"]["values"] = wt_opt["tower.ref_axis"][
+            self.wt_init["components"]["tower"]["reference_axis"]["y"]["values"] = wt_opt["high_level_tower_props.tower_ref_axis"][
                 :, 1
             ].tolist()
-            self.wt_init["components"]["tower"]["reference_axis"]["z"]["values"] = wt_opt["tower.ref_axis"][
+            self.wt_init["components"]["tower"]["reference_axis"]["z"]["values"] = wt_opt["high_level_tower_props.tower_ref_axis"][
                 :, 2
             ].tolist()
             self.wt_init["components"]["tower"]["structure"]["outfitting_factor"] = float(

@@ -485,13 +485,14 @@ class TestTowerSE(unittest.TestCase):
                 [0.1778494, 0.1404714, 0.0988901, 0.0900522, 0.0322198, 0.0101666],
             ],
         )
-        npt.assert_allclose(
-            prob["tower.turbine_F"].T,
-            [
-                [ 1.28474420e+06, -2.32830644e-10, -3.76200526e+06],
-                [ 9.30198601e+05, -4.07453626e-10, -4.39569594e+06],
-            ], 1e-6
-        )
+        x = prob["tower.turbine_F"].T
+        x[np.abs(x)<1e-8] = 0.0
+        npt.assert_allclose(x,
+                            [
+                                [ 1.28474420e+06, 0.0, -3.76200526e+06],
+                                [ 9.30198601e+05, 0.0, -4.39569594e+06],
+                            ], 1e-6
+                            )
         npt.assert_almost_equal(
             prob["tower.turbine_M"].T,
             [
@@ -539,12 +540,13 @@ class TestTowerSE(unittest.TestCase):
                 [0.0518572, 0.0513707, 0.0486856, 0.066858 , 0.064029 , 0.061868 ],
             ],
         )
-        npt.assert_allclose(
-            prob["tower.turbine_F"].T,
-            [
-                [ 1.28474420e+06, -2.32830644e-10, -3.76200526e+06],
-                [ 9.30198601e+05, -4.07453626e-10, -4.39569594e+06],
-            ], 1e-6
+        x = prob["tower.turbine_F"].T
+        x[np.abs(x)<1e-8] = 0.0
+        npt.assert_allclose(x,
+                            [
+                                [ 1.28474420e+06, 0.0, -3.76200526e+06],
+                                [ 9.30198601e+05, 0.0, -4.39569594e+06],
+                            ], 1e-6
         )
         npt.assert_almost_equal(
             prob["tower.turbine_M"].T,

@@ -366,7 +366,8 @@ class TowerFrame(om.ExplicitComponent):
         mID = np.arange(n, dtype=np.int_)+1 # 1-based indexing for frame3dd
         m_add = total_lumped_mass
         cg_add = np.zeros([3, n])
-        cg_add[:,n-1] = inputs["rna_cg"]/total_lumped_mass[-1]
+        if total_lumped_mass[-1] > 0:
+            cg_add[:,n-1] = inputs["rna_cg"]/total_lumped_mass[-1]
         I_add = np.zeros([6,n])
         I_add[:,n-1] = inputs["rna_I"]
         add_gravity = False

@@ -1459,7 +1459,10 @@ class KI_to_Elastic(ExplicitComponent):
             # find the inertia twist
             I3 = np.array([[I_cg[n+3, m+3] for m in range(3)] for n in range(3)]) 
             (w3, v3) = np.linalg.eig(I3)
-
+            if np.iscomplexobj(w3[0]):
+                w3 = np.real(w3)
+                v3 = np.real(v3)
+                
             # This angle solve is likely working only within in [-pi/2, pi/2]
             if np.abs(v3[0,0]) < np.abs(v3[0,1]):
                 angle = np.arccos(v3[0,0])

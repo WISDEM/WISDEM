@@ -175,11 +175,11 @@ class CCAirfoil(object):
         also uses a small amount of smoothing to help remove spurious multiple solutions.
         """
 
-        cl = self.cl_spline.ev(alpha, Re)
-        cd = self.cd_spline.ev(alpha, Re)
+        cl = self.cl_spline.ev(alpha, Re)[0]
+        cd = self.cd_spline.ev(alpha, Re)[0]
 
         if self.use_cm and return_cm:
-            cm = self.cm_spline.ev(alpha, Re)
+            cm = self.cm_spline.ev(alpha, Re)[0]
             return cl, cd, cm
         else:
             return cl, cd
@@ -974,7 +974,6 @@ class CCBlade(object):
                 args = (self.r[i], self.chord[i], self.theta[i], self.af[i], Vx[i], Vy[i])
 
             # derivatives of residual
-
             (
                 a[i],
                 ap[i],
