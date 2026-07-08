@@ -175,11 +175,16 @@ class CCAirfoil(object):
         also uses a small amount of smoothing to help remove spurious multiple solutions.
         """
 
-        cl = self.cl_spline.ev(alpha, Re)[0]
-        cd = self.cd_spline.ev(alpha, Re)[0]
-
+        cl = self.cl_spline.ev(alpha, Re)
+        cd = self.cd_spline.ev(alpha, Re)
+        if isinstance(cl, np.ndarray):
+            cl = cl.item()
+            cd = cd.item()
+            
         if self.use_cm and return_cm:
-            cm = self.cm_spline.ev(alpha, Re)[0]
+            cm = self.cm_spline.ev(alpha, Re)
+            if isinstance(cm, np.ndarray):
+                cm = cm.item()
             return cl, cd, cm
         else:
             return cl, cd
