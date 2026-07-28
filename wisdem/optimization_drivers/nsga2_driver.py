@@ -439,7 +439,7 @@ class NSGA2Driver(Driver):
         desvar_new = design_vars_fronts[0][median_idx, :]
         for name in desvars:
             i, j = self._desvar_idx[name]
-            self.set_design_var(name, desvar_new[i:j])
+            self._set_design_var(name, desvar_new[i:j])
         with RecordingDebugging(self._get_name(), self.iter_count, self) as rec:
             self._run_solve_nonlinear()
             rec.abs = 0.0
@@ -471,7 +471,7 @@ class NSGA2Driver(Driver):
         out_of_bounds = False
         for name in self._designvars:
             i, j = self._desvar_idx[name]
-            self.set_design_var(name, x[i:j])
+            self._set_design_var(name, x[i:j])
 
             # Check that design variables are within bounds
             if (
