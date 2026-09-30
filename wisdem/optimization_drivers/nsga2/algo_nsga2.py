@@ -691,6 +691,8 @@ class NSGA2:
         self.design_vars_fronts = design_vars_fronts_new
         self.objs_fronts = objs_fronts_new
         if self.N_constr:
+            # keep the constraints aligned with the re-sorted design vars and objectives
+            self.constrs_population = np.vstack(constrs_fronts_new)
             self.constrs_fronts = constrs_fronts_new
 
         # broadcast all the results
@@ -701,6 +703,7 @@ class NSGA2:
             self.design_vars_fronts = self.comm_mpi.bcast(self.design_vars_fronts, root=0)
             self.objs_fronts = self.comm_mpi.bcast(self.objs_fronts, root=0)
             if self.N_constr:
+                self.constrs_population = self.comm_mpi.bcast(self.constrs_population, root=0)
                 self.constrs_fronts = self.comm_mpi.bcast(self.constrs_fronts, root=0)
 
         # sanity check the re-sorting

@@ -33,6 +33,47 @@ def _make_two_obj_problem():
     return prob
 
 
+def _make_constrained_problem():
+    """Build the 2-objective problem with scaled bounds and constraints of every kind.
+
+    Design variable x in [0, 3] uses ref=10, so scaled and unscaled bounds differ.
+    Constraints, all active on x, give a feasible region of x in [0.6, 1.4]:
+      g_up  = x         upper=1.5  (one-sided upper, ref=2 so it is scaled)
+      g_lo  = x         lower=0.5  (one-sided lower)
+      g_two = 2 x       in [1.2, 2.8]  (double-sided)
+      g_arr = [x, x+1]  upper=[1.5, 2.5]  (array)
+    """
+
+    class TwoObjConstrained(om.ExplicitComponent):
+        def setup(self):
+            self.add_input("x", val=1.0)
+            self.add_output("f1", val=0.0)
+            self.add_output("f2", val=0.0)
+            self.add_output("g_up", val=0.0)
+            self.add_output("g_lo", val=0.0)
+            self.add_output("g_two", val=0.0)
+            self.add_output("g_arr", val=np.zeros(2))
+
+        def compute(self, inputs, outputs):
+            x = inputs["x"][0]
+            outputs["f1"] = x**2
+            outputs["f2"] = (x - 2.0) ** 2
+            outputs["g_up"] = x
+            outputs["g_lo"] = x
+            outputs["g_two"] = 2.0 * x
+            outputs["g_arr"] = [x, x + 1.0]
+
+    prob = om.Problem()
+    prob.model.add_subsystem("comp", TwoObjConstrained(), promotes=["*"])
+    prob.model.add_design_var("x", lower=0.0, upper=3.0, ref=10.0)
+    prob.model.add_objective("f1")
+    prob.model.add_objective("f2")
+    prob.model.add_constraint("g_up", upper=1.5, ref=2.0)
+    prob.model.add_constraint("g_lo", lower=0.5)
+    prob.model.add_constraint("g_two", lower=1.2, upper=2.8)
+    prob.model.add_constraint("g_arr", upper=[1.5, 2.5])
+    return prob
+
 
 class TestNSGA2DriverRun(unittest.TestCase):
     """Integration tests: run the driver on a minimal 2-objective problem."""
@@ -90,6 +131,64 @@ class TestNSGA2DriverRun(unittest.TestCase):
         for row in driver.desvar_nd:
             self.assertGreaterEqual(row[0], 0.0 - 1e-8)
             self.assertLessEqual(row[0], 3.0 + 1e-8)
+
+    def test_unbounded_design_var_raises(self):
+        """A design variable without both bounds is rejected at setup."""
+        prob = om.Problem()
+        prob.model.add_subsystem("comp", om.ExecComp(["f1 = x**2", "f2 = (x - 2)**2"]), promotes=["*"])
+        prob.model.add_design_var("x", lower=0.0)
+        prob.model.add_objective("f1")
+        prob.model.add_objective("f2")
+        prob.driver = NSGA2Driver()
+        with self.assertRaises(ValueError):
+            prob.setup()
+            prob.final_setup()
+
+
+class TestNSGA2DriverConstraints(unittest.TestCase):
+    """Constraint and bound handling with scaled variables. OpenMDAO >= 3.45 leaves
+    unbounded sides as None, keeps meta bounds unscaled, and _set_design_var no
+    longer unscales."""
+
+    @classmethod
+    def setUpClass(cls):
+        prob = _make_constrained_problem()
+        prob.driver = NSGA2Driver()
+        prob.driver.options["pop_size"] = 20
+        prob.driver.options["max_gen"] = 5
+        prob.setup()
+        prob.run_driver()
+        cls.prob = prob
+
+    def test_initial_population_within_bounds(self):
+        """The initial population is sampled within the (unscaled) design variable bounds."""
+        pop = self.prob.driver.population_init
+        self.assertGreaterEqual(pop.min(), 0.0 - 1e-12)
+        self.assertLessEqual(pop.max(), 3.0 + 1e-12)
+        self.assertGreater(pop.max(), 0.3)  # not squeezed into the scaled range
+
+    def test_constraint_count(self):
+        """Every bounded side of every constraint element reaches the algorithm:
+        g_up (1) + g_lo (1) + g_two (2 sides) + g_arr (2 elements) = 6."""
+        self.assertEqual(self.prob.driver.optimizer_nsga2.N_constr, 6)
+
+    def test_pareto_values_match_designs(self):
+        """Stored objectives and constraints on the Pareto front belong to their design
+        points (constraints ordered upper sides then lower sides, feasible when >= 0)."""
+        driver = self.prob.driver
+        x = driver.desvar_nd[:, 0]
+        np.testing.assert_allclose(driver.obj_nd, np.column_stack([x**2, (x - 2.0) ** 2]), atol=1e-10)
+        expected_constr = np.column_stack([1.5 - x, x - 0.5, 2.8 - 2.0 * x, 2.0 * x - 1.2, 1.5 - x, 1.5 - x])
+        np.testing.assert_allclose(driver.constr_nd, expected_constr, atol=1e-10)
+
+    def test_pareto_front_feasible(self):
+        """Pareto points and the final design satisfy all constraints (x in [0.6, 1.4]),
+        so the design values the driver sets match the ones it evaluates."""
+        x_front = self.prob.driver.desvar_nd[:, 0]
+        self.assertTrue(np.all(x_front >= 0.6 - 1e-8), x_front)
+        self.assertTrue(np.all(x_front <= 1.4 + 1e-8), x_front)
+        self.assertGreaterEqual(self.prob["x"][0], 0.6 - 1e-8)
+        self.assertLessEqual(self.prob["x"][0], 1.4 + 1e-8)
 
 
 class TestNSGA2PoseOptimizationIntegration(unittest.TestCase):

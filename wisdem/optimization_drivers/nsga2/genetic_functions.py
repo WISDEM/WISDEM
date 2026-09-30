@@ -185,8 +185,10 @@ def simulated_binary_crossover_python(
         )
         Q_out[2 * i] = c0
         Q_out[2 * i + 1] = c1
-        changed_out[2 * i] = is_changed
-        changed_out[2 * i + 1] = is_changed
+        # the caller keeps the objectives/constraints of the row previously in each slot,
+        # so an uncrossed child copied from another row must also be re-evaluated
+        changed_out[2 * i] = is_changed or (idx0 != 2 * i)
+        changed_out[2 * i + 1] = is_changed or (idx1 != 2 * i + 1)
 
     return Q_out, changed_out
 
