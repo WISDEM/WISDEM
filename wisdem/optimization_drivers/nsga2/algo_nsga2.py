@@ -765,7 +765,7 @@ class NSGA2:
             if self.accelerated and (self.rng_seed is None)
             else simulated_binary_crossover.function_nojit
         )
-        design_vars_proposal, changed_crossover = sbx_function(
+        design_vars_proposal, changed_crossover, src_crossover = sbx_function(
             design_vars_proposal,
             design_vars_l=design_vars_l,
             design_vars_u=design_vars_u,
@@ -774,6 +774,10 @@ class NSGA2:
             rng_seed=self.next_seed(),
         )
         assert len(design_vars_proposal) == self.N_population
+        # keep stored values aligned with their (possibly copied) design rows
+        objs_proposal = objs_proposal[src_crossover, :]
+        if self.N_constr:
+            constrs_proposal = constrs_proposal[src_crossover, :]
         changed = np.logical_or(changed, changed_crossover)
 
         # now, do a mutation

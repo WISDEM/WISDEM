@@ -37,7 +37,7 @@ def _make_constrained_problem():
     """Build the 2-objective problem with scaled bounds and constraints of every kind.
 
     Design variable x in [0, 3] uses ref=10, so scaled and unscaled bounds differ.
-    Constraints, all active on x, give a feasible region of x in [0.6, 1.4]:
+    Constraints, all functions of x, give a feasible region of x in [0.6, 1.4] set by g_two:
       g_up  = x         upper=1.5  (one-sided upper, ref=2 so it is scaled)
       g_lo  = x         lower=0.5  (one-sided lower)
       g_two = 2 x       in [1.2, 2.8]  (double-sided)
@@ -146,7 +146,7 @@ class TestNSGA2DriverRun(unittest.TestCase):
 
 
 class TestNSGA2DriverConstraints(unittest.TestCase):
-    """Constraint and bound handling with scaled variables. OpenMDAO >= 3.45 leaves
+    """Constraint and bound handling with scaled variables. OpenMDAO >= 3.45.1 leaves
     unbounded sides as None, keeps meta bounds unscaled, and _set_design_var no
     longer unscales."""
 
@@ -189,6 +189,23 @@ class TestNSGA2DriverConstraints(unittest.TestCase):
         self.assertTrue(np.all(x_front <= 1.4 + 1e-8), x_front)
         self.assertGreaterEqual(self.prob["x"][0], 0.6 - 1e-8)
         self.assertLessEqual(self.prob["x"][0], 1.4 + 1e-8)
+
+    def test_copied_designs_not_reevaluated(self):
+        """Without crossover or mutation every child is a copy of an evaluated row, so its
+        stored values carry over: only the initial population and the final design run."""
+        prob = _make_constrained_problem()
+        prob.driver = NSGA2Driver()
+        prob.driver.options["pop_size"] = 20
+        prob.driver.options["max_gen"] = 3
+        prob.driver.options["Pc"] = 0.0
+        prob.driver.options["Pm"] = 0.0
+        prob.setup()
+        prob.run_driver()
+        driver = prob.driver
+        self.assertEqual(driver.iter_count, 20 + 1)
+        x = driver.desvar_nd[:, 0]
+        np.testing.assert_allclose(driver.obj_nd, np.column_stack([x**2, (x - 2.0) ** 2]), atol=1e-10)
+        self.assertTrue(np.all((x >= 0.6 - 1e-8) & (x <= 1.4 + 1e-8)), x)
 
 
 class TestNSGA2PoseOptimizationIntegration(unittest.TestCase):

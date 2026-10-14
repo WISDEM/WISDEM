@@ -22,7 +22,7 @@ from openmdao.core.analysis_error import AnalysisError
 def _bound_array(bound, size, unbounded):
     """Return a bound as a float array of length size, with None mapped to unbounded (+/-inf).
 
-    OpenMDAO >= 3.45 represents an unbounded side as None or +/-inf.
+    OpenMDAO >= 3.45.1 represents an unbounded side as None or +/-inf.
     """
     if bound is None:
         return np.full(size, unbounded)

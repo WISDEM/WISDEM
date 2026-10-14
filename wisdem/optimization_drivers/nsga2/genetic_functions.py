@@ -185,12 +185,14 @@ def simulated_binary_crossover_python(
         )
         Q_out[2 * i] = c0
         Q_out[2 * i + 1] = c1
-        # the caller keeps the objectives/constraints of the row previously in each slot,
-        # so an uncrossed child copied from another row must also be re-evaluated
-        changed_out[2 * i] = is_changed or (idx0 != 2 * i)
-        changed_out[2 * i + 1] = is_changed or (idx1 != 2 * i + 1)
+        changed_out[2 * i] = is_changed
+        changed_out[2 * i + 1] = is_changed
 
-    return Q_out, changed_out
+    # source row in P_in of each output slot, so the caller can carry over stored
+    # objectives/constraints for uncrossed children instead of re-evaluating them
+    src_out = indices.ravel()
+
+    return Q_out, changed_out, src_out
 
 
 if compile_numba:
