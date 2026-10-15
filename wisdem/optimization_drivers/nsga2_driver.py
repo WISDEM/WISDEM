@@ -193,12 +193,20 @@ class NSGA2Driver(Driver):
 
         for name, meta in self._cons.items():
             equals, lower, upper = meta["equals"], meta["lower"], meta["upper"]
-            if not (_is_bounded(equals) or _is_bounded(lower) or _is_bounded(upper)):
+            if _is_bounded(equals):
+                # a random design almost never meets an equality exactly, so NSGA2's
+                # feasible-when->=0 test would mark every point infeasible
+                msg = (
+                    f"Equality constraint '{name}' (equals={equals}) is not supported by "
+                    f"{self.__class__.__name__}. Use 'lower' and 'upper' bounds instead."
+                )
+                raise ValueError(msg)
+            if not (_is_bounded(lower) or _is_bounded(upper)):
                 msg = (
                     f"Invalid bounds for constraint '{name}'. "
-                    f"When using {self.__class__.__name__}, a finite value for 'equals', "
+                    f"When using {self.__class__.__name__}, a finite value for "
                     f"'lower' or 'upper' must be specified, but they are: "
-                    f"equals={equals}, lower={lower}, upper={upper}."
+                    f"lower={lower}, upper={upper}."
                 )
                 raise ValueError(msg)
 

@@ -144,6 +144,19 @@ class TestNSGA2DriverRun(unittest.TestCase):
             prob.setup()
             prob.final_setup()
 
+    def test_equality_constraint_raises(self):
+        """An equality constraint is rejected at setup instead of being silently ignored."""
+        prob = om.Problem()
+        prob.model.add_subsystem("comp", om.ExecComp(["f1 = x**2", "f2 = (x - 2)**2", "h = x"]), promotes=["*"])
+        prob.model.add_design_var("x", lower=0.0, upper=3.0)
+        prob.model.add_objective("f1")
+        prob.model.add_objective("f2")
+        prob.model.add_constraint("h", equals=1.0)
+        prob.driver = NSGA2Driver()
+        with self.assertRaisesRegex(ValueError, "Equality constraint 'h'"):
+            prob.setup()
+            prob.final_setup()
+
 
 class TestNSGA2DriverConstraints(unittest.TestCase):
     """Constraint and bound handling with scaled variables. OpenMDAO >= 3.45.1 leaves
