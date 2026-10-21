@@ -188,7 +188,11 @@ def simulated_binary_crossover_python(
         changed_out[2 * i] = is_changed
         changed_out[2 * i + 1] = is_changed
 
-    return Q_out, changed_out
+    # source row in P_in of each output slot, so the caller can carry over stored
+    # objectives/constraints for uncrossed children instead of re-evaluating them
+    src_out = indices.ravel()
+
+    return Q_out, changed_out, src_out
 
 
 if compile_numba:

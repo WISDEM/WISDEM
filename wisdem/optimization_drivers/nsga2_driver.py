@@ -13,11 +13,25 @@ try:
 except ModuleNotFoundError:
     lhs = None
 
-from openmdao.core.constants import INF_BOUND
 from openmdao.core.driver import Driver, RecordingDebugging
 from openmdao.utils.concurrent_utils import concurrent_eval
 from openmdao.utils.mpi import MPI
 from openmdao.core.analysis_error import AnalysisError
+
+
+def _bound_array(bound, size, unbounded):
+    """Return a bound as a float array of length size, with None mapped to unbounded (+/-inf).
+
+    OpenMDAO >= 3.45.1 represents an unbounded side as None or +/-inf.
+    """
+    if bound is None:
+        return np.full(size, unbounded)
+    return np.broadcast_to(np.asarray(bound, dtype=float).flatten(), (size,)).copy()
+
+
+def _is_bounded(bound):
+    """True if any element of the bound is finite."""
+    return bound is not None and bool(np.any(np.isfinite(bound)))
 
 
 class NSGA2Driver(Driver):
@@ -169,28 +183,30 @@ class NSGA2Driver(Driver):
         for name, meta in self._designvars.items():
             lower, upper = meta["lower"], meta["upper"]
             for param in (lower, upper):
-                if param is None or np.all(np.abs(param) >= INF_BOUND):
+                if param is None or not np.all(np.isfinite(param)):
                     msg = (
                         f"Invalid bounds for design variable '{name}'. When using "
                         f"{self.__class__.__name__}, values for both 'lower' and 'upper' "
-                        f"must be specified between +/-INF_BOUND ({INF_BOUND}), "
-                        f"but they are: lower={lower}, upper={upper}."
+                        f"must be finite, but they are: lower={lower}, upper={upper}."
                     )
                     raise ValueError(msg)
 
         for name, meta in self._cons.items():
             equals, lower, upper = meta["equals"], meta["lower"], meta["upper"]
-            if (
-                (equals is None or np.all(np.abs(equals) >= INF_BOUND))
-                and (lower is None or np.all(np.abs(lower) >= INF_BOUND))
-                and (upper is None or np.all(np.abs(upper) >= INF_BOUND))
-            ):
+            if _is_bounded(equals):
+                # a random design almost never meets an equality exactly, so NSGA2's
+                # feasible-when->=0 test would mark every point infeasible
+                msg = (
+                    f"Equality constraint '{name}' (equals={equals}) is not supported by "
+                    f"{self.__class__.__name__}. Use 'lower' and 'upper' bounds instead."
+                )
+                raise ValueError(msg)
+            if not (_is_bounded(lower) or _is_bounded(upper)):
                 msg = (
                     f"Invalid bounds for constraint '{name}'. "
-                    f"When using {self.__class__.__name__}, the value for 'equals', "
-                    f"'lower' or 'upper' must be specified between +/-INF_BOUND "
-                    f"({INF_BOUND}), but they are: "
-                    f"equals={equals}, lower={lower}, upper={upper}."
+                    f"When using {self.__class__.__name__}, a finite value for "
+                    f"'lower' or 'upper' must be specified, but they are: "
+                    f"lower={lower}, upper={upper}."
                 )
                 raise ValueError(msg)
 
@@ -313,7 +329,7 @@ class NSGA2Driver(Driver):
 
         # size design variables
         desvars = self._designvars
-        desvar_vals = self.get_design_var_values()
+        desvar_vals = self.get_design_var_values(driver_scaling=False)
 
         count = 0
         for name, meta in desvars.items():
@@ -333,12 +349,28 @@ class NSGA2Driver(Driver):
         outer_bound = np.full((count,), np.inf)
         x0 = np.empty(count)
 
-        # figure out bounds vectors and initial design vars
+        # figure out bounds vectors and initial design vars. As in OpenMDAO's own
+        # GA and DE drivers (>= 3.45), design variables and constraints are handled
+        # unscaled: meta bounds are unscaled and _set_design_var does not unscale.
         for name, meta in desvars.items():
             i, j = self._desvar_idx[name]
             lower_bound[i:j] = meta["lower"]
             upper_bound[i:j] = meta["upper"]
             x0[i:j] = desvar_vals[name]
+        self._dv_lower = lower_bound
+        self._dv_upper = upper_bound
+
+        # constraint bounds per element; each finite side of each element
+        # becomes one constraint entry for the algorithm
+        con_vals = self.get_constraint_values(driver_scaling=False)
+        self._con_bounds = {}
+        n_constr = 0
+        for name, meta in self._cons.items():
+            size = np.size(con_vals[name])
+            lower = _bound_array(meta["lower"], size, -np.inf)
+            upper = _bound_array(meta["upper"], size, np.inf)
+            self._con_bounds[name] = (lower, upper)
+            n_constr += np.count_nonzero(np.isfinite(upper)) + np.count_nonzero(np.isfinite(lower))
 
         # bits of resolution
         resolver = model._resolver  # TODO: delete?
@@ -375,7 +407,7 @@ class NSGA2Driver(Driver):
             design_vars_init,
             self.objective_callback,
             len(self._objs),
-            len(self._cons),
+            n_constr,
             design_vars_l=lower_bound,
             design_vars_u=upper_bound,
             params_override=(Pc, eta_c, Pm, eta_m),
@@ -474,15 +506,9 @@ class NSGA2Driver(Driver):
             self._set_design_var(name, x[i:j])
 
             # Check that design variables are within bounds
-            if (
-                not (self._designvars[name]["lower"] <= x[i:j]).all()
-                or not (x[i:j] <= self._designvars[name]["upper"]).all()
-            ):
+            if not (self._dv_lower[i:j] <= x[i:j]).all() or not (x[i:j] <= self._dv_upper[i:j]).all():
                 out_of_bounds = True
                 break
-
-        # a very large number, but smaller than the result of nan_to_num in Numpy
-        almost_inf = INF_BOUND
 
         # execute the model under a debugger
         with RecordingDebugging(self._get_name(), self.iter_count, self) as rec:
@@ -498,12 +524,12 @@ class NSGA2Driver(Driver):
 
                 # get the objective values
                 obj_values = self.get_objective_values()
-                constr_values_raw = self.get_constraint_values()
+                constr_values_raw = self.get_constraint_values(driver_scaling=False)
             else:
                 # if out of bounds, set the objective to a very large number and skip
                 obj_values = {name: np.inf for name in self._objs}
                 constr_values_raw = (
-                    self.get_constraint_values()
+                    self.get_constraint_values(driver_scaling=False)
                 )  # get the constraint values, which should be all zeros, but since fitness is inf, it hopefully doesn't matter
 
             if is_single_objective:
@@ -511,26 +537,12 @@ class NSGA2Driver(Driver):
             else:
                 obj = np.array([val for val in obj_values.values()]).flatten()
 
-            constr_adjusted = []  # convert all bounds to leq zero
-            for name, meta in self._cons.items():
-                if (meta["lower"] <= -INF_BOUND / 10) and (
-                    meta["upper"] <= INF_BOUND / 10
-                ):  # within an order of magnitude of the inf bound
-                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
-                elif (meta["lower"] >= -INF_BOUND / 10) and (
-                    meta["upper"] >= INF_BOUND / 10
-                ):  # within an order of magnitude of the inf bound
-                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
-                elif (meta["lower"] >= -INF_BOUND / 10) and (
-                    meta["upper"] <= INF_BOUND / 10
-                ):  # within an order of magnitude of the inf bound
-                    # add as sequential one-sided constraints
-                    constr_adjusted.append(np.array(meta["upper"] - constr_values_raw[name]).flatten())
-                    constr_adjusted.append(np.array(constr_values_raw[name] - meta["lower"]).flatten())
-                else:
-                    raise ValueError(
-                        f"you've attempted to constraint {name} between numerically infinite values in both directions: \n{meta}"
-                    )
+            constr_adjusted = []  # convert all bounds to one-sided constraints, feasible when >= 0
+            for name, (lower, upper) in self._con_bounds.items():
+                val = np.asarray(constr_values_raw[name], dtype=float).flatten()
+                # upper sides first, then lower sides, skipping unbounded elements
+                constr_adjusted.append((upper - val)[np.isfinite(upper)])
+                constr_adjusted.append((val - lower)[np.isfinite(lower)])
             if len(constr_adjusted):
                 constr = np.hstack(constr_adjusted)
             else:

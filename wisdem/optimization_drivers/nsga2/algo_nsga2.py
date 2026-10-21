@@ -691,6 +691,8 @@ class NSGA2:
         self.design_vars_fronts = design_vars_fronts_new
         self.objs_fronts = objs_fronts_new
         if self.N_constr:
+            # keep the constraints aligned with the re-sorted design vars and objectives
+            self.constrs_population = np.vstack(constrs_fronts_new)
             self.constrs_fronts = constrs_fronts_new
 
         # broadcast all the results
@@ -701,6 +703,7 @@ class NSGA2:
             self.design_vars_fronts = self.comm_mpi.bcast(self.design_vars_fronts, root=0)
             self.objs_fronts = self.comm_mpi.bcast(self.objs_fronts, root=0)
             if self.N_constr:
+                self.constrs_population = self.comm_mpi.bcast(self.constrs_population, root=0)
                 self.constrs_fronts = self.comm_mpi.bcast(self.constrs_fronts, root=0)
 
         # sanity check the re-sorting
@@ -762,7 +765,7 @@ class NSGA2:
             if self.accelerated and (self.rng_seed is None)
             else simulated_binary_crossover.function_nojit
         )
-        design_vars_proposal, changed_crossover = sbx_function(
+        design_vars_proposal, changed_crossover, src_crossover = sbx_function(
             design_vars_proposal,
             design_vars_l=design_vars_l,
             design_vars_u=design_vars_u,
@@ -771,6 +774,10 @@ class NSGA2:
             rng_seed=self.next_seed(),
         )
         assert len(design_vars_proposal) == self.N_population
+        # keep stored values aligned with their (possibly copied) design rows
+        objs_proposal = objs_proposal[src_crossover, :]
+        if self.N_constr:
+            constrs_proposal = constrs_proposal[src_crossover, :]
         changed = np.logical_or(changed, changed_crossover)
 
         # now, do a mutation
